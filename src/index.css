@@ -71,6 +71,17 @@
   .bg-gradient-premium {
     @apply bg-gradient-to-r from-pink-500 to-purple-500;
   }
+  
+  .app-input {
+    background-color: var(--input-bg);
+    border: var(--input-border);
+    color: var(--input-text);
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+  .app-input::placeholder {
+    color: var(--input-placeholder);
+  }
 }
 
 /* Number font utility */

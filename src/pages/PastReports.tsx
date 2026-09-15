@@ -207,11 +207,11 @@ export const PastReports: React.FC = () => {
               <div className="bg-card rounded-[24px] shadow-2xl p-6 space-y-4 text-center">
                 <h3 className="text-xl font-bold font-gujarati text-danger">ખાતરી કરો</h3>
                 <p className="font-gujarati text-sub">શું તમે ખરેખર આ રિપોર્ટ કાઢી નાખવા માંગો છો?</p>
-                <div className="flex gap-3 pt-2">
-                  <LiquidButton variant="neutral" className="flex-1" onClick={() => setReportToDelete(null)}>
+                <div className="flex flex-wrap gap-3 pt-2 justify-center">
+                  <LiquidButton variant="neutral" className="flex-1 min-w-[120px] px-4 py-2.5 whitespace-nowrap" onClick={() => setReportToDelete(null)}>
                     {t('action.cancel' as any)}
                   </LiquidButton>
-                  <LiquidButton variant="danger" className="flex-1" onClick={confirmDelete}>
+                  <LiquidButton variant="danger" className="flex-1 min-w-[120px] px-4 py-2.5 whitespace-nowrap" onClick={confirmDelete}>
                     હા, કાઢી નાખો
                   </LiquidButton>
                 </div>
@@ -247,7 +247,7 @@ export const PastReports: React.FC = () => {
           placeholder={t('past_reports.search_placeholder' as any)}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full h-14 pl-12 pr-4 rounded-full glass-panel bg-card outline-none focus:shadow-[inset_0_0_0_2px_rgb(var(--acc))] transition-shadow font-gujarati placeholder:text-sub/50 text-txt"
+          className="w-full h-14 pl-12 pr-4 rounded-full app-input outline-none focus:shadow-[inset_0_0_0_2px_rgb(var(--acc))] transition-shadow font-gujarati placeholder-opacity-50"
         />
       </div>
 

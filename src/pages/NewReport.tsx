@@ -281,13 +281,13 @@ export const NewReport: React.FC = () => {
                   placeholder="દા.ત. ધાનેરા, વડગામ, દાંતા..." 
                   value={newHalqaName}
                   onChange={(e) => setNewHalqaName(e.target.value)}
-                  className="w-full bg-card rounded-md px-4 py-3 outline-none shadow-[inset_0_0_0_1px_rgb(var(--brd)/0.15)] font-gujarati focus:shadow-[inset_0_0_0_2px_rgb(var(--acc))] transition-shadow text-txt"
+                  className="w-full app-input rounded-md px-4 py-3 outline-none shadow-[inset_0_0_0_1px_rgb(var(--brd)/0.15)] font-gujarati focus:shadow-[inset_0_0_0_2px_rgb(var(--acc))] transition-shadow"
                 />
-                <div className="flex gap-3 pt-2">
-                  <LiquidButton variant="neutral" className="flex-1" onClick={() => setShowHalqaDialog(false)} disabled={isAddingHalqa}>
+                <div className="flex flex-wrap gap-3 pt-2 justify-center">
+                  <LiquidButton variant="neutral" className="flex-1 min-w-[120px] px-4 py-2.5 whitespace-nowrap" onClick={() => setShowHalqaDialog(false)} disabled={isAddingHalqa}>
                     {t('action.cancel' as any)}
                   </LiquidButton>
-                  <LiquidButton variant="primary" className="flex-1 flex items-center justify-center gap-2" onClick={handleAddHalqa} disabled={isAddingHalqa}>
+                  <LiquidButton variant="primary" className="flex-1 flex items-center justify-center gap-2 min-w-[120px] px-4 py-2.5 whitespace-nowrap" onClick={handleAddHalqa} disabled={isAddingHalqa}>
                     {isAddingHalqa ? (
                       <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                     ) : '+ ઉમેરો'}
@@ -304,11 +304,11 @@ export const NewReport: React.FC = () => {
               <div className="bg-card rounded-[24px] shadow-2xl p-6 space-y-4 text-center">
                 <h3 className="text-xl font-bold font-gujarati text-danger">ખાતરી કરો</h3>
                 <p className="font-gujarati text-sub">શું તમે ખરેખર "{halqaToDelete}" કાઢી નાખવા માંગો છો?</p>
-                <div className="flex gap-3 pt-2">
-                  <LiquidButton variant="neutral" className="flex-1" onClick={() => setHalqaToDelete(null)}>
+                <div className="flex flex-wrap gap-3 pt-2 justify-center">
+                  <LiquidButton variant="neutral" className="flex-1 min-w-[120px] px-4 py-2.5 whitespace-nowrap" onClick={() => setHalqaToDelete(null)}>
                     {t('action.cancel' as any)}
                   </LiquidButton>
-                  <LiquidButton variant="danger" className="flex-1" onClick={confirmDeleteHalqa}>
+                  <LiquidButton variant="danger" className="flex-1 min-w-[120px] px-4 py-2.5 whitespace-nowrap" onClick={confirmDeleteHalqa}>
                     હા, કાઢી નાખો
                   </LiquidButton>
                 </div>
@@ -323,11 +323,11 @@ export const NewReport: React.FC = () => {
               <div className="bg-card rounded-[24px] shadow-2xl p-6 space-y-4 text-center">
                 <h3 className="text-xl font-bold font-gujarati text-danger">ડ્રાફ્ટ ડિલીટ</h3>
                 <p className="font-gujarati text-sub">શું તમે બધી માહિતી ભૂંસવા માંગો છો?</p>
-                <div className="flex gap-3 pt-2">
-                  <LiquidButton variant="neutral" className="flex-1" onClick={() => setShowClearConfirm(false)}>
+                <div className="flex flex-wrap gap-3 pt-2 justify-center">
+                  <LiquidButton variant="neutral" className="flex-1 min-w-[120px] px-4 py-2.5 whitespace-nowrap" onClick={() => setShowClearConfirm(false)}>
                     {t('action.cancel' as any)}
                   </LiquidButton>
-                  <LiquidButton variant="danger" className="flex-1" onClick={confirmClear}>
+                  <LiquidButton variant="danger" className="flex-1 min-w-[120px] px-4 py-2.5 whitespace-nowrap" onClick={confirmClear}>
                     હા, ભૂંસી નાખો
                   </LiquidButton>
                 </div>
@@ -344,7 +344,7 @@ export const NewReport: React.FC = () => {
       <div className="flex flex-col xl:flex-row gap-6 xl:gap-8 xl:items-start">
         <div className="contents xl:flex xl:flex-1 xl:flex-col xl:gap-6">
           {/* Halqa Selector */}
-          <section className="order-1 xl:order-none space-y-3">
+          <section className="order-1 xl:order-none space-y-3 sticky top-[60px] z-30 bg-bg pb-3 pt-2 -mx-6 px-6 border-b border-brd/30 shadow-sm">
             <div className="flex overflow-x-auto pb-2 gap-2 snap-x hide-scrollbar">
               {ALL_HALQAS.map(h => (
                 <div key={h} className="snap-start relative group">
@@ -412,8 +412,8 @@ export const NewReport: React.FC = () => {
                 ))}
               </div>
               {/* Month/year heading */}
-              <div className="text-center mb-3 font-num font-bold text-txt">
-                {calYear}/{String(calMonth).padStart(2,'0')}
+              <div className="text-center mb-3 font-gujarati font-bold text-txt">
+                {['જાન્યુઆરી', 'ફેબ્રુઆરી', 'માર્ચ', 'એપ્રિલ', 'મે', 'જૂન', 'જુલાઈ', 'ઓગસ્ટ', 'સપ્ટેમ્બર', 'ઓક્ટોબર', 'નવેમ્બર', 'ડિસેમ્બર'][calMonthIndex]} {calYear}
               </div>
               <div className="grid grid-cols-7 gap-1 mb-6">
                 {/* Offset empty cells so day 1 lands on correct weekday */}
@@ -473,7 +473,7 @@ export const NewReport: React.FC = () => {
                 type="number"
                 value={(stats as any)[key] || ''}
                 onChange={(e) => handleStatChange(key as keyof typeof stats, e.target.value)}
-                className="bg-transparent text-2xl font-bold font-num w-full outline-none text-right border-b border-transparent focus:border-primary  text-txt"
+                className="app-input text-2xl font-bold font-num w-full outline-none text-right rounded-lg px-2 focus:ring-2 focus:ring-acc/40 transition-all placeholder-opacity-50"
                 placeholder="0"
               />
             </GlassCard>
@@ -486,7 +486,7 @@ export const NewReport: React.FC = () => {
             type="number"
             value={stats.muslim_teachers || ''}
             onChange={(e) => handleStatChange('muslim_teachers', e.target.value)}
-            className="bg-transparent text-2xl font-bold font-num w-24 outline-none text-right border-b border-transparent focus:border-primary  text-txt"
+            className="app-input text-2xl font-bold font-num w-24 outline-none text-right rounded-lg px-2 focus:ring-2 focus:ring-acc/40 transition-all placeholder-opacity-50"
             placeholder="0"
           />
         </GlassCard>
@@ -499,7 +499,7 @@ export const NewReport: React.FC = () => {
           <textarea 
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            className="w-full bg-transparent outline-none resize-none min-h-[60px] font-gujarati text-txt placeholder:text-sub/50"
+            className="w-full app-input bg-transparent outline-none resize-none min-h-[60px] font-gujarati text-txt placeholder:text-sub/50 p-3 rounded-2xl"
             placeholder="અહીં લખો..."
           />
         </GlassCard>
@@ -543,7 +543,7 @@ export const NewReport: React.FC = () => {
                 <tr style={{ background: 'rgb(var(--acc))' }}>
                   <th className="py-4 px-4 w-2/5">
                     <div className="flex items-center justify-start">
-                      <span className="inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 bg-white/15 border border-white/20 backdrop-blur-sm font-gujarati font-semibold text-sm text-white whitespace-nowrap" style={{ textShadow: '0 1px 3px rgba(0,0,0,0.25)' }}>
+                      <span className="inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 backdrop-blur-sm font-gujarati font-semibold text-sm whitespace-nowrap" style={{ textShadow: 'var(--on-primary-shadow)', background: 'var(--on-primary-chip-bg)', borderColor: 'var(--on-primary-chip-border)', borderWidth: '1px', color: 'var(--on-primary)' }}>
                         <ListChecks size={14} />
                         પ્રવૃત્તિ
                       </span>
@@ -551,7 +551,7 @@ export const NewReport: React.FC = () => {
                   </th>
                   <th className="py-4 px-4 text-center">
                     <div className="flex items-center justify-center">
-                      <span className="inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 bg-white/15 border border-white/20 backdrop-blur-sm font-gujarati font-semibold text-sm text-white whitespace-nowrap" style={{ textShadow: '0 1px 3px rgba(0,0,0,0.25)' }}>
+                      <span className="inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 backdrop-blur-sm font-gujarati font-semibold text-sm whitespace-nowrap" style={{ textShadow: 'var(--on-primary-shadow)', background: 'var(--on-primary-chip-bg)', borderColor: 'var(--on-primary-chip-border)', borderWidth: '1px', color: 'var(--on-primary)' }}>
                         <MapPin size={14} />
                         {t('header.gujishta' as any)}
                       </span>
@@ -559,7 +559,7 @@ export const NewReport: React.FC = () => {
                   </th>
                   <th className="py-4 px-4 text-center">
                     <div className="flex items-center justify-center">
-                      <span className="inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 bg-white/15 border border-white/20 backdrop-blur-sm font-gujarati font-semibold text-sm text-white whitespace-nowrap" style={{ textShadow: '0 1px 3px rgba(0,0,0,0.25)' }}>
+                      <span className="inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 backdrop-blur-sm font-gujarati font-semibold text-sm whitespace-nowrap" style={{ textShadow: 'var(--on-primary-shadow)', background: 'var(--on-primary-chip-bg)', borderColor: 'var(--on-primary-chip-border)', borderWidth: '1px', color: 'var(--on-primary)' }}>
                         <MapPin size={14} />
                         {t('header.azaim' as any)}
                       </span>
@@ -567,7 +567,7 @@ export const NewReport: React.FC = () => {
                   </th>
                   <th className="py-4 px-4 text-center">
                     <div className="flex items-center justify-center">
-                      <span className="inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 bg-white/15 border border-white/20 backdrop-blur-sm font-gujarati font-semibold text-sm text-white whitespace-nowrap" style={{ textShadow: '0 1px 3px rgba(0,0,0,0.25)' }}>
+                      <span className="inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 backdrop-blur-sm font-gujarati font-semibold text-sm whitespace-nowrap" style={{ textShadow: 'var(--on-primary-shadow)', background: 'var(--on-primary-chip-bg)', borderColor: 'var(--on-primary-chip-border)', borderWidth: '1px', color: 'var(--on-primary)' }}>
                         <MapPin size={14} />
                         {t('header.maujuda' as any)}
                       </span>
@@ -594,7 +594,7 @@ export const NewReport: React.FC = () => {
                         type="text"
                         value={activities[key]?.gujishta || ''}
                         onChange={(e) => handleActivityChange(key, 'gujishta', e.target.value)}
-                        className="w-full max-w-[110px] mx-auto block rounded-xl border border-brd/50 bg-inp/60 py-2.5 text-sm text-center text-txt font-num placeholder:text-sub/40 outline-none focus:border-acc focus:ring-2 focus:ring-acc/40 transition-all"
+                        className="w-full max-w-[110px] mx-auto block rounded-xl app-input py-2.5 text-sm text-center font-num outline-none focus:border-acc focus:ring-2 focus:ring-acc/40 transition-all"
                         placeholder="-"
                       />
                     </td>
@@ -603,7 +603,7 @@ export const NewReport: React.FC = () => {
                         type="text"
                         value={activities[key]?.azaim || ''}
                         onChange={(e) => handleActivityChange(key, 'azaim', e.target.value)}
-                        className="w-full max-w-[110px] mx-auto block rounded-xl border border-brd/50 bg-inp/60 py-2.5 text-sm text-center text-txt font-num placeholder:text-sub/40 outline-none focus:border-acc focus:ring-2 focus:ring-acc/40 transition-all"
+                        className="w-full max-w-[110px] mx-auto block rounded-xl app-input py-2.5 text-sm text-center font-num outline-none focus:border-acc focus:ring-2 focus:ring-acc/40 transition-all"
                         placeholder="-"
                       />
                     </td>
@@ -612,8 +612,7 @@ export const NewReport: React.FC = () => {
                         type="text"
                         value={activities[key]?.maujuda || ''}
                         onChange={(e) => handleActivityChange(key, 'maujuda', e.target.value)}
-                        className="w-full max-w-[110px] mx-auto block rounded-xl border-2 py-2.5 text-sm text-center text-txt font-num font-bold placeholder:text-acc/40 outline-none focus:ring-2 focus:ring-acc/40 transition-all"
-                        style={{ borderColor: 'rgb(var(--acc) / 0.5)', background: 'rgb(var(--acc) / 0.06)' }}
+                        className="w-full max-w-[110px] mx-auto block rounded-xl app-input py-2.5 text-sm text-center font-num font-bold outline-none focus:ring-2 focus:ring-acc/40 transition-all"
                         placeholder="-"
                       />
                     </td>
@@ -637,7 +636,7 @@ export const NewReport: React.FC = () => {
                       type="text"
                       value={activities['mashwara']?.maujuda || ''}
                       onChange={(e) => handleActivityChange('mashwara', 'maujuda', e.target.value)}
-                      className="w-full rounded-xl border border-brd/50 bg-inp/60 px-4 py-2.5 text-sm text-txt font-gujarati placeholder:text-sub/40 outline-none focus:border-acc focus:ring-2 focus:ring-acc/40 transition-all"
+                      className="w-full rounded-xl app-input px-4 py-2.5 text-sm font-gujarati outline-none focus:border-acc focus:ring-2 focus:ring-acc/40 transition-all placeholder-opacity-50"
                       placeholder="વિગત લખો..."
                     />
                   </td>

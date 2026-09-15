@@ -13,6 +13,16 @@ html[data-theme="outdoor"] {
   --inp-alpha: 0.9;
   --grad-a: 36 59 143;
   --grad-b: 90 167 232;
+  --on-primary: #ffffff;
+  --on-primary-sub: rgba(255, 255, 255, 0.8);
+  --on-primary-chip-bg: rgba(255, 255, 255, 0.15);
+  --on-primary-chip-border: rgba(255, 255, 255, 0.20);
+  --on-primary-shadow: 0 1px 3px rgba(0,0,0,0.25);
+  
+  --input-bg: rgba(255, 253, 246, 0.6);
+  --input-border: 1px solid rgba(36, 59, 143, 0.35);
+  --input-text: #1E2F73;
+  --input-placeholder: rgba(107, 122, 168, 0.5);
 }
 html[data-theme="dark"] {
   --bg: 31 35 41;
@@ -29,6 +39,16 @@ html[data-theme="dark"] {
   --inp-alpha: 1;
   --grad-a: 101 163 13;
   --grad-b: 182 255 46;
+  --on-primary: #1A2E05;
+  --on-primary-sub: #3F6212;
+  --on-primary-chip-bg: rgba(26, 46, 5, 0.12);
+  --on-primary-chip-border: rgba(26, 46, 5, 0.25);
+  --on-primary-shadow: none;
+  
+  --input-bg: rgba(255, 255, 255, 0.06);
+  --input-border: 1px solid rgba(182, 255, 46, 0.35);
+  --input-text: #F3F4F6;
+  --input-placeholder: rgba(156, 163, 175, 0.55);
 }
 html[data-theme="premium"] {
   --bg: 23 18 56;
@@ -45,6 +65,16 @@ html[data-theme="premium"] {
   --inp-alpha: 0.1;
   --grad-a: 236 72 153;
   --grad-b: 168 85 247;
+  --on-primary: #1A2E05;
+  --on-primary-sub: #3F6212;
+  --on-primary-chip-bg: rgba(26, 46, 5, 0.12);
+  --on-primary-chip-border: rgba(26, 46, 5, 0.25);
+  --on-primary-shadow: none;
+
+  --input-bg: #241029;
+  --input-border: 1px solid rgba(236, 72, 153, 0.35);
+  --input-text: #FFE3F1;
+  --input-placeholder: rgba(255, 227, 241, 0.55);
 }
 
 html[data-theme="outdoor"] body {

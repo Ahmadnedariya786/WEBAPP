@@ -29,7 +29,7 @@ function App() {
   return (
     <>
       {showGreeting && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-bg pointer-events-none" style={{ animation: 'fadeOut 0.5s ease 2s forwards' }}>
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-bg pointer-events-none" style={{ animation: 'fadeOut 0.3s ease 1.3s forwards' }}>
           <div className="glass-panel w-[86%] max-w-md mx-auto rounded-3xl p-6 text-center shadow-2xl backdrop-blur-xl flex flex-col items-center justify-center">
             <h1 className="font-bold font-gujarati text-txt mb-2 text-center leading-tight text-balance" style={{ fontSize: 'clamp(1.6rem, 7vw, 3rem)' }}>અસ્સલામુ અલયકુમ</h1>
             <span className="block text-center text-xs tracking-[0.2em] text-sub uppercase font-num mt-2">ASSALAMU ALAYKUM</span>

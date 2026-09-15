@@ -145,7 +145,7 @@ export const AuthDialog: React.FC = () => {
                         value={code}
                         onChange={(e) => setCode(e.target.value.toUpperCase())}
                         placeholder="MT-XXXX-XXXX"
-                        className="w-full neu-inset rounded-full px-5 py-3.5 outline-none font-num text-center text-txt tracking-widest placeholder:tracking-normal placeholder:text-sub/50 uppercase focus:ring-2 focus:ring-acc/40 transition-shadow text-sm"
+                        className="w-full app-input rounded-full px-5 py-3.5 outline-none font-num text-center tracking-widest placeholder:tracking-normal placeholder-opacity-50 uppercase focus:ring-2 focus:ring-acc/40 transition-shadow text-sm"
                         disabled={loading}
                         autoFocus
                       />

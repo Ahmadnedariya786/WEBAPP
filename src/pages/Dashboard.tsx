@@ -79,21 +79,21 @@ export const Dashboard: React.FC = () => {
 
       {/* Hero Stat */}
       <GlassCard 
-        className="shadow-xl text-white p-6 relative overflow-hidden"
+        className="shadow-xl text-[var(--on-primary)] p-6 relative overflow-hidden"
         style={{ background: 'linear-gradient(135deg, rgb(var(--grad-a)), rgb(var(--grad-b)))' }}
       >
         <div className="absolute top-0 right-0 w-32 h-32 bg-card rounded-full blur-2xl -translate-y-1/2 translate-x-1/4" />
         <div className="relative z-10 flex items-center justify-between">
           <div>
-            <h3 className="font-gujarati text-sub font-medium mb-1 text-white/80">{t('stat.students_count')}</h3>
-            <div className="text-5xl font-num font-bold text-white">{totalStudents.toLocaleString('en-IN')}</div>
-            <div className="flex items-center gap-1 text-acc2 text-sm mt-2 font-num">
+            <h3 className="font-gujarati text-[var(--on-primary-sub)] font-medium mb-1">{t('stat.students_count')}</h3>
+            <div className="text-5xl font-num font-bold text-[var(--on-primary)]">{totalStudents.toLocaleString('en-IN')}</div>
+            <div className="flex items-center gap-1 text-[var(--on-primary)] text-sm mt-2 font-num">
               <TrendingUp size={16} /> +0% 
-              <span className="font-gujarati text-white/70 ml-1">ગયા માસ કરતા</span>
+              <span className="font-gujarati text-[var(--on-primary-sub)] ml-1">ગયા માસ કરતા</span>
             </div>
           </div>
-          <div className="w-16 h-16 rounded-full bg-black/20 backdrop-blur-sm flex items-center justify-center shadow-[inset_0_0_0_1px_rgb(255_255_255/0.15)] overflow-hidden">
-            <Users size={32} className="text-white" />
+          <div className="w-16 h-16 rounded-full bg-black/20 backdrop-blur-sm flex items-center justify-center overflow-hidden" style={{ boxShadow: 'inset 0 0 0 1px var(--on-primary-chip-border)' }}>
+            <Users size={32} style={{ color: 'var(--on-primary)' }} />
           </div>
         </div>
       </GlassCard>
@@ -136,11 +136,11 @@ export const Dashboard: React.FC = () => {
             <div className="rounded-2xl overflow-hidden bg-card shadow-lg border border-brd/40">
               {/* Accent header */}
               <div className="py-4 px-4 flex items-center justify-between" style={{ background: 'rgb(var(--acc))' }}>
-                <span className="inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 bg-white/15 border border-white/20 backdrop-blur-sm font-gujarati font-semibold text-sm text-white whitespace-nowrap" style={{ textShadow: '0 1px 3px rgba(0,0,0,0.25)' }}>
+                <span className="inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 backdrop-blur-sm font-gujarati font-semibold text-sm whitespace-nowrap" style={{ textShadow: 'var(--on-primary-shadow)', background: 'var(--on-primary-chip-bg)', borderColor: 'var(--on-primary-chip-border)', borderWidth: '1px', color: 'var(--on-primary)' }}>
                   <ListChecks size={14} />
                   પ્રવૃત્તિ
                 </span>
-                <span className="inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 bg-white/15 border border-white/20 backdrop-blur-sm font-gujarati font-semibold text-sm text-white whitespace-nowrap" style={{ textShadow: '0 1px 3px rgba(0,0,0,0.25)' }}>
+                <span className="inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 backdrop-blur-sm font-gujarati font-semibold text-sm whitespace-nowrap" style={{ textShadow: 'var(--on-primary-shadow)', background: 'var(--on-primary-chip-bg)', borderColor: 'var(--on-primary-chip-border)', borderWidth: '1px', color: 'var(--on-primary)' }}>
                   <MapPin size={14} />
                   પ્રગતિ
                 </span>

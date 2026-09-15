@@ -311,8 +311,8 @@ export const Admin: React.FC = () => {
                     onChange={(e) => { setPassword(e.target.value); setError(false); }}
                     placeholder="•••••••••"
                     className={[
-                      'w-full neu-inset rounded-full px-5 py-3.5 outline-none',
-                      'text-txt text-center font-num tracking-widest placeholder:tracking-normal placeholder:text-sub/50',
+                      'w-full app-input rounded-full px-5 py-3.5 outline-none',
+                      'text-center font-num tracking-widest placeholder:tracking-normal placeholder-opacity-50',
                       'focus:ring-2 focus:ring-acc/40 transition-shadow text-sm',
                       error ? 'ring-2 ring-danger/60' : '',
                     ].join(' ')}
@@ -487,7 +487,7 @@ export const Admin: React.FC = () => {
                         value={newCodeLabel}
                         onChange={e => setNewCodeLabel(e.target.value)}
                         placeholder="કોડ કોને આપ્યો? નામ લખો"
-                        className="w-full bg-card/50 rounded-xl px-4 py-3 outline-none border border-brd/10 font-gujarati focus:border-acc text-txt"
+                        className="w-full app-input rounded-xl px-4 py-3 outline-none font-gujarati focus:ring-2 focus:ring-acc/40 placeholder-opacity-50"
                         required
                         autoFocus
                       />
