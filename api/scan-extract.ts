@@ -81,6 +81,8 @@ Rows 1 to 13 correspond to:
 // Module-level in-memory cache for dynamic model discovery
 let cachedModel: string | null = null;
 let lastDiscoveryTime: number = 0;
+let lastDiscoveredList: string[] = [];
+let lastDiscoveryError: string | null = null;
 const CACHE_TTL_MS = 60 * 60 * 1000; // 60 minutes
 const FALLBACK_CHAIN = ['gemini-flash-latest', 'gemini-2.5-flash', 'gemini-2.0-flash'];
 
@@ -119,6 +121,7 @@ async function getOrDiscoverModel(apiKey: string): Promise<string> {
     if (!resp.ok) {
       const errText = await resp.text();
       console.error('[Dynamic Discovery Error]', resp.status, errText);
+      lastDiscoveryError = `HTTP ${resp.status}: ${errText}`;
       cachedModel = FALLBACK_CHAIN[0];
       lastDiscoveryTime = now;
       return cachedModel;
@@ -126,6 +129,7 @@ async function getOrDiscoverModel(apiKey: string): Promise<string> {
 
     const data: any = await resp.json();
     const models: Array<{ name: string; supportedGenerationMethods?: string[] }> = data?.models || [];
+    lastDiscoveredList = models.map(m => stripModelPrefix(m.name));
 
     const supportsGenerateContent = (m: any) => {
       if (!m.supportedGenerationMethods) return true;
@@ -155,6 +159,7 @@ async function getOrDiscoverModel(apiKey: string): Promise<string> {
   } catch (err: any) {
     clearTimeout(timeoutId);
     console.error('[Dynamic Discovery Exception]', err.message || err);
+    lastDiscoveryError = err.message || 'Exception';
     // N3: On discovery failure go straight to fallback chain so scan never hangs
     cachedModel = FALLBACK_CHAIN[0];
     lastDiscoveryTime = now;
@@ -182,11 +187,19 @@ export default async function handler(req: any, res: any) {
       }
     }
 
-    return res.status(200).json({
+    const responseData: any = {
       ok: true,
       hasKey,
       model: model || null
-    });
+    };
+
+    if (url.searchParams.get('debug') === '1') {
+      responseData.discoveredCount = lastDiscoveredList.length;
+      responseData.discoveredModels = lastDiscoveredList;
+      responseData.discoveryError = lastDiscoveryError;
+    }
+
+    return res.status(200).json(responseData);
   }
 
   // Only POST allowed for extraction
