@@ -37,6 +37,7 @@ async function runProofPack() {
   const page = await browser.newPage();
   const consoleErrors = [];
   page.on('console', msg => {
+    console.log('[BROWSER]', msg.type(), msg.text());
     if (msg.type() === 'error') {
       consoleErrors.push(msg.text());
     }

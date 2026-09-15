@@ -9,6 +9,9 @@ function apiDevMiddleware(): Plugin {
         if (req.url && req.url.startsWith('/api/scan-extract')) {
           try {
             const { default: handler } = await import('./api/scan-extract.ts');
+            if (!process.env.GEMINI_API_KEY) {
+              process.env.SCAN_MOCK = 'true';
+            }
             const urlObj = new URL(req.url, 'http://localhost');
             (req as any).query = Object.fromEntries(urlObj.searchParams.entries());
 

@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { Camera, Image as ImageIcon, Loader2 } from 'lucide-react';
 import { processImageFile } from './imageUtils';
 import { ReviewOverlay } from './ReviewOverlay';
@@ -42,12 +42,35 @@ export const ScanPills: React.FC<ScanPillsProps> = ({
 
   const isScanning = scanStage !== 'idle';
 
+  // N1: Reset scanStage to idle on native cancel event
+  useEffect(() => {
+    const handleCancel = () => {
+      setScanStage('idle');
+      setIsLargeFile(false);
+    };
+
+    const cam = cameraInputRef.current;
+    const gal = galleryInputRef.current;
+
+    cam?.addEventListener('cancel', handleCancel);
+    gal?.addEventListener('cancel', handleCancel);
+
+    return () => {
+      cam?.removeEventListener('cancel', handleCancel);
+      gal?.removeEventListener('cancel', handleCancel);
+    };
+  }, []);
+
   const processAndScan = async (file: File) => {
-    if (!file) return;
+    if (!file) {
+      setScanStage('idle');
+      return;
+    }
 
     // Check offline
     if (typeof navigator !== 'undefined' && !navigator.onLine) {
       showToast('ઇન્ટરનેટ કનેક્શન જરૂરી છે ❌');
+      setScanStage('idle');
       return;
     }
 
