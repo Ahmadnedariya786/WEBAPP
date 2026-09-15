@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { t } from '../i18n';
 import { GlassCard } from '../components/ui/GlassCard';
 import { LiquidButton } from '../components/ui/LiquidButton';
-import { Shield, Users, Activity, Database, Lock, ChevronLeft, CheckCircle, Key, Trash2, Copy, Share2 } from 'lucide-react';
+import { Shield, Users, Activity, Database, Lock, ChevronLeft, CheckCircle, Key, KeyRound, Trash2, Copy, Share2, LogOut } from 'lucide-react';
 import { getLogs, clearLogs, type SystemLog, logActivity } from '../lib/utils';
 import { useAppStore } from '../store/appStore';
 import { supabaseService } from '../services/supabaseService';
@@ -364,19 +364,20 @@ export const Admin: React.FC = () => {
                 <Shield className="text-acc" />
                 {t('admin.dashboard_title' as any)}
               </h2>
-              <span className="bg-acc2/10 text-acc2 border border-acc2/20 px-2 py-0.5 rounded-full text-xs font-gujarati font-medium whitespace-nowrap">
-                એડમિન લૉગિન ✅
+              <span className="bg-acc2/10 text-acc2 border border-acc2/20 px-2 py-0.5 rounded-full text-xs font-gujarati font-medium whitespace-nowrap inline-flex items-center gap-1">
+                એડમિન લૉગિન <CheckCircle className="w-4 h-4" />
               </span>
             </div>
-            <button onClick={handleLogout} className="text-sm font-gujarati bg-card hover:bg-card/80 border border-brd/10 px-3 py-1.5 rounded-full text-txt transition-colors">
-              🔒 લૉગઆઉટ
+            <button onClick={handleLogout} className="h-9 px-3 rounded-full text-sm font-semibold font-gujarati bg-card hover:bg-card/80 border border-brd/10 text-txt transition-colors inline-flex items-center gap-1.5 whitespace-nowrap">
+              <LogOut className="w-4 h-4 shrink-0" />
+              લૉગઆઉટ
             </button>
           </header>
 
           <div className="grid grid-cols-2 gap-4">
             <GlassCard onClick={() => setActiveScreen('users')} hoverEffect className="cursor-pointer rounded-2xl p-6 flex flex-col items-center justify-center text-center gap-3 min-h-[160px] max-h-[220px]">
               <Users size={32} className="text-acc" />
-              <span className="font-gujarati font-medium text-sm">🔑 પાસવર્ડ મેનેજ કરો</span>
+              <span className="font-gujarati font-medium text-sm inline-flex items-center gap-1.5"><Key className="w-4 h-4" /> પાસવર્ડ મેનેજ કરો</span>
             </GlassCard>
 
             <GlassCard onClick={openLogs} hoverEffect className="cursor-pointer rounded-2xl p-6 flex flex-col items-center justify-center text-center gap-3 min-h-[160px] max-h-[220px]">
@@ -410,11 +411,12 @@ export const Admin: React.FC = () => {
                   className="font-gujarati flex gap-1 bg-acc/10 text-acc border-acc/20 hover:bg-acc hover:text-white"
                   disabled={isPurging}
                 >
-                  🗑️ {isPurging ? 'સાફ...' : 'લિસ્ટ સાફ કરો'}
+                  <Trash2 className="w-4 h-4" /> {isPurging ? 'સાફ...' : 'લિસ્ટ સાફ કરો'}
                 </LiquidButton>
               )}
-              <LiquidButton onClick={() => setShowGenerateModal(true)} size="sm" className="font-gujarati flex gap-2">
-                <Key size={16} /> 🔑 નવો પાસવર્ડ
+              <LiquidButton onClick={() => setShowGenerateModal(true)} className="inline-flex items-center justify-center gap-2 px-4 min-h-10 rounded-full text-sm font-semibold font-gujarati w-auto">
+                <KeyRound className="w-4 h-4 shrink-0" />
+                <span className="min-[360px]:whitespace-nowrap whitespace-normal leading-tight py-1">નવો પાસવર્ડ</span>
               </LiquidButton>
             </div>
           </header>
