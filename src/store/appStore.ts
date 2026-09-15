@@ -41,6 +41,8 @@ interface AppState {
   deleteReport: (id: string) => Promise<void>
   addCustomHalqa: (halqaName: string) => Promise<void>
   removeCustomHalqa: (id: string) => Promise<void>
+  addAdminHalqa: (name: string, is_default: boolean) => Promise<void>
+  removeAdminHalqa: (id: string) => Promise<void>
   
   // To keep backward compatibility for anything still expecting string array
   customHalqas: string[]
@@ -119,11 +121,10 @@ export const useAppStore = create<AppState>()(
             supabaseService.listReports(),
             supabaseService.listHalqas()
           ])
-          const DEFAULT_HALQAS = ['પાલનપુર', 'ડીસા', 'ધાનેરા', 'થરાદ'];
           set({ 
             reports, 
             halqas,
-            customHalqas: halqas.filter(h => !DEFAULT_HALQAS.includes(h.name)).map(h => h.name),
+            customHalqas: halqas.filter((h: any) => h.is_custom).map((h: any) => h.name),
             isLoading: false 
           })
         } catch (err) {
@@ -152,11 +153,10 @@ export const useAppStore = create<AppState>()(
             supabaseService.listReports(),
             supabaseService.listHalqas()
           ])
-          const DEFAULT_HALQAS = ['પાલનપુર', 'ડીસા', 'ધાનેરા', 'થરાદ'];
           set({ 
             reports, 
             halqas,
-            customHalqas: halqas.filter(h => !DEFAULT_HALQAS.includes(h.name)).map(h => h.name)
+            customHalqas: halqas.filter((h: any) => h.is_custom).map((h: any) => h.name)
           })
         } catch (err) {
           console.error(err)
@@ -225,7 +225,38 @@ export const useAppStore = create<AppState>()(
           if (!code) throw new Error("Unauthorized");
           await supabaseService.deleteHalqa(id, code)
           set((state) => ({
-            halqas: state.halqas.filter(h => h.id !== id)
+            halqas: state.halqas.filter(h => h.id !== id),
+            customHalqas: state.customHalqas.filter(name => !state.halqas.find(h => h.id === id && h.name === name))
+          }))
+        } catch (err) {
+          console.error(err)
+          throw err
+        }
+      },
+
+      addAdminHalqa: async (name, is_default) => {
+        try {
+          const code = get().sessionCode;
+          if (!code) throw new Error("Unauthorized");
+          const newHalqa = await supabaseService.addAdminHalqa(name, code, is_default)
+          set((state) => ({ 
+            halqas: [...state.halqas, newHalqa],
+            customHalqas: is_default ? state.customHalqas : [...state.customHalqas, name]
+          }))
+        } catch (err) {
+          console.error(err)
+          throw err
+        }
+      },
+
+      removeAdminHalqa: async (id) => {
+        try {
+          const code = get().sessionCode;
+          if (!code) throw new Error("Unauthorized");
+          await supabaseService.deleteHalqa(id, code)
+          set((state) => ({
+            halqas: state.halqas.filter(h => h.id !== id),
+            customHalqas: state.customHalqas.filter(name => !state.halqas.find(h => h.id === id && h.name === name))
           }))
         } catch (err) {
           console.error(err)

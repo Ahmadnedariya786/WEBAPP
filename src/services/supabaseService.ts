@@ -81,12 +81,17 @@ export const supabaseService = {
     }
   },
   async listHalqas() {
-    const { data, error } = await supabase.from('halqas').select('id, name').order('created_at', { ascending: true });
+    const { data, error } = await supabase.from('halqas').select('id, name, is_custom').order('created_at', { ascending: true });
     if (error) throw error;
     return data;
   },
   async addHalqa(name: string, adminCode: string) {
     const { data, error } = await supabase.rpc('fn_save_halqa', { p_admin: adminCode, p_payload: { name, is_custom: true } });
+    if (error) throw error;
+    return data;
+  },
+  async addAdminHalqa(name: string, adminCode: string, is_default: boolean) {
+    const { data, error } = await supabase.rpc('fn_save_halqa', { p_admin: adminCode, p_payload: { name, is_custom: !is_default } });
     if (error) throw error;
     return data;
   },

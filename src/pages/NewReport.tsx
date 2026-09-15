@@ -10,7 +10,6 @@ import { cn, formatDate, localTodayIso } from '../lib/utils';
 import { isDuplicateReportError, mapSupabaseError } from '../services/supabaseService';
 
 // Constants
-const DEFAULT_HALQAS = ['પાલનપુર', 'ડીસા', 'ધાનેરા', 'થરાદ'];
 const ACTIVITY_KEYS = [
   'activity.namaz', 'activity.mashwara_pabandi', 'activity.taleem', 'activity.gasht',
   'activity.panchkosa', 'activity.shabguzari', 'activity.mulaqat_percent', 'activity.school_namaz',
@@ -240,7 +239,7 @@ export const NewReport: React.FC = () => {
     }
   };
 
-  const ALL_HALQAS = [...DEFAULT_HALQAS, ...customHalqas];
+  const ALL_HALQAS = halqas.map((h: any) => h.name);
 
   // Calendar: derive year/month from currently selected date or today
   const calendarBase = date || localTodayIso();

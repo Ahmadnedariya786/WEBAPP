@@ -3,8 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { t } from '../i18n';
 import { GlassCard } from '../components/ui/GlassCard';
 import { LiquidButton } from '../components/ui/LiquidButton';
-import { Shield, Users, Activity, Database, Lock, ChevronLeft, CheckCircle, Key, KeyRound, Trash2, Copy, Share2, LogOut } from 'lucide-react';
-import { getLogs, clearLogs, type SystemLog, logActivity } from '../lib/utils';
+import { Shield, Users, Activity, Database, Lock, ChevronLeft, CheckCircle, Key, KeyRound, Trash2, Copy, Share2, LogOut, MapPin, Plus } from 'lucide-react';
+import { getLogs, clearLogs, type SystemLog, logActivity, cn } from '../lib/utils';
 import { useAppStore } from '../store/appStore';
 import { supabaseService } from '../services/supabaseService';
 import { useNavigate } from 'react-router-dom';
@@ -19,7 +19,7 @@ export const Admin: React.FC = () => {
   const [isFirstRun, setIsFirstRun] = useState(false);
   const [shakeInput, setShakeInput] = useState(false);
   
-  const [activeScreen, setActiveScreen] = useState<'main' | 'users' | 'logs'>('main');
+  const [activeScreen, setActiveScreen] = useState<'main' | 'users' | 'logs' | 'halqas'>('main');
   const [logs, setLogs] = useState<SystemLog[]>([]);
   
   const [toastMessage, setToastMessage] = useState('');
@@ -31,6 +31,10 @@ export const Admin: React.FC = () => {
   const [newCodeLabel, setNewCodeLabel] = useState('');
   const [generatedCode, setGeneratedCode] = useState<string | null>(null);
   const [isPurging, setIsPurging] = useState(false);
+  
+  // Halqa Management State
+  const [newAdminHalqa, setNewAdminHalqa] = useState('');
+  const [halqaToDelete, setHalqaToDelete] = useState<{ id: string, name: string } | null>(null);
 
   const showNotification = (msg: string) => {
     setToastMessage(msg);
@@ -380,6 +384,11 @@ export const Admin: React.FC = () => {
               <span className="font-gujarati font-medium text-sm inline-flex items-center gap-1.5"><Key className="w-4 h-4" /> પાસવર્ડ મેનેજ કરો</span>
             </GlassCard>
 
+            <GlassCard onClick={() => setActiveScreen('halqas')} hoverEffect className="cursor-pointer rounded-2xl p-6 flex flex-col items-center justify-center text-center gap-3 min-h-[160px] max-h-[220px]">
+              <MapPin size={32} className="text-sub" />
+              <span className="font-gujarati font-medium text-sm inline-flex items-center gap-1.5">હલકા સંચાલન</span>
+            </GlassCard>
+
             <GlassCard onClick={openLogs} hoverEffect className="cursor-pointer rounded-2xl p-6 flex flex-col items-center justify-center text-center gap-3 min-h-[160px] max-h-[220px]">
               <Activity size={32} className="text-sub" />
               <span className="font-gujarati font-medium text-sm">{t('admin.system_logs' as any)}</span>
@@ -542,6 +551,120 @@ export const Admin: React.FC = () => {
               )}
             </div>
           </GlassCard>
+        </div>
+      )}
+
+      {activeScreen === 'halqas' && (
+        <div className="space-y-6 relative">
+          <header className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <button onClick={() => setActiveScreen('main')} className="w-10 h-10 flex items-center justify-center rounded-full glass-panel text-sub">
+                <ChevronLeft size={20} />
+              </button>
+              <h2 className="text-xl font-bold font-gujarati">હલકા સંચાલન</h2>
+            </div>
+          </header>
+
+          <GlassCard className="p-4 space-y-4">
+            <h3 className="font-gujarati font-bold text-txt">નવો ડિફોલ્ટ હલકો ઉમેરો</h3>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={newAdminHalqa}
+                onChange={e => setNewAdminHalqa(e.target.value)}
+                placeholder="હલકાનું નામ"
+                className="flex-1 app-input rounded-xl px-4 py-2 outline-none font-gujarati focus:ring-2 focus:ring-acc/40 placeholder-opacity-50"
+              />
+              <LiquidButton
+                onClick={async () => {
+                  if (!newAdminHalqa.trim()) return;
+                  setIsLoading(true);
+                  try {
+                    await useAppStore.getState().addAdminHalqa(newAdminHalqa.trim(), true);
+                    useAppStore.getState().refreshAll();
+                    setNewAdminHalqa('');
+                    showNotification('નવો હલકો ઉમેરાયો ✅');
+                  } catch (err: any) {
+                    showNotification('ભૂલ આવી: ' + (err.message || 'અજ્ઞાત ભૂલ'));
+                  }
+                  setIsLoading(false);
+                }}
+                disabled={isLoading || !newAdminHalqa.trim()}
+                className="px-4"
+              >
+                <Plus size={20} />
+              </LiquidButton>
+            </div>
+          </GlassCard>
+
+          <div className="space-y-3">
+            {halqas.map((h: any) => (
+              <GlassCard key={h.id} className="p-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <span className="font-gujarati font-bold text-txt text-lg">{h.name}</span>
+                  <span className={cn(
+                    "px-2 py-0.5 rounded-full text-xs font-gujarati border",
+                    !h.is_custom 
+                      ? "bg-acc/10 text-acc border-acc/20" 
+                      : "bg-sub/10 text-sub border-sub/20"
+                  )}>
+                    {!h.is_custom ? 'ડિફોલ્ટ' : 'ટીમ'}
+                  </span>
+                </div>
+                <button
+                  onClick={() => setHalqaToDelete({ id: h.id, name: h.name })}
+                  className="w-11 h-11 rounded-full bg-danger/10 text-danger flex items-center justify-center hover:bg-danger hover:text-white transition-colors shrink-0"
+                >
+                  <Trash2 size={20} />
+                </button>
+              </GlassCard>
+            ))}
+          </div>
+
+          <AnimatePresence>
+            {halqaToDelete && (
+              <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={(e) => { if (e.target === e.currentTarget) setHalqaToDelete(null); }}>
+                <motion.div initial={{opacity:0, scale:0.95}} animate={{opacity:1, scale:1}} exit={{opacity:0, scale:0.95}} className="w-[92%] max-w-sm rounded-2xl bg-card p-6 shadow-2xl border border-brd/10 space-y-5">
+                  <div className="w-12 h-12 bg-danger/10 text-danger rounded-full flex items-center justify-center mx-auto mb-2">
+                    <Trash2 size={24} />
+                  </div>
+                  <h3 className="font-gujarati font-bold text-lg text-txt text-center leading-tight">
+                    શું તમે ખરેખર '{halqaToDelete.name}' કાઢી નાખવા માંગો છો?
+                  </h3>
+                  
+                  <div className="bg-danger/5 border border-danger/20 p-3 rounded-lg text-danger font-gujarati text-sm leading-relaxed text-center">
+                    <span className="font-bold">ચેતવણી:</span> આ હલકામાં રિપોર્ટ્સ હોઈ શકે છે — રિપોર્ટ્સ ક્યારેય નહીં કાઢી નાખવામાં આવે, ફક્ત હલકો દૂર થશે.
+                  </div>
+
+                  <div className="flex gap-3 pt-2">
+                    <LiquidButton type="button" variant="neutral" className="flex-1 font-gujarati font-semibold" onClick={() => setHalqaToDelete(null)}>
+                      રદ કરો
+                    </LiquidButton>
+                    <LiquidButton
+                      type="button"
+                      variant="danger"
+                      className="flex-1 font-gujarati font-semibold bg-danger text-white border-danger hover:bg-danger/90"
+                      disabled={isLoading}
+                      onClick={async () => {
+                        setIsLoading(true);
+                        try {
+                          await useAppStore.getState().removeAdminHalqa(halqaToDelete.id);
+                          useAppStore.getState().refreshAll();
+                          setHalqaToDelete(null);
+                          showNotification('હલકો ડિલીટ થયો ✅');
+                        } catch (err: any) {
+                          showNotification('ભૂલ આવી: ' + (err.message || 'અજ્ઞાત ભૂલ'));
+                        }
+                        setIsLoading(false);
+                      }}
+                    >
+                      {isLoading ? '...' : 'હા, કાઢી નાખો'}
+                    </LiquidButton>
+                  </div>
+                </motion.div>
+              </div>
+            )}
+          </AnimatePresence>
         </div>
       )}
     </div>
