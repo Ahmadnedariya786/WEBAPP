@@ -135,60 +135,102 @@ export default async function handler(req: any, res: any) {
     return res.status(200).json(getDevMockResponse());
   }
 
-  // Call Gemini Flash Vision API with 30s timeout
+  // Model fallback chain: gemini-flash-latest -> gemini-2.5-flash -> gemini-2.0-flash
+  const MODELS = ['gemini-flash-latest', 'gemini-2.5-flash', 'gemini-2.0-flash'];
+
+  const geminiPayload = {
+    contents: [
+      {
+        parts: [
+          { text: SYSTEM_PROMPT },
+          {
+            inlineData: {
+              mimeType,
+              data: image.replace(/^data:image\/[a-z]+;base64,/, '')
+            }
+          }
+        ]
+      }
+    ],
+    generationConfig: {
+      temperature: 0.1,
+      responseMimeType: 'application/json'
+    }
+  };
+
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 30000);
 
+  let lastErrorDetails: any = null;
+  let lastStatus = 500;
+
   try {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
-    const geminiPayload = {
-      contents: [
-        {
-          parts: [
-            { text: SYSTEM_PROMPT },
-            {
-              inlineData: {
-                mimeType,
-                data: image.replace(/^data:image\/[a-z]+;base64,/, '')
-              }
-            }
-          ]
+    for (const model of MODELS) {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
+
+      try {
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-goog-api-key': apiKey
+          },
+          body: JSON.stringify(geminiPayload),
+          signal: controller.signal
+        });
+
+        if (!response.ok) {
+          lastStatus = response.status;
+          const errText = await response.text();
+          let parsedErr: any = null;
+          try {
+            parsedErr = JSON.parse(errText);
+          } catch {
+            parsedErr = { raw: errText };
+          }
+
+          // D3: Expanded error logging for Vercel logs
+          console.error(
+            `[Gemini API Error] Model: ${model} | HTTP Status: ${response.status}\n` +
+            `Error Message: ${parsedErr?.error?.message || errText}\n` +
+            `Error Status: ${parsedErr?.error?.status || response.statusText}\n` +
+            `Full Body: ${JSON.stringify(parsedErr, null, 2)}`
+          );
+          lastErrorDetails = parsedErr;
+          continue; // Try next fallback model
         }
-      ],
-      generationConfig: {
-        temperature: 0.1,
-        responseMimeType: 'application/json'
+
+        // D1: Succeeded! Log successful model name (once per invocation)
+        console.log(`[Gemini OCR] Successfully extracted using model: ${model}`);
+
+        clearTimeout(timeoutId);
+
+        const data: any = await response.json();
+        const candidateText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (!candidateText) {
+          console.error(`[Gemini API Warning] Model ${model} returned empty content.`);
+          lastErrorDetails = { error: 'Empty candidates in response' };
+          continue;
+        }
+
+        // Clean potential markdown wrap if any
+        const cleanJson = candidateText.replace(/^```json\s*/i, '').replace(/```\s*$/, '').trim();
+        const parsed = JSON.parse(cleanJson);
+        return res.status(200).json(parsed);
+
+      } catch (innerErr: any) {
+        if (innerErr.name === 'AbortError') throw innerErr;
+        console.error(`[Gemini OCR Exception] Attempt with model ${model} failed:`, innerErr.message || innerErr);
+        lastErrorDetails = { message: innerErr.message };
       }
-    };
+    }
 
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(geminiPayload),
-      signal: controller.signal
-    });
-
+    // If all models in the chain failed
     clearTimeout(timeoutId);
-
-    if (!response.ok) {
-      const errText = await response.text();
-      console.error('Gemini API Error:', response.status, errText);
-      return res.status(response.status >= 500 ? 502 : 400).json({
-        error: 'Gemini Vision API એક્સટ્રેક્શન નિષ્ફળ ગયું',
-        details: errText
-      });
-    }
-
-    const data: any = await response.json();
-    const candidateText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!candidateText) {
-      return res.status(500).json({ error: 'ઈમેજમાંથી કોઈ ડેટા મળ્યો નથી' });
-    }
-
-    // Clean potential markdown wrap if any
-    const cleanJson = candidateText.replace(/^```json\s*/i, '').replace(/```\s*$/, '').trim();
-    const parsed = JSON.parse(cleanJson);
-    return res.status(200).json(parsed);
+    return res.status(lastStatus >= 500 ? 502 : lastStatus).json({
+      error: 'Gemini Vision API એક્સટ્રેક્શન નિષ્ફળ ગયું (તમામ મોડેલ્સ નિષ્ફળ)',
+      details: lastErrorDetails
+    });
 
   } catch (err: any) {
     clearTimeout(timeoutId);
