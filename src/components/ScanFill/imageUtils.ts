@@ -1,9 +1,9 @@
 /**
  * Utilities for client-side image processing:
  * 1. EXIF orientation normalization
- * 2. Max 1600px aspect-ratio preserving downscaling
- * 3. JPEG compression at quality 0.8
- * 4. Base64 encoding
+ * 2. Max 1200px aspect-ratio preserving downscaling
+ * 3. JPEG compression at quality 0.75 via async canvas.toBlob()
+ * 4. Base64 encoding via FileReader
  */
 
 export interface ProcessedImage {
@@ -12,9 +12,13 @@ export interface ProcessedImage {
   mimeType: string;
   width: number;
   height: number;
+  durationMs?: number;
+  sizeKb?: number;
 }
 
 export async function processImageFile(file: File): Promise<ProcessedImage> {
+  const startTime = performance.now();
+
   if (!file.type.startsWith('image/')) {
     throw new Error('અમાન્ય ફાઇલ પ્રકાર: કૃપા કરીને ફોટો અપલોડ કરો');
   }
@@ -23,25 +27,37 @@ export async function processImageFile(file: File): Promise<ProcessedImage> {
   let naturalWidth = 0;
   let naturalHeight = 0;
 
-  // Try createImageBitmap with EXIF orientation handling
-  if (typeof createImageBitmap === 'function') {
+  // D2 & D5: Detect createImageBitmap in window
+  const hasCreateImageBitmap = typeof window !== 'undefined' && 'createImageBitmap' in window;
+
+  if (hasCreateImageBitmap) {
     try {
-      imgSource = await createImageBitmap(file, { imageOrientation: 'from-image' });
+      // Primary: imageOrientation 'from-image' for EXIF normalization
+      imgSource = await window.createImageBitmap(file, { imageOrientation: 'from-image' });
       naturalWidth = imgSource.width;
       naturalHeight = imgSource.height;
     } catch {
-      imgSource = await loadImageElement(file);
-      naturalWidth = (imgSource as HTMLImageElement).naturalWidth;
-      naturalHeight = (imgSource as HTMLImageElement).naturalHeight;
+      // N2: On TypeError (older Safari) retry createImageBitmap without options
+      try {
+        imgSource = await window.createImageBitmap(file);
+        naturalWidth = imgSource.width;
+        naturalHeight = imgSource.height;
+      } catch {
+        // Fallback to Image() path
+        imgSource = await loadImageElement(file);
+        naturalWidth = (imgSource as HTMLImageElement).naturalWidth;
+        naturalHeight = (imgSource as HTMLImageElement).naturalHeight;
+      }
     }
   } else {
+    // D5: Fallback for older browsers
     imgSource = await loadImageElement(file);
     naturalWidth = (imgSource as HTMLImageElement).naturalWidth;
     naturalHeight = (imgSource as HTMLImageElement).naturalHeight;
   }
 
-  // Calculate scaled dimensions (max 1600px)
-  const MAX_DIM = 1600;
+  // D2: Reduce MAX_DIM from 1600 to 1200px
+  const MAX_DIM = 1200;
   const longest = Math.max(naturalWidth, naturalHeight);
   const scale = longest > MAX_DIM ? MAX_DIM / longest : 1;
   const targetWidth = Math.round(naturalWidth * scale);
@@ -57,34 +73,59 @@ export async function processImageFile(file: File): Promise<ProcessedImage> {
 
   ctx.drawImage(imgSource, 0, 0, targetWidth, targetHeight);
 
-  // Close ImageBitmap if used to release memory
+  // Close ImageBitmap if used to release memory promptly
   if ('close' in imgSource && typeof imgSource.close === 'function') {
     imgSource.close();
   }
 
   const mimeType = 'image/jpeg';
-  const dataUrl = canvas.toDataURL(mimeType, 0.8);
+
+  // D2: Async canvas.toBlob() (0.75 quality) + FileReader.readAsDataURL — NEVER canvas.toDataURL()
+  const blob = await new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob(
+      b => {
+        if (b) resolve(b);
+        else reject(new Error('Canvas toBlob failed'));
+      },
+      mimeType,
+      0.75
+    );
+  });
+
+  const dataUrl = await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = () => reject(new Error('ફાઇલ વાંચવામાં નિષ્ફળ'));
+    reader.readAsDataURL(blob);
+  });
+
   const base64 = dataUrl.replace(/^data:image\/[a-z]+;base64,/, '');
+  const durationMs = Math.round(performance.now() - startTime);
+  const sizeKb = Math.round((base64.length * 3) / 4 / 1024);
 
   return {
     base64,
     dataUrl,
     mimeType,
     width: targetWidth,
-    height: targetHeight
+    height: targetHeight,
+    durationMs,
+    sizeKb
   };
 }
 
 function loadImageElement(file: File): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const img = new Image();
-      img.onload = () => resolve(img);
-      img.onerror = () => reject(new Error('ફોટો લોડ કરવામાં નિષ્ફળ'));
-      img.src = reader.result as string;
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      resolve(img);
     };
-    reader.onerror = () => reject(new Error('ફાઇલ વાંચવામાં નિષ્ફળ'));
-    reader.readAsDataURL(file);
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error('ફોટો લોડ કરવામાં નિષ્ફળ'));
+    };
+    img.src = url;
   });
 }

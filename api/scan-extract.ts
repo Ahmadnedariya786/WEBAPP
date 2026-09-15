@@ -250,6 +250,10 @@ export default async function handler(req: any, res: any) {
     return res.status(400).json({ error: 'ઈમેજ સાઈઝ 8MB કરતાં વધુ છે' });
   }
 
+  // D3: Log actual image size received (KB) for monitoring
+  const sizeInKb = Math.round(sizeInBytes / 1024);
+  console.log(`[scan-extract] Received image payload size: ${sizeInKb} KB`);
+
   const apiKey = process.env.GEMINI_API_KEY;
   const isDev = process.env.NODE_ENV === 'development' || process.env.SCAN_MOCK === 'true';
 

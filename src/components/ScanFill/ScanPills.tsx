@@ -32,17 +32,17 @@ export const ScanPills: React.FC<ScanPillsProps> = ({
   showToast,
   currentHalqas
 }) => {
-  const [isScanning, setIsScanning] = useState(false);
+  const [scanStage, setScanStage] = useState<'idle' | 'compressing' | 'scanning'>('idle');
+  const [isLargeFile, setIsLargeFile] = useState(false);
   const [reviewData, setReviewData] = useState<ReviewData | null>(null);
   const [isOverlayOpen, setIsOverlayOpen] = useState(false);
 
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    // Reset file input so same file can be selected again
-    e.target.value = '';
+  const isScanning = scanStage !== 'idle';
+
+  const processAndScan = async (file: File) => {
     if (!file) return;
 
     // Check offline
@@ -51,13 +51,17 @@ export const ScanPills: React.FC<ScanPillsProps> = ({
       return;
     }
 
-    setIsScanning(true);
+    const large = file.size > 5 * 1024 * 1024;
+    setIsLargeFile(large);
+    setScanStage('compressing');
 
     try {
-      // Step 1: EXIF normalize + compress max 1600px JPEG q0.8
+      // Stage 1: EXIF normalize + compress max 1200px JPEG q0.75
       const processed = await processImageFile(file);
 
-      // Step 2: Call /api/scan-extract
+      // Stage 2: Call /api/scan-extract
+      setScanStage('scanning');
+
       const response = await fetch('/api/scan-extract', {
         method: 'POST',
         headers: {
@@ -89,7 +93,9 @@ export const ScanPills: React.FC<ScanPillsProps> = ({
       console.error('Scan & extract failure:', err);
       showToast('સ્કેન નિષ્ફળ ❌ — સાફ રોશનીમાં ફોટો લઈને ફરી પ્રયત્ન કરો');
     } finally {
-      setIsScanning(false);
+      // N1: Reset scanStage to 'idle' in finally-block covering success, error, and cancel paths
+      setScanStage('idle');
+      setIsLargeFile(false);
     }
   };
 
@@ -190,26 +196,42 @@ export const ScanPills: React.FC<ScanPillsProps> = ({
     onFill(data);
   };
 
+  const getSpinnerText = () => {
+    if (scanStage === 'compressing') {
+      return isLargeFile ? 'કમ્પ્રેસ થઈ રહ્યું છે...' : 'ફોટો તૈયાર થઈ રહ્યો છે...';
+    }
+    if (scanStage === 'scanning') {
+      return 'સ્કેન થઈ રહ્યું છે...';
+    }
+    return '';
+  };
+
   return (
     <div className="w-full space-y-1.5" id="scan-fill-module">
-      {/* Hidden file inputs for Camera & Gallery */}
+      {/* Hidden file inputs for Camera & Gallery (never display:none for mobile browser compatibility) */}
       <input
         ref={cameraInputRef}
         type="file"
         accept="image/*"
         capture="environment"
-        className="hidden"
         id="camera-scan-input"
-        onChange={handleFileSelected}
+        style={{ position: 'absolute', left: '-9999px', width: '1px', height: '1px', opacity: 0, pointerEvents: 'none' }}
+        onChange={(e) => {
+          if (e.target.files?.[0]) processAndScan(e.target.files[0]);
+          e.target.value = '';
+        }}
         disabled={isScanning}
       />
       <input
         ref={galleryInputRef}
         type="file"
         accept="image/*"
-        className="hidden"
         id="gallery-scan-input"
-        onChange={handleFileSelected}
+        style={{ position: 'absolute', left: '-9999px', width: '1px', height: '1px', opacity: 0, pointerEvents: 'none' }}
+        onChange={(e) => {
+          if (e.target.files?.[0]) processAndScan(e.target.files[0]);
+          e.target.value = '';
+        }}
         disabled={isScanning}
       />
 
@@ -227,7 +249,7 @@ export const ScanPills: React.FC<ScanPillsProps> = ({
           ) : (
             <Camera size={16} className="text-acc shrink-0" />
           )}
-          <span>{isScanning ? 'પ્રોસેસિંગ...' : 'કેમેરાથી સ્કાન'}</span>
+          <span>{isScanning ? getSpinnerText() : 'કેમેરાથી સ્કાન'}</span>
         </button>
 
         <button
@@ -242,7 +264,7 @@ export const ScanPills: React.FC<ScanPillsProps> = ({
           ) : (
             <ImageIcon size={16} className="text-acc shrink-0" />
           )}
-          <span>{isScanning ? 'પ્રોસેસિંગ...' : 'ગેલરીથી ઇમ્પોર્ટ'}</span>
+          <span>{isScanning ? getSpinnerText() : 'ગેલરીથી ઇમ્પોર્ટ'}</span>
         </button>
       </div>
 
