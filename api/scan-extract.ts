@@ -80,6 +80,7 @@ Rows 1 to 13 correspond to:
 
 // Module-level in-memory cache for dynamic model discovery
 let cachedModel: string | null = null;
+let cachedDiscoveredFlashModels: string[] = [];
 let lastDiscoveryTime: number = 0;
 let lastDiscoveredList: string[] = [];
 let lastDiscoveryError: string | null = null;
@@ -135,6 +136,13 @@ async function getOrDiscoverModel(apiKey: string): Promise<string> {
       if (!m.supportedGenerationMethods) return true;
       return Array.isArray(m.supportedGenerationMethods) && m.supportedGenerationMethods.includes('generateContent');
     };
+
+    // Extract all live flash models supporting generateContent, sorted descending by version
+    const liveFlashModels = models
+      .filter(m => /gemini-.*-flash/.test(stripModelPrefix(m.name)) && supportsGenerateContent(m))
+      .map(m => stripModelPrefix(m.name));
+    liveFlashModels.sort((a, b) => b.localeCompare(a, undefined, { numeric: true }));
+    cachedDiscoveredFlashModels = liveFlashModels;
 
     // (1) alias "gemini-flash-latest" if listed
     const flashLatest = models.find(m => stripModelPrefix(m.name) === 'gemini-flash-latest' && supportsGenerateContent(m));
@@ -265,8 +273,12 @@ export default async function handler(req: any, res: any) {
   // D1: console.log the chosen model once per invocation: "scan-extract model: <name>"
   console.log(`scan-extract model: ${chosenModel}`);
 
-  // Candidate models: chosen model first, then remaining fallback chain models in order
-  const modelsToTry = [chosenModel, ...FALLBACK_CHAIN.filter(m => m !== chosenModel)];
+  // Candidate models: chosen model first, then discovered live flash models, then remaining fallback chain models in order
+  const modelsToTry = Array.from(new Set([
+    chosenModel,
+    ...cachedDiscoveredFlashModels,
+    ...FALLBACK_CHAIN
+  ]));
 
   const geminiPayload = {
     contents: [
