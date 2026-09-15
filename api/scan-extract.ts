@@ -78,8 +78,118 @@ Rows 1 to 13 correspond to:
 13: મશવારો ક્યારે અને ક્યાં (Mashwara details in mojuda)
 `;
 
+// Module-level in-memory cache for dynamic model discovery
+let cachedModel: string | null = null;
+let lastDiscoveryTime: number = 0;
+const CACHE_TTL_MS = 60 * 60 * 1000; // 60 minutes
+const FALLBACK_CHAIN = ['gemini-flash-latest', 'gemini-2.5-flash', 'gemini-2.0-flash'];
+
+function stripModelPrefix(name: string): string {
+  return (name || '').replace(/^models\//, '');
+}
+
+/**
+ * Dynamic Model Discovery:
+ * D1 & N3: 10s timeout AbortController.
+ * Preference:
+ *  (1) alias "gemini-flash-latest" if listed and supports generateContent
+ *  (2) else first model matching /gemini-.*-flash/ supporting generateContent
+ *  (3) else fallback chain ["gemini-flash-latest", "gemini-2.5-flash", "gemini-2.0-flash"]
+ */
+async function getOrDiscoverModel(apiKey: string): Promise<string> {
+  const now = Date.now();
+  if (cachedModel && (now - lastDiscoveryTime < CACHE_TTL_MS)) {
+    return cachedModel;
+  }
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 10000); // N3: 10-second AbortController timeout
+
+  try {
+    const resp = await fetch('https://generativelanguage.googleapis.com/v1beta/models', {
+      method: 'GET',
+      headers: {
+        'x-goog-api-key': apiKey
+      },
+      signal: controller.signal
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!resp.ok) {
+      const errText = await resp.text();
+      console.error('[Dynamic Discovery Error]', resp.status, errText);
+      cachedModel = FALLBACK_CHAIN[0];
+      lastDiscoveryTime = now;
+      return cachedModel;
+    }
+
+    const data: any = await resp.json();
+    const models: Array<{ name: string; supportedGenerationMethods?: string[] }> = data?.models || [];
+
+    const supportsGenerateContent = (m: any) => {
+      if (!m.supportedGenerationMethods) return true;
+      return Array.isArray(m.supportedGenerationMethods) && m.supportedGenerationMethods.includes('generateContent');
+    };
+
+    // (1) alias "gemini-flash-latest" if listed
+    const flashLatest = models.find(m => stripModelPrefix(m.name) === 'gemini-flash-latest' && supportsGenerateContent(m));
+    if (flashLatest) {
+      cachedModel = 'gemini-flash-latest';
+      lastDiscoveryTime = now;
+      return cachedModel;
+    }
+
+    // (2) else the first model whose name matches /gemini-.*-flash/ and supports generateContent
+    const flashMatch = models.find(m => /gemini-.*-flash/.test(stripModelPrefix(m.name)) && supportsGenerateContent(m));
+    if (flashMatch) {
+      cachedModel = stripModelPrefix(flashMatch.name); // N1: Strip "models/" prefix
+      lastDiscoveryTime = now;
+      return cachedModel;
+    }
+
+    // (3) else fallback chain
+    cachedModel = FALLBACK_CHAIN[0];
+    lastDiscoveryTime = now;
+    return cachedModel;
+  } catch (err: any) {
+    clearTimeout(timeoutId);
+    console.error('[Dynamic Discovery Exception]', err.message || err);
+    // N3: On discovery failure go straight to fallback chain so scan never hangs
+    cachedModel = FALLBACK_CHAIN[0];
+    lastDiscoveryTime = now;
+    return cachedModel;
+  }
+}
+
 export default async function handler(req: any, res: any) {
-  // Only POST allowed
+  const url = new URL(req.url || '', 'http://localhost');
+  const isPing = req.query?.ping === '1' || url.searchParams.get('ping') === '1';
+
+  // D3 & N2: HEALTH PING (GET /api/scan-extract?ping=1)
+  // Without calling Gemini generateContent and without an image
+  if (isPing) {
+    const apiKey = process.env.GEMINI_API_KEY;
+    const hasKey = Boolean(apiKey);
+    let model: string | null = cachedModel;
+
+    // N2: May run cached model discovery (models-list GET) when cache is empty so model field is informative
+    if (!model && hasKey && apiKey) {
+      try {
+        model = await getOrDiscoverModel(apiKey);
+      } catch {
+        model = null;
+      }
+    }
+
+    return res.status(200).json({
+      ok: true,
+      hasKey,
+      model: model || null
+    });
+  }
+
+  // Only POST allowed for extraction
   if (req.method !== 'POST') {
     res.setHeader('Allow', ['POST']);
     return res.status(405).json({ error: 'Method Not Allowed' });
@@ -109,6 +219,10 @@ export default async function handler(req: any, res: any) {
     return res.status(400).json({ error: 'Missing image data (base64 string required)' });
   }
 
+  if (mimeType && !mimeType.startsWith('image/')) {
+    return res.status(415).json({ error: 'Unsupported media type (image required)' });
+  }
+
   // Validate image size (≤ 8MB base64 approx ~6MB raw)
   const sizeInBytes = (image.length * 3) / 4;
   if (sizeInBytes > 8 * 1024 * 1024) {
@@ -118,25 +232,28 @@ export default async function handler(req: any, res: any) {
   const apiKey = process.env.GEMINI_API_KEY;
   const isDev = process.env.NODE_ENV === 'development' || process.env.SCAN_MOCK === 'true';
 
-  // N2: Dev mock pipeline runs ONLY when NODE_ENV=development or SCAN_MOCK=true
-  if (!apiKey) {
-    if (isDev) {
-      console.warn('[DEV ONLY] GEMINI_API_KEY missing in dev environment. Returning mock data matching test spec.');
-      return res.status(200).json(getDevMockResponse());
-    }
-    // Production MUST fail if GEMINI_API_KEY is not configured
-    return res.status(500).json({
-      error: 'GEMINI_API_KEY server-side environment variable is not configured on Vercel.'
-    });
-  }
-
   // Explicit mock header for testing locally during development
   if (isDev && req.headers['x-mock-scan'] === 'true') {
     return res.status(200).json(getDevMockResponse());
   }
 
-  // Model fallback chain: gemini-flash-latest -> gemini-2.5-flash -> gemini-2.0-flash
-  const MODELS = ['gemini-flash-latest', 'gemini-2.5-flash', 'gemini-2.0-flash'];
+  // D2: Missing key → 500 { "code": "MISSING_KEY" }
+  if (!apiKey) {
+    if (isDev && process.env.SCAN_MOCK === 'true') {
+      console.warn('[DEV ONLY] GEMINI_API_KEY missing in dev environment. Returning mock data matching test spec.');
+      return res.status(200).json(getDevMockResponse());
+    }
+    // Production MUST fail if GEMINI_API_KEY is not configured
+    return res.status(500).json({ code: 'MISSING_KEY' });
+  }
+
+  // D1: Dynamic Model Discovery
+  const chosenModel = await getOrDiscoverModel(apiKey);
+  // D1: console.log the chosen model once per invocation: "scan-extract model: <name>"
+  console.log(`scan-extract model: ${chosenModel}`);
+
+  // Candidate models: chosen model first, then remaining fallback chain models in order
+  const modelsToTry = [chosenModel, ...FALLBACK_CHAIN.filter(m => m !== chosenModel)];
 
   const geminiPayload = {
     contents: [
@@ -161,11 +278,12 @@ export default async function handler(req: any, res: any) {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 30000);
 
-  let lastErrorDetails: any = null;
   let lastStatus = 500;
+  let lastMessage = 'Unknown error';
 
   try {
-    for (const model of MODELS) {
+    for (const rawModel of modelsToTry) {
+      const model = stripModelPrefix(rawModel); // N1: Strip "models/" prefix
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
 
       try {
@@ -188,20 +306,17 @@ export default async function handler(req: any, res: any) {
           } catch {
             parsedErr = { raw: errText };
           }
+          lastMessage = parsedErr?.error?.message || errText || response.statusText || 'Upstream error';
 
-          // D3: Expanded error logging for Vercel logs
+          // D2: FULL upstream body console.error'd (expanded, not collapsed)
           console.error(
-            `[Gemini API Error] Model: ${model} | HTTP Status: ${response.status}\n` +
-            `Error Message: ${parsedErr?.error?.message || errText}\n` +
-            `Error Status: ${parsedErr?.error?.status || response.statusText}\n` +
-            `Full Body: ${JSON.stringify(parsedErr, null, 2)}`
+            `[scan-extract upstream error]\n` +
+            `Model: ${model}\n` +
+            `HTTP Status: ${response.status}\n` +
+            `Body:\n${typeof parsedErr === 'object' ? JSON.stringify(parsedErr, null, 2) : errText}`
           );
-          lastErrorDetails = parsedErr;
-          continue; // Try next fallback model
+          continue; // Try next fallback model in order
         }
-
-        // D1: Succeeded! Log successful model name (once per invocation)
-        console.log(`[Gemini OCR] Successfully extracted using model: ${model}`);
 
         clearTimeout(timeoutId);
 
@@ -209,7 +324,8 @@ export default async function handler(req: any, res: any) {
         const candidateText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
         if (!candidateText) {
           console.error(`[Gemini API Warning] Model ${model} returned empty content.`);
-          lastErrorDetails = { error: 'Empty candidates in response' };
+          lastStatus = 502;
+          lastMessage = 'Empty candidates in response';
           continue;
         }
 
@@ -221,15 +337,16 @@ export default async function handler(req: any, res: any) {
       } catch (innerErr: any) {
         if (innerErr.name === 'AbortError') throw innerErr;
         console.error(`[Gemini OCR Exception] Attempt with model ${model} failed:`, innerErr.message || innerErr);
-        lastErrorDetails = { message: innerErr.message };
+        lastStatus = 502;
+        lastMessage = innerErr.message || 'Exception';
       }
     }
 
-    // If all models in the chain failed
+    // D2: Upstream non-ok (any 404/400/429 from Gemini) → 502 { "code": "UPSTREAM", "detail": status + first 300 chars of message }
     clearTimeout(timeoutId);
-    return res.status(lastStatus >= 500 ? 502 : lastStatus).json({
-      error: 'Gemini Vision API એક્સટ્રેક્શન નિષ્ફળ ગયું (તમામ મોડેલ્સ નિષ્ફળ)',
-      details: lastErrorDetails
+    return res.status(502).json({
+      code: 'UPSTREAM',
+      detail: `${lastStatus} ${lastMessage.slice(0, 300)}`.trim()
     });
 
   } catch (err: any) {

@@ -70,7 +70,14 @@ export const ScanPills: React.FC<ScanPillsProps> = ({
       });
 
       if (!response.ok) {
-        throw new Error('API response not ok: ' + response.status);
+        let errJson: any = null;
+        try {
+          errJson = await response.json();
+        } catch {
+          errJson = { status: response.status, statusText: response.statusText };
+        }
+        console.error('Scan & extract server error:', errJson);
+        throw new Error(errJson?.detail || errJson?.code || `API response not ok: ${response.status}`);
       }
 
       const extracted: ExtractedReport = await response.json();

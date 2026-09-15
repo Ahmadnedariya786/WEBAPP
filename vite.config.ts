@@ -9,10 +9,20 @@ function apiDevMiddleware(): Plugin {
         if (req.url && req.url.startsWith('/api/scan-extract')) {
           try {
             const { default: handler } = await import('./api/scan-extract.ts');
+            const urlObj = new URL(req.url, 'http://localhost');
+            (req as any).query = Object.fromEntries(urlObj.searchParams.entries());
+
             let rawBody = '';
             req.on('data', chunk => { rawBody += chunk; });
             req.on('end', async () => {
-              const body = rawBody ? JSON.parse(rawBody) : {};
+              let body = {};
+              if (rawBody && rawBody.trim()) {
+                try {
+                  body = JSON.parse(rawBody);
+                } catch {
+                  body = rawBody;
+                }
+              }
               const resMock: any = res;
               resMock.status = (statusCode: number) => {
                 resMock.statusCode = statusCode;
