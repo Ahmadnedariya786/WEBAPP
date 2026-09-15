@@ -291,6 +291,7 @@ export default async function handler(req: any, res: any) {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 30000);
 
+  const modelAttempts: string[] = [];
   let lastStatus = 500;
   let lastMessage = 'Unknown error';
 
@@ -320,6 +321,7 @@ export default async function handler(req: any, res: any) {
             parsedErr = { raw: errText };
           }
           lastMessage = parsedErr?.error?.message || errText || response.statusText || 'Upstream error';
+          modelAttempts.push(`${model}: ${response.status} ${lastMessage}`);
 
           // D2: FULL upstream body console.error'd (expanded, not collapsed)
           console.error(
@@ -339,6 +341,7 @@ export default async function handler(req: any, res: any) {
           console.error(`[Gemini API Warning] Model ${model} returned empty content.`);
           lastStatus = 502;
           lastMessage = 'Empty candidates in response';
+          modelAttempts.push(`${model}: empty content`);
           continue;
         }
 
@@ -352,14 +355,19 @@ export default async function handler(req: any, res: any) {
         console.error(`[Gemini OCR Exception] Attempt with model ${model} failed:`, innerErr.message || innerErr);
         lastStatus = 502;
         lastMessage = innerErr.message || 'Exception';
+        modelAttempts.push(`${model}: ${innerErr.message || 'Exception'}`);
       }
     }
 
     // D2: Upstream non-ok (any 404/400/429 from Gemini) → 502 { "code": "UPSTREAM", "detail": status + first 300 chars of message }
     clearTimeout(timeoutId);
+    const finalDetail = modelAttempts.length > 0
+      ? modelAttempts.join(' | ').slice(0, 300)
+      : `${lastStatus} ${lastMessage.slice(0, 300)}`;
+
     return res.status(502).json({
       code: 'UPSTREAM',
-      detail: `${lastStatus} ${lastMessage.slice(0, 300)}`.trim()
+      detail: finalDetail.trim()
     });
 
   } catch (err: any) {
