@@ -35,6 +35,7 @@ interface AppState {
   halqas: any[]
   
   loadData: () => Promise<void>
+  refreshAll: () => Promise<void>
   addReport: (report: SavedReport) => Promise<void>
   updateReport: (id: string, report: SavedReport) => Promise<void>
   deleteReport: (id: string) => Promise<void>
@@ -128,6 +129,37 @@ export const useAppStore = create<AppState>()(
         } catch (err) {
           console.error(err)
           set({ isLoading: false })
+        }
+      },
+      
+      refreshAll: async () => {
+        try {
+          const code = get().sessionCode;
+          if (code) {
+            try {
+              const role = await supabaseService.loginCode(code);
+              if (!role) {
+                get().setSession(null, null);
+                window.dispatchEvent(new CustomEvent('app-toast', { detail: 'કોડ રદ થયેલ છે — ફરી દાખલ કરો' }));
+              } else {
+                get().setSession(code, role);
+              }
+            } catch (err) {
+              get().setSession(null, null);
+            }
+          }
+          const [reports, halqas] = await Promise.all([
+            supabaseService.listReports(),
+            supabaseService.listHalqas()
+          ])
+          const DEFAULT_HALQAS = ['પાલનપુર', 'ડીસા', 'ધાનેરા', 'થરાદ'];
+          set({ 
+            reports, 
+            halqas,
+            customHalqas: halqas.filter(h => !DEFAULT_HALQAS.includes(h.name)).map(h => h.name)
+          })
+        } catch (err) {
+          console.error(err)
         }
       },
       

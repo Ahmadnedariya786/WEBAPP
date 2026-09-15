@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { FileText, Clock, BarChart2, Settings as SettingsIcon } from 'lucide-react';
+import { FileText, Clock, BarChart2, Settings as SettingsIcon, RefreshCw } from 'lucide-react';
 import { t } from '../../i18n';
 import { cn } from '../../lib/utils';
 import ThemeSwitcher from '../ui/ThemeSwitcher';
+import { useAppStore } from '../../store/appStore';
 
 const NAV_ITEMS = [
   { path: '/dashboard', icon: BarChart2, label: 'nav.dashboard' },
@@ -15,6 +16,17 @@ const NAV_ITEMS = [
 export const Layout: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { refreshAll } = useAppStore();
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleRefresh = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (isRefreshing) return;
+    setIsRefreshing(true);
+    await refreshAll();
+    window.dispatchEvent(new CustomEvent('app-toast', { detail: 'ડેટા રિફ્રેશ થયો ✅' }));
+    setTimeout(() => setIsRefreshing(false), 500); // Ensures animation spins for at least 0.5s
+  };
 
   return (
     <div className="min-h-screen bg-bg text-txt">
@@ -23,8 +35,18 @@ export const Layout: React.FC = () => {
         <h1 className="font-bold text-lg tracking-wide font-gujarati uppercase">
           Mehnat Tracker
         </h1>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <ThemeSwitcher />
+          
+          <button 
+            type="button" 
+            onClick={handleRefresh}
+            aria-label="રિફ્રેશ" 
+            className="w-10 h-10 flex items-center justify-center rounded-full bg-transparent hover:bg-acc/10 active:bg-acc/20 transition-colors" 
+          >
+            <RefreshCw size={18} className={cn("text-txt", isRefreshing && "motion-safe:animate-spin")} />
+          </button>
+
           <button 
             type="button" 
             onClick={(e) => {
@@ -32,7 +54,7 @@ export const Layout: React.FC = () => {
               navigate('/settings');
             }} 
             aria-label="સેટિંગ્સ" 
-            className="p-2 rounded-full bg-card/50 hover:bg-card " 
+            className="w-10 h-10 flex items-center justify-center rounded-full bg-transparent hover:bg-acc/10 active:bg-acc/20 transition-colors" 
           >
             <SettingsIcon size={18} className="text-txt"/>
           </button>
