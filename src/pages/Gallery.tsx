@@ -11,12 +11,14 @@ export const Gallery: React.FC = () => {
 
   return (
     <div className="max-w-md mx-auto p-6 space-y-8 pb-24">
-      <header className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-2xl font-bold font-gujarati">{t('gallery.title')}</h1>
-          <p className="text-sm text-sub font-gujarati">{t('gallery.subtitle')}</p>
+      <header className="flex flex-wrap gap-4 items-center justify-between mb-8">
+        <div className="min-w-0 flex-1">
+          <h1 className="text-2xl font-bold font-gujarati truncate">{t('gallery.title')}</h1>
+          <p className="text-sm text-sub font-gujarati truncate">{t('gallery.subtitle')}</p>
         </div>
-        <ThemeSwitcher />
+        <div className="shrink-0">
+          <ThemeSwitcher />
+        </div>
       </header>
 
       {/* Buttons */}

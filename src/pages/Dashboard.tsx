@@ -73,8 +73,8 @@ export const Dashboard: React.FC = () => {
 
   return (
     <div className="space-y-6 pb-12 relative">
-      <header className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold font-gujarati">{t('nav.dashboard')}</h2>
+      <header className="flex flex-wrap gap-2 justify-between items-center">
+        <h2 className="text-2xl font-bold font-gujarati min-w-0 truncate">{t('nav.dashboard')}</h2>
       </header>
 
       {/* Hero Stat */}

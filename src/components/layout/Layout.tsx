@@ -31,11 +31,11 @@ export const Layout: React.FC = () => {
   return (
     <div className="min-h-screen bg-bg text-txt">
       {/* Top Bar */}
-      <header className="sticky top-0 z-40 px-6 py-4 bg-card/70 backdrop-blur-xl flex items-center justify-between" style={{boxShadow: 'inset 0 -1px 0 rgb(var(--brd) / 0.15), 0 4px 16px rgb(var(--shadow-color) / var(--shadow-alpha))'}} >
-        <h1 className="font-bold text-lg tracking-wide font-gujarati uppercase">
+      <header className="sticky top-0 z-40 px-4 sm:px-6 py-4 bg-card/70 backdrop-blur-xl flex flex-wrap gap-2 items-center justify-between" style={{boxShadow: 'inset 0 -1px 0 rgb(var(--brd) / 0.15), 0 4px 16px rgb(var(--shadow-color) / var(--shadow-alpha))'}} >
+        <h1 className="font-bold text-lg tracking-wide font-gujarati uppercase min-w-0 truncate">
           Mehnat Tracker
         </h1>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 shrink-0">
           <ThemeSwitcher />
           
           <button 

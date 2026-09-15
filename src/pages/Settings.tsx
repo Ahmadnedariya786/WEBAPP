@@ -16,9 +16,9 @@ export const Settings: React.FC = () => {
 
   return (
     <div className="space-y-6 pb-12">
-      <header className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold font-gujarati">{t('settings.title' as any)}</h2>
-        <div className="text-xs font-gujarati bg-card px-3 py-1.5 rounded-full shadow-sm text-sub flex items-center gap-1.5">
+      <header className="flex flex-wrap gap-2 justify-between items-center">
+        <h2 className="text-2xl font-bold font-gujarati min-w-0 truncate">{t('settings.title' as any)}</h2>
+        <div className="text-xs shrink-0 font-gujarati bg-card px-3 py-1.5 rounded-full shadow-sm text-sub flex items-center gap-1.5">
           {useAppStore().sessionRole === 'admin' 
             ? <span className="inline-flex items-center gap-1">એડમિન લૉગિન <CheckCircle className="w-4 h-4 text-acc2" /></span>
             : useAppStore().sessionRole === 'team' 

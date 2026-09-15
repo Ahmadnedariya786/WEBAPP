@@ -221,20 +221,20 @@ export const PastReports: React.FC = () => {
         )}
       </AnimatePresence>
 
-      <header className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold font-gujarati">{t('nav.past_reports')}</h2>
+      <header className="flex flex-wrap gap-2 justify-between items-center">
+        <h2 className="text-2xl font-bold font-gujarati min-w-0 truncate">{t('nav.past_reports')}</h2>
       </header>
 
       {/* Top Actions */}
-      <div className="flex gap-3">
-        <LiquidButton variant="primary" className="flex-1 flex flex-row items-center justify-center gap-2 whitespace-nowrap px-6 py-3.5 max-[380px]:text-sm" onClick={() => navigate('/')}>
-          <Plus size={18} />
-          <span className="font-gujarati">{t('nav.new_report')}</span>
+      <div className="flex flex-wrap gap-3">
+        <LiquidButton variant="primary" className="flex-1 flex flex-row items-center justify-center gap-2 whitespace-nowrap px-4 py-3.5 max-[380px]:text-sm min-w-0 shrink-0" onClick={() => navigate('/')}>
+          <Plus size={18} className="shrink-0" />
+          <span className="font-gujarati truncate">{t('nav.new_report')}</span>
         </LiquidButton>
         {sessionRole && (
-          <LiquidButton variant="neutral" className="flex-1 flex flex-row items-center justify-center gap-2 whitespace-nowrap px-6 py-3.5 max-[380px]:text-sm text-acc border-acc2/30" onClick={handleDownloadAllExcel}>
-            <Download size={18} />
-            <span className="font-gujarati">{t('past_reports.btn_all_excel' as any)}</span>
+          <LiquidButton variant="neutral" className="flex-1 flex flex-row items-center justify-center gap-2 whitespace-nowrap px-4 py-3.5 max-[380px]:text-sm text-acc border-acc2/30 min-w-0 shrink-0" onClick={handleDownloadAllExcel}>
+            <Download size={18} className="shrink-0" />
+            <span className="font-gujarati truncate">એક્સેલ ડાઉનલોડ</span>
           </LiquidButton>
         )}
       </div>

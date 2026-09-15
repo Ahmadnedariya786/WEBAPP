@@ -336,8 +336,8 @@ export const NewReport: React.FC = () => {
         )}
       </AnimatePresence>
 
-      <header className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold font-gujarati">{t('nav.new_report')}</h2>
+      <header className="flex flex-wrap gap-2 justify-between items-center mb-6">
+        <h2 className="text-2xl font-bold font-gujarati min-w-0 truncate">{t('nav.new_report')}</h2>
       </header>
 
       <div className="flex flex-col xl:flex-row gap-6 xl:gap-8 xl:items-start">

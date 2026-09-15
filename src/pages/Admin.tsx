@@ -362,20 +362,20 @@ export const Admin: React.FC = () => {
 
       {activeScreen === 'main' && (
         <div className="space-y-6">
-          <header className="flex justify-between items-center">
-            <div className="flex items-center gap-3">
-              <h2 className="text-2xl font-bold font-gujarati flex items-center gap-2">
-                <Shield className="text-acc" />
-                {t('admin.dashboard_title' as any)}
-              </h2>
-              <span className="bg-acc2/10 text-acc2 border border-acc2/20 px-2 py-0.5 rounded-full text-xs font-gujarati font-medium whitespace-nowrap inline-flex items-center gap-1">
-                એડમિન લૉગિન <CheckCircle className="w-4 h-4" />
-              </span>
-            </div>
-            <button onClick={handleLogout} className="h-9 px-3 rounded-full text-sm font-semibold font-gujarati bg-card hover:bg-card/80 border border-brd/10 text-txt transition-colors inline-flex items-center gap-1.5 whitespace-nowrap">
+          <header className="flex flex-wrap items-center gap-x-2 gap-y-3">
+            <Shield className="text-acc shrink-0" />
+            <h2 className="text-2xl font-bold font-gujarati truncate min-w-0">
+              {t('admin.dashboard_title' as any)}
+            </h2>
+            <div className="flex-1 min-w-0"></div>
+            <button onClick={handleLogout} className="h-9 px-3 shrink-0 rounded-full text-sm font-semibold font-gujarati bg-card hover:bg-card/80 border border-brd/10 text-txt transition-colors inline-flex items-center gap-1.5 whitespace-nowrap">
               <LogOut className="w-4 h-4 shrink-0" />
               લૉગઆઉટ
             </button>
+            <div className="basis-full h-0 m-0 p-0 hidden sm:block"></div>
+            <span className="bg-acc2/10 text-acc2 border border-acc2/20 px-2 py-0.5 rounded-full text-xs font-gujarati font-medium whitespace-nowrap inline-flex items-center gap-1 shrink-0 order-last sm:order-none w-full sm:w-auto mt-1 sm:mt-0">
+              એડમિન લૉગિન <CheckCircle className="w-4 h-4 shrink-0" />
+            </span>
           </header>
 
           <div className="grid grid-cols-2 gap-4">
@@ -404,28 +404,28 @@ export const Admin: React.FC = () => {
 
       {activeScreen === 'users' && (
         <div className="space-y-6 relative">
-          <header className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <button onClick={() => setActiveScreen('main')} className="w-10 h-10 flex items-center justify-center rounded-full glass-panel text-sub">
+          <header className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-center gap-4 min-w-0">
+              <button onClick={() => setActiveScreen('main')} className="w-10 h-10 shrink-0 flex items-center justify-center rounded-full glass-panel text-sub">
                 <ChevronLeft size={20} />
               </button>
-              <h2 className="text-xl font-bold font-gujarati">{t('admin.manage_users' as any)}</h2>
+              <h2 className="text-xl font-bold font-gujarati truncate min-w-0">{t('admin.manage_users' as any)}</h2>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
               {codes.some(c => c.revoked_at) && (
                 <LiquidButton
                   onClick={handlePurgeRevoked}
                   size="sm"
                   variant="danger"
-                  className="font-gujarati flex gap-1 bg-acc/10 text-acc border-acc/20 hover:bg-acc hover:text-white"
+                  className="font-gujarati flex gap-1 bg-acc/10 text-acc border-acc/20 hover:bg-acc hover:text-white shrink-0"
                   disabled={isPurging}
                 >
-                  <Trash2 className="w-4 h-4" /> {isPurging ? 'સાફ...' : 'લિસ્ટ સાફ કરો'}
+                  <Trash2 className="w-4 h-4 shrink-0" /> {isPurging ? 'સાફ...' : 'લિસ્ટ સાફ કરો'}
                 </LiquidButton>
               )}
-              <LiquidButton onClick={() => setShowGenerateModal(true)} className="inline-flex items-center justify-center gap-2 px-4 min-h-10 rounded-full text-sm font-semibold font-gujarati w-auto">
+              <LiquidButton onClick={() => setShowGenerateModal(true)} className="inline-flex items-center justify-center gap-2 px-4 min-h-10 rounded-full text-sm font-semibold font-gujarati w-auto shrink-0">
                 <KeyRound className="w-4 h-4 shrink-0" />
-                <span className="min-[360px]:whitespace-nowrap whitespace-normal leading-tight py-1">નવો પાસવર્ડ</span>
+                <span className="whitespace-nowrap leading-tight py-1">નવો પાસવર્ડ</span>
               </LiquidButton>
             </div>
           </header>
@@ -519,12 +519,12 @@ export const Admin: React.FC = () => {
 
       {activeScreen === 'logs' && (
         <div className="space-y-6">
-          <header className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <button onClick={() => setActiveScreen('main')} className="w-10 h-10 flex items-center justify-center rounded-full glass-panel text-sub">
+          <header className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-center gap-4 min-w-0">
+              <button onClick={() => setActiveScreen('main')} className="w-10 h-10 shrink-0 flex items-center justify-center rounded-full glass-panel text-sub">
                 <ChevronLeft size={20} />
               </button>
-              <h2 className="text-2xl font-bold font-gujarati">{t('admin.system_logs' as any)}</h2>
+              <h2 className="text-2xl font-bold font-gujarati truncate min-w-0">{t('admin.system_logs' as any)}</h2>
             </div>
           </header>
           
@@ -556,24 +556,24 @@ export const Admin: React.FC = () => {
 
       {activeScreen === 'halqas' && (
         <div className="space-y-6 relative">
-          <header className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <button onClick={() => setActiveScreen('main')} className="w-10 h-10 flex items-center justify-center rounded-full glass-panel text-sub">
+          <header className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-center gap-4 min-w-0">
+              <button onClick={() => setActiveScreen('main')} className="w-10 h-10 shrink-0 flex items-center justify-center rounded-full glass-panel text-sub">
                 <ChevronLeft size={20} />
               </button>
-              <h2 className="text-xl font-bold font-gujarati">હલકા સંચાલન</h2>
+              <h2 className="text-xl font-bold font-gujarati truncate min-w-0">હલકા સંચાલન</h2>
             </div>
           </header>
 
           <GlassCard className="p-4 space-y-4">
             <h3 className="font-gujarati font-bold text-txt">નવો ડિફોલ્ટ હલકો ઉમેરો</h3>
-            <div className="flex gap-2">
+            <div className="flex items-center gap-2">
               <input
                 type="text"
                 value={newAdminHalqa}
                 onChange={e => setNewAdminHalqa(e.target.value)}
                 placeholder="હલકાનું નામ"
-                className="flex-1 app-input rounded-xl px-4 py-2 outline-none font-gujarati focus:ring-2 focus:ring-acc/40 placeholder-opacity-50"
+                className="flex-1 min-w-0 app-input rounded-xl px-4 py-2 outline-none font-gujarati focus:ring-2 focus:ring-acc/40 placeholder-opacity-50"
               />
               <LiquidButton
                 onClick={async () => {
@@ -590,7 +590,7 @@ export const Admin: React.FC = () => {
                   setIsLoading(false);
                 }}
                 disabled={isLoading || !newAdminHalqa.trim()}
-                className="px-4"
+                className="w-11 h-11 shrink-0 p-0 flex items-center justify-center"
               >
                 <Plus size={20} />
               </LiquidButton>
