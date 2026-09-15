@@ -1,13 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import * as XLSX from 'xlsx';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAppStore } from '../store/appStore';
 import { t } from '../i18n';
 import { GlassCard } from '../components/ui/GlassCard';
 import { LiquidButton } from '../components/ui/LiquidButton';
-import { Calendar, Save, Trash2, Download, Share2, CheckCircle, Plus, X, Copy, ListChecks, MapPin, Lock } from 'lucide-react';
+import { Calendar, Save, Trash2, Download, Share2, CheckCircle, Plus, X, Copy, ListChecks, MapPin, Lock, RotateCcw } from 'lucide-react';
 import { cn, formatDate, localTodayIso } from '../lib/utils';
 import { isDuplicateReportError, mapSupabaseError } from '../services/supabaseService';
+import { ScanPills } from '../components/ScanFill';
 
 // Constants
 const ACTIVITY_KEYS = [
@@ -22,6 +23,11 @@ export const NewReport: React.FC = () => {
   // Toasts
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
+
+  // S23: Scan & Fill State
+  const [recentlyFilledKeys, setRecentlyFilledKeys] = useState<Set<string>>(new Set());
+  const [undoSnapshot, setUndoSnapshot] = useState<any | null>(null);
+  const undoTimeoutRef = useRef<any>(null);
 
   // Form State
   const [halqa, setHalqa] = useState('');
@@ -66,6 +72,54 @@ export const NewReport: React.FC = () => {
     window.open(`https://wa.me/?text=${text}`, '_blank');
   };
 
+  const handleScanFill = (reviewData: any) => {
+    const result = useAppStore.getState().fillFromScan(reviewData, halqas);
+
+    if (result.matchedHalqa) {
+      setHalqa(result.matchedHalqa);
+    } else if (result.unmatchedHalqaName) {
+      showNotification(`હલકો '${result.unmatchedHalqaName}' મળ્યો નથી — મેન્યુઅલી પસંદ કરો`);
+    }
+
+    if (result.newDraft.stats) {
+      setStats(result.newDraft.stats);
+    }
+    if (result.newDraft.activities) {
+      setActivities(result.newDraft.activities);
+    }
+    if (result.newDraft.mashwara) {
+      setMashwara(result.newDraft.mashwara);
+    }
+
+    // Visual feedback: soft accent highlight for 2s
+    setRecentlyFilledKeys(new Set(result.filledKeys));
+    setTimeout(() => {
+      setRecentlyFilledKeys(new Set());
+    }, 2000);
+
+    // Snapshot for Undo (30s lifetime or until save)
+    setUndoSnapshot(result.preFillSnapshot);
+    if (undoTimeoutRef.current) clearTimeout(undoTimeoutRef.current);
+    undoTimeoutRef.current = setTimeout(() => {
+      setUndoSnapshot(null);
+    }, 30000);
+
+    showNotification('સ્કેન ડેટા ભરાયો ✅ — ચકાસીને સાચવો');
+  };
+
+  const handleUndo = () => {
+    if (!undoSnapshot) return;
+    setHalqa(undoSnapshot.halqa || '');
+    setStats(undoSnapshot.stats || { std_10: 0, std_11: 0, std_12: 0, college: 0, engineering: 0, medical: 0, muslim_teachers: 0 });
+    setActivities(undoSnapshot.activities || {});
+    setMashwara(undoSnapshot.mashwara || '');
+    setNotes(undoSnapshot.notes || '');
+    setDraftReport(undoSnapshot);
+    setUndoSnapshot(null);
+    if (undoTimeoutRef.current) clearTimeout(undoTimeoutRef.current);
+    showNotification('ડ્રાફ્ટ પૂર્વવત્ થયો ↩️');
+  };
+
   const handleSave = () => {
     if (!halqa) {
       showNotification('કૃપા કરીને હલકો પસંદ કરો ❌');
@@ -83,6 +137,8 @@ export const NewReport: React.FC = () => {
           notes
         });
         showNotification('રિપોર્ટ સેવ થયો ✅');
+        setUndoSnapshot(null);
+        if (undoTimeoutRef.current) clearTimeout(undoTimeoutRef.current);
         setHalqa('');
         sessionStorage.removeItem('currentDate');
         setDate(localTodayIso());
@@ -103,6 +159,8 @@ export const NewReport: React.FC = () => {
   };
 
   const confirmClear = () => {
+    setUndoSnapshot(null);
+    if (undoTimeoutRef.current) clearTimeout(undoTimeoutRef.current);
     setHalqa('');
     sessionStorage.removeItem('currentDate');
     setDate(localTodayIso());
@@ -250,7 +308,7 @@ export const NewReport: React.FC = () => {
 
   return (
     <div className="space-y-6 pb-12 relative">
-      {/* Toast */}
+      {/* Toast & Undo Pill */}
       <AnimatePresence>
         {showToast && (
           <div className="fixed inset-x-4 bottom-24 z-[80] flex justify-center pointer-events-none">
@@ -258,11 +316,44 @@ export const NewReport: React.FC = () => {
               initial={{ opacity: 0, y: 50, scale: 0.9 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 20, scale: 0.9 }}
-              className="w-full max-w-md rounded-2xl bg-card/95 backdrop-blur px-4 py-3 flex items-center gap-2 shadow-lg border border-brd/10"
+              className="w-full max-w-md rounded-2xl bg-card/95 backdrop-blur px-4 py-3 flex items-center justify-between gap-2 shadow-lg border border-brd/10 pointer-events-auto"
             >
-              <CheckCircle size={18} className="text-acc2 shrink-0" />
-              <span className="flex-1 text-sm text-txt font-gujarati font-medium">{toastMessage}</span>
+              <div className="flex items-center gap-2 min-w-0">
+                <CheckCircle size={18} className="text-acc2 shrink-0" />
+                <span className="flex-1 text-sm text-txt font-gujarati font-medium truncate">{toastMessage}</span>
+              </div>
+              {undoSnapshot && (
+                <button
+                  type="button"
+                  onClick={handleUndo}
+                  id="btn-toast-undo"
+                  className="px-3 py-1 rounded-full bg-acc text-white text-xs font-gujarati font-bold hover:bg-acc/90 active:scale-95 transition-all shrink-0 flex items-center gap-1 shadow-xs cursor-pointer"
+                >
+                  <RotateCcw size={12} />
+                  <span>અન્ડૂ</span>
+                </button>
+              )}
             </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Persistent Floating Undo Pill (visible until save or 30s) */}
+      <AnimatePresence>
+        {undoSnapshot && !showToast && (
+          <div className="fixed bottom-24 right-4 z-[80]">
+            <motion.button
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              type="button"
+              onClick={handleUndo}
+              id="btn-floating-undo"
+              className="px-4 py-2 rounded-full bg-card/95 backdrop-blur shadow-lg border border-acc/40 text-acc hover:bg-acc hover:text-white text-sm font-gujarati font-bold flex items-center gap-1.5 transition-all cursor-pointer"
+            >
+              <RotateCcw size={14} />
+              <span>અન્ડૂ</span>
+            </motion.button>
           </div>
         )}
       </AnimatePresence>
@@ -377,8 +468,17 @@ export const NewReport: React.FC = () => {
         </div>
       </section>
 
+      {/* S23: Scan-&-Fill Camera & Gallery Pills (Above Date Card) */}
+      <div className="order-2 xl:order-none">
+        <ScanPills
+          onFill={handleScanFill}
+          showToast={showNotification}
+          currentHalqas={ALL_HALQAS}
+        />
+      </div>
+
       {/* Date Picker (Trigger Card) */}
-      <GlassCard className="order-2 xl:order-none p-4">
+      <GlassCard className="order-3 xl:order-none p-4">
         <div 
           className="flex items-center gap-4 cursor-pointer"
           onClick={() => setShowCalendar(true)}
@@ -472,7 +572,10 @@ export const NewReport: React.FC = () => {
                 type="number"
                 value={(stats as any)[key] || ''}
                 onChange={(e) => handleStatChange(key as keyof typeof stats, e.target.value)}
-                className="app-input text-2xl font-bold font-num w-full outline-none text-right rounded-lg px-2 focus:ring-2 focus:ring-acc/40 transition-all placeholder-opacity-50"
+                className={cn(
+                  "app-input text-2xl font-bold font-num w-full outline-none text-right rounded-lg px-2 focus:ring-2 focus:ring-acc/40 transition-all placeholder-opacity-50",
+                  recentlyFilledKeys.has(`stat.${key}`) && "bg-acc/20 ring-2 ring-acc/60"
+                )}
                 placeholder="0"
               />
             </GlassCard>
@@ -485,7 +588,10 @@ export const NewReport: React.FC = () => {
             type="number"
             value={stats.muslim_teachers || ''}
             onChange={(e) => handleStatChange('muslim_teachers', e.target.value)}
-            className="app-input text-2xl font-bold font-num w-24 outline-none text-right rounded-lg px-2 focus:ring-2 focus:ring-acc/40 transition-all placeholder-opacity-50"
+            className={cn(
+              "app-input text-2xl font-bold font-num w-24 outline-none text-right rounded-lg px-2 focus:ring-2 focus:ring-acc/40 transition-all placeholder-opacity-50",
+              recentlyFilledKeys.has('stat.muslim_teachers') && "bg-acc/20 ring-2 ring-acc/60"
+            )}
             placeholder="0"
           />
         </GlassCard>
@@ -593,7 +699,10 @@ export const NewReport: React.FC = () => {
                         type="text"
                         value={activities[key]?.gujishta || ''}
                         onChange={(e) => handleActivityChange(key, 'gujishta', e.target.value)}
-                        className="w-full max-w-[110px] mx-auto block rounded-xl app-input py-2.5 text-sm text-center font-num outline-none focus:border-acc focus:ring-2 focus:ring-acc/40 transition-all"
+                        className={cn(
+                          "w-full max-w-[110px] mx-auto block rounded-xl app-input py-2.5 text-sm text-center font-num outline-none focus:border-acc focus:ring-2 focus:ring-acc/40 transition-all",
+                          recentlyFilledKeys.has(`${key}.gujishta`) && "bg-acc/20 ring-2 ring-acc/60"
+                        )}
                         placeholder="-"
                       />
                     </td>
@@ -602,7 +711,10 @@ export const NewReport: React.FC = () => {
                         type="text"
                         value={activities[key]?.azaim || ''}
                         onChange={(e) => handleActivityChange(key, 'azaim', e.target.value)}
-                        className="w-full max-w-[110px] mx-auto block rounded-xl app-input py-2.5 text-sm text-center font-num outline-none focus:border-acc focus:ring-2 focus:ring-acc/40 transition-all"
+                        className={cn(
+                          "w-full max-w-[110px] mx-auto block rounded-xl app-input py-2.5 text-sm text-center font-num outline-none focus:border-acc focus:ring-2 focus:ring-acc/40 transition-all",
+                          recentlyFilledKeys.has(`${key}.azaim`) && "bg-acc/20 ring-2 ring-acc/60"
+                        )}
                         placeholder="-"
                       />
                     </td>
@@ -611,7 +723,10 @@ export const NewReport: React.FC = () => {
                         type="text"
                         value={activities[key]?.maujuda || ''}
                         onChange={(e) => handleActivityChange(key, 'maujuda', e.target.value)}
-                        className="w-full max-w-[110px] mx-auto block rounded-xl app-input py-2.5 text-sm text-center font-num font-bold outline-none focus:ring-2 focus:ring-acc/40 transition-all"
+                        className={cn(
+                          "w-full max-w-[110px] mx-auto block rounded-xl app-input py-2.5 text-sm text-center font-num font-bold outline-none focus:ring-2 focus:ring-acc/40 transition-all",
+                          recentlyFilledKeys.has(`${key}.maujuda`) && "bg-acc/20 ring-2 ring-acc/60"
+                        )}
                         placeholder="-"
                       />
                     </td>
@@ -635,7 +750,10 @@ export const NewReport: React.FC = () => {
                       type="text"
                       value={activities['mashwara']?.maujuda || ''}
                       onChange={(e) => handleActivityChange('mashwara', 'maujuda', e.target.value)}
-                      className="w-full rounded-xl app-input px-4 py-2.5 text-sm font-gujarati outline-none focus:border-acc focus:ring-2 focus:ring-acc/40 transition-all placeholder-opacity-50"
+                      className={cn(
+                        "w-full rounded-xl app-input px-4 py-2.5 text-sm font-gujarati outline-none focus:border-acc focus:ring-2 focus:ring-acc/40 transition-all placeholder-opacity-50",
+                        recentlyFilledKeys.has('mashwara') && "bg-acc/20 ring-2 ring-acc/60"
+                      )}
                       placeholder="વિગત લખો..."
                     />
                   </td>

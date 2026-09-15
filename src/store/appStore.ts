@@ -46,6 +46,15 @@ interface AppState {
   
   // To keep backward compatibility for anything still expecting string array
   customHalqas: string[]
+
+  // S23: Scan-&-Fill action (never auto-saves)
+  fillFromScan: (scanData: any, currentHalqas: any[]) => {
+    preFillSnapshot: any;
+    matchedHalqa: string | null;
+    unmatchedHalqaName: string | null;
+    filledKeys: string[];
+    newDraft: any;
+  }
 }
 
 const getInitialSession = () => {
@@ -262,6 +271,123 @@ export const useAppStore = create<AppState>()(
           console.error(err)
           throw err
         }
+      },
+
+      fillFromScan: (scanData: any, currentHalqas: any[]) => {
+        const currentDraft = get().draftReport ? JSON.parse(JSON.stringify(get().draftReport)) : {
+          halqa: '',
+          date: '',
+          stats: { std_10: 0, std_11: 0, std_12: 0, college: 0, engineering: 0, medical: 0, muslim_teachers: 0 },
+          activities: {},
+          mashwara: '',
+          notes: ''
+        };
+
+        const preFillSnapshot = JSON.parse(JSON.stringify(currentDraft));
+        const newDraft = JSON.parse(JSON.stringify(currentDraft));
+        const filledKeys: string[] = [];
+
+        // 1. Halqa Name matching (normalized match: trim + ignore whitespace)
+        let matchedHalqa: string | null = null;
+        let unmatchedHalqaName: string | null = null;
+        const rawHalqa = scanData.halqa_name?.v?.trim();
+        if (rawHalqa) {
+          const norm = rawHalqa.replace(/\s+/g, '');
+          const found = currentHalqas.find((h: any) => {
+            const name = typeof h === 'string' ? h : h?.name || '';
+            return name.trim().replace(/\s+/g, '') === norm;
+          });
+          if (found) {
+            matchedHalqa = typeof found === 'string' ? found : found.name;
+            newDraft.halqa = matchedHalqa;
+            filledKeys.push('halqa');
+          } else {
+            unmatchedHalqaName = rawHalqa;
+          }
+        }
+
+        // 2. Stats (GOLDEN RULE: write ONLY non-empty values; empty = skip)
+        if (!newDraft.stats) {
+          newDraft.stats = { std_10: 0, std_11: 0, std_12: 0, college: 0, engineering: 0, medical: 0, muslim_teachers: 0 };
+        }
+        const statMapping: Record<string, string> = {
+          std10: 'std_10',
+          std11: 'std_11',
+          std12: 'std_12',
+          college: 'college',
+          engineer: 'engineering',
+          medical: 'medical',
+          muslim_teachers: 'muslim_teachers'
+        };
+
+        for (const [scanKey, draftKey] of Object.entries(statMapping)) {
+          const rawVal = scanData.stats?.[scanKey]?.v;
+          if (rawVal !== undefined && rawVal !== null && String(rawVal).trim() !== '') {
+            const parsedNum = parseInt(String(rawVal).replace(/[^0-9]/g, ''), 10);
+            newDraft.stats[draftKey] = isNaN(parsedNum) ? 0 : parsedNum;
+            filledKeys.push(`stat.${draftKey}`);
+          }
+        }
+
+        // 3. 13 Activities (write ONLY non-empty values; empty = skip)
+        const ACTIVITY_KEYS = [
+          'activity.namaz', 'activity.mashwara_pabandi', 'activity.taleem', 'activity.gasht',
+          'activity.panchkosa', 'activity.shabguzari', 'activity.mulaqat_percent', 'activity.school_namaz',
+          'activity.jamaat_3', 'activity.jamaat_10', 'activity.jamaat_40', 'activity.jamaat_4m'
+        ];
+
+        if (!newDraft.activities) newDraft.activities = {};
+
+        if (Array.isArray(scanData.activities)) {
+          scanData.activities.forEach((row: any) => {
+            if (row.no >= 1 && row.no <= 12) {
+              const actKey = ACTIVITY_KEYS[row.no - 1];
+              if (!newDraft.activities[actKey]) {
+                newDraft.activities[actKey] = { gujishta: '', azaim: '', maujuda: '' };
+              }
+              // gujishata -> gujishta
+              const gujVal = row.cols?.gujishata?.v;
+              if (gujVal !== undefined && gujVal !== null && String(gujVal).trim() !== '') {
+                newDraft.activities[actKey].gujishta = String(gujVal).trim();
+                filledKeys.push(`${actKey}.gujishta`);
+              }
+              // agraaham -> azaim
+              const azaimVal = row.cols?.agraaham?.v;
+              if (azaimVal !== undefined && azaimVal !== null && String(azaimVal).trim() !== '') {
+                newDraft.activities[actKey].azaim = String(azaimVal).trim();
+                filledKeys.push(`${actKey}.azaim`);
+              }
+              // mojuda -> maujuda
+              const maujVal = row.cols?.mojuda?.v;
+              if (maujVal !== undefined && maujVal !== null && String(maujVal).trim() !== '') {
+                newDraft.activities[actKey].maujuda = String(maujVal).trim();
+                filledKeys.push(`${actKey}.maujuda`);
+              }
+            } else if (row.no === 13) {
+              // Row 13: Mashwara
+              const mashVal = row.cols?.mojuda?.v || row.cols?.gujishata?.v;
+              if (mashVal !== undefined && mashVal !== null && String(mashVal).trim() !== '') {
+                if (!newDraft.activities['mashwara']) {
+                  newDraft.activities['mashwara'] = { gujishta: '', azaim: '', maujuda: '' };
+                }
+                newDraft.activities['mashwara'].maujuda = String(mashVal).trim();
+                newDraft.mashwara = String(mashVal).trim();
+                filledKeys.push('mashwara');
+              }
+            }
+          });
+        }
+
+        // DATA KAVACH: NEVER auto-save to DB, only set draft in state
+        set({ draftReport: newDraft });
+
+        return {
+          preFillSnapshot,
+          matchedHalqa,
+          unmatchedHalqaName,
+          filledKeys,
+          newDraft
+        };
       }
     }),
     {
