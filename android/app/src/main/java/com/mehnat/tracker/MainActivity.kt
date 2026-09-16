@@ -1,6 +1,8 @@
 package com.mehnat.tracker
 
+import android.app.Activity
 import android.app.DownloadManager
+import android.content.ClipData
 import android.content.Context
 import android.content.Intent
 import android.net.ConnectivityManager
@@ -10,10 +12,12 @@ import android.os.Bundle
 import android.os.Environment
 import android.os.Handler
 import android.os.Looper
+import android.provider.MediaStore
 import android.view.View
 import android.webkit.CookieManager
 import android.webkit.DownloadListener
 import android.webkit.URLUtil
+import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
@@ -22,6 +26,8 @@ import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.FileProvider
+import java.io.File
 
 class MainActivity : AppCompatActivity() {
 
@@ -31,9 +37,21 @@ class MainActivity : AppCompatActivity() {
     private lateinit var retryButton: Button
     private val TARGET_URL = "https://banaskantha-mehnat-tracker.vercel.app"
 
+    private var filePathCallback: ValueCallback<Array<Uri>>? = null
+    private var cameraImageUri: Uri? = null
+
+    companion object {
+        private const val FILE_CHOOSER_REQUEST_CODE = 1001
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        if (savedInstanceState != null) {
+            @Suppress("DEPRECATION")
+            cameraImageUri = savedInstanceState.getParcelable("camera_image_uri")
+        }
 
         webView = findViewById(R.id.webView)
         splashScreen = findViewById(R.id.splashScreen)
@@ -77,7 +95,82 @@ class MainActivity : AppCompatActivity() {
 
         webView.addJavascriptInterface(AndroidDownloader(this), "AndroidDownloader")
 
-        webView.webChromeClient = WebChromeClient()
+        webView.webChromeClient = object : WebChromeClient() {
+            override fun onShowFileChooser(
+                webView: WebView?,
+                filePathCallback: ValueCallback<Array<Uri>>?,
+                fileChooserParams: FileChooserParams?
+            ): Boolean {
+                // Ensure any previous unresolved callback is cleared cleanly
+                this@MainActivity.filePathCallback?.onReceiveValue(null)
+                this@MainActivity.filePathCallback = filePathCallback
+
+                val isCapture = fileChooserParams?.isCaptureEnabled == true
+
+                if (isCapture) {
+                    val photoFile = try {
+                        val storageDir = File(cacheDir, "camera_photos").apply { if (!exists()) mkdirs() }
+                        File.createTempFile("IMG_${System.currentTimeMillis()}_", ".jpg", storageDir)
+                    } catch (e: Exception) {
+                        null
+                    }
+
+                    if (photoFile == null) {
+                        this@MainActivity.filePathCallback?.onReceiveValue(null)
+                        this@MainActivity.filePathCallback = null
+                        return false
+                    }
+
+                    val photoUri = try {
+                        FileProvider.getUriForFile(
+                            this@MainActivity,
+                            "${applicationContext.packageName}.fileprovider",
+                            photoFile
+                        )
+                    } catch (e: Exception) {
+                        this@MainActivity.filePathCallback?.onReceiveValue(null)
+                        this@MainActivity.filePathCallback = null
+                        return false
+                    }
+
+                    cameraImageUri = photoUri
+
+                    val captureIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE).apply {
+                        putExtra(MediaStore.EXTRA_OUTPUT, photoUri)
+                        addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                        clipData = ClipData.newRawUri("", photoUri)
+                    }
+
+                    try {
+                        startActivityForResult(captureIntent, FILE_CHOOSER_REQUEST_CODE)
+                        return true
+                    } catch (e: Exception) {
+                        cameraImageUri = null
+                        this@MainActivity.filePathCallback?.onReceiveValue(null)
+                        this@MainActivity.filePathCallback = null
+                        return false
+                    }
+                } else {
+                    cameraImageUri = null
+                    val contentIntent = Intent(Intent.ACTION_GET_CONTENT).apply {
+                        addCategory(Intent.CATEGORY_OPENABLE)
+                        type = "image/*"
+                        if (fileChooserParams?.mode == FileChooserParams.MODE_OPEN_MULTIPLE) {
+                            putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+                        }
+                    }
+
+                    try {
+                        startActivityForResult(contentIntent, FILE_CHOOSER_REQUEST_CODE)
+                        return true
+                    } catch (e: Exception) {
+                        this@MainActivity.filePathCallback?.onReceiveValue(null)
+                        this@MainActivity.filePathCallback = null
+                        return false
+                    }
+                }
+            }
+        }
 
         webView.setDownloadListener(DownloadListener { url, userAgent, contentDisposition, mimetype, contentLength ->
             if (url.startsWith("blob:")) {
@@ -189,5 +282,41 @@ class MainActivity : AppCompatActivity() {
         } else {
             super.onBackPressed()
         }
+    }
+
+    @Deprecated("Deprecated in Java")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        if (requestCode == FILE_CHOOSER_REQUEST_CODE) {
+            val callback = filePathCallback
+            if (callback == null) {
+                super.onActivityResult(requestCode, resultCode, data)
+                return
+            }
+
+            if (resultCode == Activity.RESULT_OK) {
+                val results: Array<Uri>? = when {
+                    data?.data != null -> arrayOf(data.data!!)
+                    data?.clipData != null && data.clipData!!.itemCount > 0 -> {
+                        val count = data.clipData!!.itemCount
+                        Array(count) { i -> data.clipData!!.getItemAt(i).uri }
+                    }
+                    cameraImageUri != null -> arrayOf(cameraImageUri!!)
+                    else -> null
+                }
+                callback.onReceiveValue(results)
+            } else {
+                callback.onReceiveValue(null)
+            }
+
+            filePathCallback = null
+            cameraImageUri = null
+            return
+        }
+        super.onActivityResult(requestCode, resultCode, data)
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        cameraImageUri?.let { outState.putParcelable("camera_image_uri", it) }
     }
 }
