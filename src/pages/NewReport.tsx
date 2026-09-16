@@ -557,43 +557,51 @@ export const NewReport: React.FC = () => {
 
       {/* Stats Grid */}
       <section className="order-3 xl:order-none grid grid-cols-2 md:grid-cols-4 gap-3">
-        <GlassCard className="col-span-2 p-4">
-          <div className="flex justify-between items-center">
-            <span className="font-gujarati font-bold text-lg text-txt">{t('stat.students_count' as any)}</span>
-            <span className="text-3xl font-bold font-num text-acc">{totalStudents}</span>
+        <GlassCard className="col-span-2 md:col-span-4 p-3.5">
+          <div className="flex justify-between items-center min-h-[40px]">
+            <span className="font-gujarati font-bold text-base md:text-lg text-txt">{t('stat.students_count' as any)}</span>
+            <span className="text-3xl font-bold font-num text-acc pr-[12px]">{totalStudents}</span>
           </div>
         </GlassCard>
         
         {['std_10', 'std_11', 'std_12', 'college', 'engineering', 'medical'].map(key => {
           return (
-            <GlassCard key={key} className="p-4 flex flex-col justify-between h-24">
-              <span className="font-gujarati text-sm text-sub line-clamp-1">{t(`stat.${key}` as any)}</span>
-              <input 
-                type="number"
-                value={(stats as any)[key] || ''}
-                onChange={(e) => handleStatChange(key as keyof typeof stats, e.target.value)}
-                className={cn(
-                  "app-input text-2xl font-bold font-num w-full outline-none text-right rounded-lg px-2 focus:ring-2 focus:ring-acc/40 transition-all placeholder-opacity-50",
-                  recentlyFilledKeys.has(`stat.${key}`) && "bg-acc/20 ring-2 ring-acc/60"
-                )}
-                placeholder="0"
-              />
+            <GlassCard key={key} className="p-3.5">
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center min-h-[18px]">
+                  <span className="font-gujarati text-[13px] text-sub font-medium truncate">{t(`stat.${key}` as any)}</span>
+                </div>
+                <input 
+                  type="number"
+                  value={(stats as any)[key] || ''}
+                  onChange={(e) => handleStatChange(key as keyof typeof stats, e.target.value)}
+                  className={cn(
+                    "app-input w-full h-[40px] rounded-lg text-[16px] font-semibold font-num text-right pl-3 pr-[12px] outline-none focus:ring-2 focus:ring-acc/40 transition-all",
+                    recentlyFilledKeys.has(`stat.${key}`) && "bg-acc/20 ring-2 ring-acc/60"
+                  )}
+                  placeholder="0"
+                />
+              </div>
             </GlassCard>
           );
         })}
         
-        <GlassCard className="col-span-2 p-4 flex justify-between items-center">
-          <span className="font-gujarati text-sm text-sub">{t('stat.muslim_teachers' as any)}</span>
-          <input 
-            type="number"
-            value={stats.muslim_teachers || ''}
-            onChange={(e) => handleStatChange('muslim_teachers', e.target.value)}
-            className={cn(
-              "app-input text-2xl font-bold font-num w-24 outline-none text-right rounded-lg px-2 focus:ring-2 focus:ring-acc/40 transition-all placeholder-opacity-50",
-              recentlyFilledKeys.has('stat.muslim_teachers') && "bg-acc/20 ring-2 ring-acc/60"
-            )}
-            placeholder="0"
-          />
+        <GlassCard className="col-span-2 md:col-span-4 p-3.5">
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center min-h-[18px]">
+              <span className="font-gujarati text-[13px] text-sub font-medium truncate">{t('stat.muslim_teachers' as any)}</span>
+            </div>
+            <input 
+              type="number"
+              value={stats.muslim_teachers || ''}
+              onChange={(e) => handleStatChange('muslim_teachers', e.target.value)}
+              className={cn(
+                "app-input w-full h-[40px] rounded-lg text-[16px] font-semibold font-num text-right pl-3 pr-[12px] outline-none focus:ring-2 focus:ring-acc/40 transition-all",
+                recentlyFilledKeys.has('stat.muslim_teachers') && "bg-acc/20 ring-2 ring-acc/60"
+              )}
+              placeholder="0"
+            />
+          </div>
         </GlassCard>
       </section>
 

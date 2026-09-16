@@ -82,6 +82,16 @@
   .app-input::placeholder {
     color: var(--input-placeholder);
   }
+
+  /* Suppress number input spinners for uniform number alignment */
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  input[type="number"] {
+    -moz-appearance: textfield;
+  }
 }
 
 /* Number font utility */
