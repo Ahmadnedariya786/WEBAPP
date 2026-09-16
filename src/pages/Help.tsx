@@ -23,10 +23,13 @@ export const Help: React.FC = () => {
   return (
     <div className="space-y-6 pb-12">
       <header className="flex flex-wrap gap-2 justify-between items-center">
-        <h2 className="text-2xl font-bold font-gujarati flex items-center gap-2 text-txt min-w-0 truncate">
-          <HelpCircle className="text-acc shrink-0" />
-          <span className="truncate">{t('help.title' as any)}</span>
-        </h2>
+        <div className="flex flex-col gap-1">
+          <h2 className="text-[22px] font-extrabold text-txt font-gujarati uppercase min-w-0 truncate flex items-center gap-2">
+            <HelpCircle className="text-acc shrink-0" />
+            <span className="truncate">{t('help.title' as any)}</span>
+          </h2>
+          <div className="h-1 w-12 bg-acc rounded-full" />
+        </div>
       </header>
 
       <div className="space-y-4">
@@ -121,3 +124,6 @@ export const Help: React.FC = () => {
     </div>
   );
 };
+
+
+

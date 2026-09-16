@@ -222,7 +222,10 @@ export const PastReports: React.FC = () => {
       </AnimatePresence>
 
       <header className="flex flex-wrap gap-2 justify-between items-center">
-        <h2 className="text-2xl font-bold font-gujarati min-w-0 truncate">{t('nav.past_reports')}</h2>
+        <div className="flex flex-col gap-1">
+          <h2 className="text-[22px] font-extrabold text-txt font-gujarati uppercase min-w-0 truncate">{t('nav.past_reports')}</h2>
+          <div className="h-1 w-12 bg-acc rounded-full" />
+        </div>
       </header>
 
       {/* Top Actions */}
@@ -336,3 +339,6 @@ export const PastReports: React.FC = () => {
     </div>
   );
 };
+
+
+

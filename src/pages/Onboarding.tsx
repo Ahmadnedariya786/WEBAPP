@@ -40,7 +40,10 @@ export const Onboarding: React.FC = () => {
               transition={{ duration: 0.3 }}
               className="space-y-6"
             >
-              <h2 className="text-2xl font-bold font-gujarati">{slides[slide].title}</h2>
+              <div className="flex flex-col gap-1">
+                <h2 className="text-[22px] font-extrabold text-txt font-gujarati uppercase min-w-0 truncate">{slides[slide].title}</h2>
+                <div className="h-1 w-12 bg-acc rounded-full" />
+              </div>
               <p className="text-sub font-gujarati text-lg">{slides[slide].desc}</p>
             </motion.div>
           </AnimatePresence>
@@ -77,3 +80,4 @@ export const Onboarding: React.FC = () => {
     </div>
   );
 };
+

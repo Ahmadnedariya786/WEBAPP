@@ -17,7 +17,10 @@ export const Settings: React.FC = () => {
   return (
     <div className="space-y-6 pb-12">
       <header className="flex flex-wrap gap-2 justify-between items-center">
-        <h2 className="text-2xl font-bold font-gujarati min-w-0 truncate">{t('settings.title' as any)}</h2>
+        <div className="flex flex-col gap-1">
+          <h2 className="text-[22px] font-extrabold text-txt font-gujarati uppercase min-w-0 truncate">{t('settings.title' as any)}</h2>
+          <div className="h-1 w-12 bg-acc rounded-full" />
+        </div>
         <div className="text-xs shrink-0 font-gujarati bg-card px-3 py-1.5 rounded-full shadow-sm text-sub flex items-center gap-1.5">
           {useAppStore().sessionRole === 'admin' 
             ? <span className="inline-flex items-center gap-1">એડમિન લૉગિન <CheckCircle className="w-4 h-4 text-acc2" /></span>
@@ -94,3 +97,6 @@ export const Settings: React.FC = () => {
     </div>
   );
 };
+
+
+

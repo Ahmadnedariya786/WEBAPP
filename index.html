@@ -12,6 +12,17 @@
       let t = localStorage.getItem('theme');
       if (!t) { t = 'dark'; localStorage.setItem('theme', t); }
       document.documentElement.setAttribute('data-theme', t);
+      const m = document.querySelector('meta[name="theme-color"]');
+      if (t === 'outdoor') {
+        if (m) m.setAttribute('content', '#F5F0E1');
+        document.documentElement.style.backgroundColor = '#F5F0E1';
+      } else if (t === 'premium') {
+        if (m) m.setAttribute('content', '#171238');
+        document.documentElement.style.backgroundColor = '#171238';
+      } else {
+        if (m) m.setAttribute('content', '#1F2329');
+        document.documentElement.style.backgroundColor = '#1F2329';
+      }
       
       window.AndroidPrepareDownload = function(filename, mime) {
         window.AndroidPreparedFilename = filename;
