@@ -557,52 +557,52 @@ export const NewReport: React.FC = () => {
 
       {/* Stats Grid */}
       <section className="order-3 xl:order-none grid grid-cols-2 md:grid-cols-4 gap-3">
-        <GlassCard className="col-span-2 md:col-span-4 p-3.5">
+        <div className="stat-card col-span-2 md:col-span-4 p-3.5">
           <div className="flex justify-between items-center min-h-[40px]">
-            <span className="font-gujarati font-bold text-base md:text-lg text-txt">{t('stat.students_count' as any)}</span>
+            <span className="font-gujarati font-bold text-base md:text-lg stat-total-label">{t('stat.students_count' as any)}</span>
             <span className="text-3xl font-bold font-num text-acc pr-[12px]">{totalStudents}</span>
           </div>
-        </GlassCard>
+        </div>
         
         {['std_10', 'std_11', 'std_12', 'college', 'engineering', 'medical'].map(key => {
           return (
-            <GlassCard key={key} className="p-3.5">
+            <div key={key} className="stat-card p-3.5">
               <div className="flex flex-col gap-2">
-                <div className="flex items-center min-h-[18px]">
-                  <span className="font-gujarati text-[13px] text-sub font-medium truncate">{t(`stat.${key}` as any)}</span>
+                <div className="flex items-center justify-center min-h-[18px]">
+                  <span className="font-gujarati text-[13px] font-medium text-center truncate stat-label">{t(`stat.${key}` as any)}</span>
                 </div>
                 <input 
                   type="number"
                   value={(stats as any)[key] || ''}
                   onChange={(e) => handleStatChange(key as keyof typeof stats, e.target.value)}
                   className={cn(
-                    "app-input w-full h-[40px] rounded-lg text-[16px] font-semibold font-num text-right pl-3 pr-[12px] outline-none focus:ring-2 focus:ring-acc/40 transition-all",
+                    "stat-input w-full h-[40px] rounded-lg text-[16px] font-semibold font-num text-center outline-none focus:ring-2 focus:ring-acc/40 transition-all placeholder:text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none",
                     recentlyFilledKeys.has(`stat.${key}`) && "bg-acc/20 ring-2 ring-acc/60"
                   )}
                   placeholder="0"
                 />
               </div>
-            </GlassCard>
+            </div>
           );
         })}
         
-        <GlassCard className="col-span-2 md:col-span-4 p-3.5">
+        <div className="stat-card col-span-2 md:col-span-4 p-3.5">
           <div className="flex flex-col gap-2">
-            <div className="flex items-center min-h-[18px]">
-              <span className="font-gujarati text-[13px] text-sub font-medium truncate">{t('stat.muslim_teachers' as any)}</span>
+            <div className="flex items-center justify-center min-h-[18px]">
+              <span className="font-gujarati text-[13px] font-medium text-center truncate stat-label">{t('stat.muslim_teachers' as any)}</span>
             </div>
             <input 
               type="number"
               value={stats.muslim_teachers || ''}
               onChange={(e) => handleStatChange('muslim_teachers', e.target.value)}
               className={cn(
-                "app-input w-full h-[40px] rounded-lg text-[16px] font-semibold font-num text-right pl-3 pr-[12px] outline-none focus:ring-2 focus:ring-acc/40 transition-all",
+                "stat-input w-full h-[40px] rounded-lg text-[16px] font-semibold font-num text-center outline-none focus:ring-2 focus:ring-acc/40 transition-all placeholder:text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none",
                 recentlyFilledKeys.has('stat.muslim_teachers') && "bg-acc/20 ring-2 ring-acc/60"
               )}
               placeholder="0"
             />
           </div>
-        </GlassCard>
+        </div>
       </section>
 
       {/* Special Note */}

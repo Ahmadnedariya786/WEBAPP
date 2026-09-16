@@ -92,6 +92,75 @@
   input[type="number"] {
     -moz-appearance: textfield;
   }
+
+  /* ── S25 Stat Cards Theme-Aware Skin ── */
+  .stat-card {
+    border-radius: 1rem;
+    transition: background-color 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  }
+
+  .stat-input {
+    transition: background-color 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+}
+
+/* Outdoor (Light): Soft Neumorphism */
+html[data-theme="outdoor"] .stat-card {
+  background-color: #FFFDF8;
+  box-shadow: -4px -4px 10px rgba(255, 255, 255, 0.95), 4px 4px 10px rgba(176, 150, 90, 0.20);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+}
+
+html[data-theme="outdoor"] .stat-label {
+  color: #1F2937 !important;
+}
+
+html[data-theme="outdoor"] .stat-total-label {
+  color: #1F2937 !important;
+}
+
+html[data-theme="outdoor"] .stat-input {
+  background-color: #F8EFE0;
+  border: none !important;
+  box-shadow: inset 2px 2px 5px rgba(176, 150, 90, 0.25), inset -2px -2px 5px rgba(255, 255, 255, 0.9);
+  color: #111827;
+}
+
+html[data-theme="outdoor"] .stat-input::placeholder {
+  color: #6B7280;
+}
+
+/* Graphite & Premium (Dark): Soft Elevation */
+html[data-theme="dark"] .stat-card,
+html[data-theme="premium"] .stat-card {
+  background-color: rgb(var(--card));
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+  border: 1px solid rgb(var(--brd) / 0.15);
+}
+
+html[data-theme="dark"] .stat-label,
+html[data-theme="premium"] .stat-label {
+  color: rgb(var(--sub));
+}
+
+html[data-theme="dark"] .stat-total-label,
+html[data-theme="premium"] .stat-total-label {
+  color: rgb(var(--text));
+}
+
+html[data-theme="dark"] .stat-input,
+html[data-theme="premium"] .stat-input {
+  background-color: var(--input-bg);
+  border: var(--input-border) !important;
+  color: var(--input-text);
+  box-shadow: none;
+}
+
+html[data-theme="dark"] .stat-input::placeholder,
+html[data-theme="premium"] .stat-input::placeholder {
+  color: var(--input-placeholder);
 }
 
 /* Number font utility */
