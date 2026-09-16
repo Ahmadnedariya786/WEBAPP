@@ -19,6 +19,7 @@ html[data-theme="outdoor"] {
   --on-primary-chip-border: rgba(255, 255, 255, 0.20);
   --on-primary-shadow: 0 1px 3px rgba(0,0,0,0.25);
   
+  --dialog-surface: #FBF7EC;
   --input-bg: rgba(255, 253, 246, 0.6);
   --input-border: 1px solid rgba(36, 59, 143, 0.35);
   --input-text: #1E2F73;
