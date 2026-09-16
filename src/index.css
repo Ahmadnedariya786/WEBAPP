@@ -163,6 +163,119 @@ html[data-theme="premium"] .stat-input::placeholder {
   color: var(--input-placeholder);
 }
 
+/* ── S26 Admin Password Dialog Theme Styles ── */
+.admin-dialog-card {
+  transition: background-color 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.admin-dialog-btn {
+  transition: all 0.2s ease;
+}
+
+/* Outdoor Theme: Light Cream Surface, Navy Text, Blueberry Pill */
+html[data-theme="outdoor"] .admin-dialog-card {
+  background-color: rgb(var(--card));
+  box-shadow: 0 10px 30px -4px rgba(36, 59, 143, 0.10), 0 4px 12px -2px rgba(36, 59, 143, 0.06);
+  border: 1px solid rgba(36, 59, 143, 0.15);
+}
+
+html[data-theme="outdoor"] .admin-dialog-icon {
+  background-color: rgba(36, 59, 143, 0.08);
+  color: #243B8F;
+  box-shadow: none;
+}
+
+html[data-theme="outdoor"] .admin-dialog-title {
+  color: #1E2F73;
+  text-shadow: none !important;
+}
+
+html[data-theme="outdoor"] .admin-dialog-sub {
+  color: #4B5E99;
+}
+
+html[data-theme="outdoor"] .admin-dialog-input {
+  background-color: #FFFFFF;
+  border: 1px solid rgba(36, 59, 143, 0.25) !important;
+  color: #1E2F73;
+  box-shadow: inset 0 1px 2px rgba(36, 59, 143, 0.05);
+}
+
+html[data-theme="outdoor"] .admin-dialog-input::placeholder {
+  color: #8A98C2;
+}
+
+html[data-theme="outdoor"] .admin-dialog-btn {
+  background-color: #243B8F !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 4px 14px rgba(36, 59, 143, 0.25);
+  border: none;
+}
+
+html[data-theme="outdoor"] .admin-dialog-btn:hover:not(:disabled) {
+  background-color: #1E2F73 !important;
+}
+
+html[data-theme="outdoor"] .admin-dialog-btn:active:not(:disabled) {
+  transform: scale(0.98);
+  box-shadow: 0 2px 6px rgba(36, 59, 143, 0.2);
+}
+
+html[data-theme="outdoor"] .admin-dialog-btn:disabled {
+  background-color: #3850A2 !important;
+  color: #FFFFFF !important;
+  opacity: 0.85 !important;
+}
+
+/* Graphite & Premium: Pixel-identical to existing dark neumorphism */
+html[data-theme="dark"] .admin-dialog-card,
+html[data-theme="premium"] .admin-dialog-card {
+  background: var(--neu-bg);
+  box-shadow: 9px 9px 18px var(--neu-dark), -9px -9px 18px var(--neu-light);
+}
+
+html[data-theme="dark"] .admin-dialog-icon,
+html[data-theme="premium"] .admin-dialog-icon {
+  background: var(--neu-bg);
+  box-shadow: 9px 9px 18px var(--neu-dark), -9px -9px 18px var(--neu-light);
+  color: rgb(var(--acc));
+}
+
+html[data-theme="dark"] .admin-dialog-title,
+html[data-theme="premium"] .admin-dialog-title {
+  color: rgb(var(--text));
+  text-shadow: 1px 1px 2px var(--neu-dark), -1px -1px 1px var(--neu-light);
+}
+
+html[data-theme="dark"] .admin-dialog-sub,
+html[data-theme="premium"] .admin-dialog-sub {
+  color: rgb(var(--sub));
+}
+
+html[data-theme="dark"] .admin-dialog-input,
+html[data-theme="premium"] .admin-dialog-input {
+  background-color: var(--input-bg);
+  border: var(--input-border) !important;
+  color: var(--input-text);
+}
+
+html[data-theme="dark"] .admin-dialog-input::placeholder,
+html[data-theme="premium"] .admin-dialog-input::placeholder {
+  color: var(--input-placeholder);
+}
+
+html[data-theme="dark"] .admin-dialog-btn,
+html[data-theme="premium"] .admin-dialog-btn {
+  background: var(--neu-bg);
+  box-shadow: 9px 9px 18px var(--neu-dark), -9px -9px 18px var(--neu-light);
+  color: rgb(var(--acc));
+}
+
+html[data-theme="dark"] .admin-dialog-btn:active:not(:disabled),
+html[data-theme="premium"] .admin-dialog-btn:active:not(:disabled) {
+  box-shadow: inset 6px 6px 12px var(--neu-dark), inset -6px -6px 12px var(--neu-light);
+}
+
 /* Number font utility */
 .font-num {
   font-family: 'Plus Jakarta Sans', sans-serif;

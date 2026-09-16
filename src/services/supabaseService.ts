@@ -114,6 +114,14 @@ export const supabaseService = {
     if (error) throw error;
     return data as boolean;
   },
+  async checkAdminConfigured(): Promise<boolean> {
+    try {
+      const { data } = await supabase.rpc('fn_set_admin_code', { p_old: null, p_new: null });
+      return data === false;
+    } catch {
+      return true;
+    }
+  },
   async loginCode(code: string) {
     const { data, error } = await supabase.rpc('fn_login_code', { p_code: code });
     if (error) throw error;

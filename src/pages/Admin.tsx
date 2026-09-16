@@ -92,8 +92,8 @@ export const Admin: React.FC = () => {
   // Probe first-run status on mount
   useEffect(() => {
     let mounted = true;
-    supabaseService.getSetting('admin_code').then((val) => {
-      if (mounted) setIsFirstRun(!val);
+    supabaseService.checkAdminConfigured().then((isConfigured) => {
+      if (mounted) setIsFirstRun(!isConfigured);
     }).catch(() => {/* ignore */});
     return () => { mounted = false; };
   }, []);
@@ -243,14 +243,9 @@ export const Admin: React.FC = () => {
           )}
         </AnimatePresence>
 
-        {/* Embossed gate — circle on desktop, rounded card on mobile */}
+        {/* Embossed gate — rounded card on mobile and desktop */}
         <div
-          className={[
-            'neu-raised relative flex flex-col items-center justify-center p-8',
-            /* desktop: circular; mobile: pill card */
-            'w-[92%] rounded-[2rem]',
-            'sm:w-[340px] sm:h-[340px] sm:rounded-full',
-          ].join(' ')}
+          className="admin-dialog-card relative flex flex-col items-center justify-center p-6 sm:p-7 w-full max-w-[340px] rounded-[2rem]"
           style={{ minHeight: '280px' }}
         >
           <AnimatePresence mode="wait">
@@ -261,16 +256,15 @@ export const Admin: React.FC = () => {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="flex flex-col items-center gap-4"
+                className="flex flex-col items-center gap-4 py-2"
               >
                 <div
-                  className="w-20 h-20 rounded-full neu-raised flex items-center justify-center neu-check-in"
+                  className="w-16 h-16 rounded-full admin-dialog-icon flex items-center justify-center neu-check-in"
                   style={{ color: 'rgb(16 185 129)' }}
                 >
-                  <CheckCircle size={40} />
+                  <CheckCircle size={36} />
                 </div>
-                <p className="font-gujarati font-semibold text-txt text-center text-sm"
-                   style={{ textShadow: '1px 1px 2px var(--neu-dark), -1px -1px 1px var(--neu-light)' }}>
+                <p className="font-gujarati font-semibold admin-dialog-title text-center text-sm">
                   સ્વાગત છે! લૉગિન સફળ
                 </p>
               </motion.div>
@@ -284,29 +278,26 @@ export const Admin: React.FC = () => {
                 className="w-full flex flex-col items-center gap-5"
               >
                 {/* Lock icon bubble */}
-                <div className="w-12 h-12 rounded-full neu-raised flex items-center justify-center text-acc">
+                <div className="w-12 h-12 rounded-full admin-dialog-icon flex items-center justify-center">
                   <Lock size={22} />
                 </div>
 
-                {/* Title — first-run vs login */}
+                {/* Title & Subtitle — first-run vs login */}
                 <div className="text-center">
-                  <h2
-                    className="text-lg font-bold font-gujarati text-txt leading-snug"
-                    style={{ textShadow: '1px 1px 2px var(--neu-dark), -1px -1px 1px var(--neu-light)' }}
-                  >
-                    {isFirstRun ? 'એડમિન પાસવર્ડ સેટ કરો' : 'એડમિન લૉગિન'}
+                  <h2 className="admin-dialog-title text-lg font-bold font-gujarati leading-snug">
+                    {isFirstRun ? 'એડમિન પાસવર્ડ સેટ કરો' : 'એડમિન પાસવર્ડ દાખલ કરો'}
                   </h2>
-                  {isFirstRun && (
-                    <p className="text-xs font-gujarati text-sub mt-1 leading-relaxed">
-                      પ્રથમ વખત — નવો પાસવર્ડ બનાવો
-                    </p>
-                  )}
+                  <p className="admin-dialog-sub text-xs font-gujarati mt-1.5 leading-relaxed">
+                    {isFirstRun
+                      ? 'પ્રથમ વખત — નવો પાસવર્ડ બનાવો'
+                      : 'લૉગિન કરવા માટે સાચો પાસવર્ડ દાખલ કરો'}
+                  </p>
                 </div>
 
                 {/* Form */}
                 <form
                   onSubmit={handleLogin}
-                  className={`w-full space-y-3 ${shakeInput ? 'neu-shake' : ''}`}
+                  className={`w-full space-y-3.5 ${shakeInput ? 'neu-shake' : ''}`}
                   onAnimationEnd={() => setShakeInput(false)}
                 >
                   <input
@@ -315,8 +306,8 @@ export const Admin: React.FC = () => {
                     onChange={(e) => { setPassword(e.target.value); setError(false); }}
                     placeholder="•••••••••"
                     className={[
-                      'w-full app-input rounded-full px-5 py-3.5 outline-none',
-                      'text-center font-num tracking-widest placeholder:tracking-normal placeholder-opacity-50',
+                      'admin-dialog-input w-full rounded-full px-5 py-3.5 outline-none',
+                      'text-center font-num tracking-widest placeholder:tracking-normal',
                       'focus:ring-2 focus:ring-acc/40 transition-shadow text-sm',
                       error ? 'ring-2 ring-danger/60' : '',
                     ].join(' ')}
@@ -327,9 +318,9 @@ export const Admin: React.FC = () => {
                   <button
                     type="submit"
                     disabled={isLoading || !password.trim()}
-                    className="neu-btn neu-raised w-full rounded-full py-3.5 font-semibold font-gujarati text-acc text-sm transition-shadow disabled:opacity-50"
+                    className="admin-dialog-btn w-full rounded-full py-3.5 font-semibold font-gujarati text-sm flex items-center justify-center transition-all disabled:opacity-50"
                   >
-                    {isLoading ? '...' : isFirstRun ? 'સેટ કરો' : 'લૉગિન'}
+                    {isLoading ? '...' : isFirstRun ? 'સેટ કરો' : 'લૉગિન કરો'}
                   </button>
                 </form>
               </motion.div>
