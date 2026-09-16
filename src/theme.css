@@ -1,29 +1,42 @@
 html[data-theme="outdoor"] {
-  --bg: 255 248 231;
+  /* Page surface: Light cream #F5F0E1 */
+  --bg: 245 240 225;
+  /* Card surface: Pure warm cream #FFFDF6 */
   --card: 255 253 246;
+  /* Primary text: Navy #1E2F73 */
   --text: 30 47 115;
-  --sub: 107 122 168;
+  /* Muted text: Muted navy #5A6BA8 (AA compliant >= 4.5:1) */
+  --sub: 90 107 168;
+  --muted: #5A6BA8;
+  /* Primary accent: Deep blueberry #243B8F */
   --acc: 36 59 143;
-  --acc2: 76 111 231;
-  --brd: 36 59 143;
-  --inp: 255 253 246;
+  --acc2: 36 59 143;
+  --acc-soft: rgba(36, 59, 143, 0.10);
+  /* Border: Subtle navy rgba(30, 47, 115, 0.15) */
+  --brd: 30 47 115;
+  --border: rgba(30, 47, 115, 0.15);
+  /* Inputs: Pure white #FFFFFF */
+  --inp: 255 255 255;
   --danger: 217 58 58;
   --shadow-color: 36 59 143;
   --shadow-alpha: 0.10;
-  --inp-alpha: 0.9;
+  --inp-alpha: 1.0;
   --grad-a: 36 59 143;
-  --grad-b: 90 167 232;
+  --grad-b: 36 59 143;
   --on-primary: #ffffff;
-  --on-primary-sub: rgba(255, 255, 255, 0.8);
+  --on-primary-sub: rgba(255, 255, 255, 0.85);
   --on-primary-chip-bg: rgba(255, 255, 255, 0.15);
-  --on-primary-chip-border: rgba(255, 255, 255, 0.20);
-  --on-primary-shadow: 0 1px 3px rgba(0,0,0,0.25);
+  --on-primary-chip-border: rgba(255, 255, 255, 0.25);
+  --on-primary-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
   
+  /* Surfaces */
+  --header-surface: #FBF7EC;
+  --sheet-surface: #FBF7EC;
   --dialog-surface: #FBF7EC;
-  --input-bg: rgba(255, 253, 246, 0.6);
-  --input-border: 1px solid rgba(36, 59, 143, 0.35);
+  --input-bg: #FFFFFF;
+  --input-border: 1px solid rgba(30, 47, 115, 0.20);
   --input-text: #1E2F73;
-  --input-placeholder: rgba(107, 122, 168, 0.5);
+  --input-placeholder: rgba(90, 107, 168, 0.60);
 }
 html[data-theme="dark"] {
   --bg: 31 35 41;
@@ -79,7 +92,7 @@ html[data-theme="premium"] {
 }
 
 html[data-theme="outdoor"] body {
-  background: linear-gradient(180deg,#FFF8E7,#F8E9C4);
+  background: #F5F0E1;
 }
 
 html[data-theme="dark"] body {
@@ -88,9 +101,9 @@ html[data-theme="dark"] body {
 
 /* ── Neumorphic tokens (gate screens only) ── */
 html[data-theme="outdoor"] {
-  --neu-bg: #F7ECCF;
-  --neu-light: rgba(255,255,255,0.9);
-  --neu-dark: rgba(176,150,90,0.45);
+  --neu-bg: #FBF7EC;
+  --neu-light: #FFFFFF;
+  --neu-dark: rgba(176,150,90,0.25);
 }
 html[data-theme="dark"] {
   --neu-bg: #23272E;
