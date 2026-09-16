@@ -4,7 +4,11 @@ import App from './App.tsx'
 import './index.css'
 import './theme.css'
 
-// Theme initialization is handled in index.html to prevent flash of wrong theme
+import { useAppStore } from './store/appStore'
+
+if (typeof window !== 'undefined') {
+  (window as any).useAppStore = useAppStore;
+}
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

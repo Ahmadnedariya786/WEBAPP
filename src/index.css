@@ -332,3 +332,259 @@ html[data-theme="premium"] .admin-dialog-btn:active:not(:disabled) {
   .neu-check-in { animation: none !important; transform: scale(1); opacity: 1; }
 }
 
+/* ── S27 Neumorphic Calendar Styles ── */
+.neu-cal-dialog {
+  width: 100%;
+  max-width: 360px;
+  border-radius: 1.5rem;
+  padding: 1.125rem 0.875rem;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+/* OUTDOOR (Light): True Light Neumorphism */
+html[data-theme="outdoor"] .neu-cal-dialog {
+  background-color: #F7ECCF;
+  box-shadow: 0 16px 36px -8px rgba(176, 150, 90, 0.35), 0 4px 16px rgba(176, 150, 90, 0.20);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+}
+
+html[data-theme="outdoor"] .neu-cal-title {
+  color: #1E2F73;
+}
+html[data-theme="outdoor"] .neu-cal-sub {
+  color: #4B5E99;
+}
+html[data-theme="outdoor"] .neu-cal-weekday {
+  color: #4B5E99;
+}
+
+html[data-theme="outdoor"] .neu-cal-btn {
+  background: #F7ECCF;
+  box-shadow: -3px -3px 7px rgba(255, 255, 255, 0.95), 3px 3px 7px rgba(176, 150, 90, 0.35);
+  color: #1E2F73;
+  border: 1px solid rgba(255, 255, 255, 0.85);
+}
+html[data-theme="outdoor"] .neu-cal-btn:active {
+  box-shadow: inset 2px 2px 4px rgba(176, 150, 90, 0.40), inset -2px -2px 4px rgba(255, 255, 255, 0.95);
+}
+
+html[data-theme="outdoor"] .neu-cal-disc {
+  background: #F7ECCF;
+  box-shadow: -3px -3px 6px rgba(255, 255, 255, 0.95), 3px 3px 6px rgba(176, 150, 90, 0.35);
+  color: #1E2F73;
+  border: 1px solid rgba(255, 255, 255, 0.75);
+}
+html[data-theme="outdoor"] .neu-cal-disc:active {
+  box-shadow: inset 2px 2px 4px rgba(176, 150, 90, 0.45), inset -2px -2px 4px rgba(255, 255, 255, 0.95);
+}
+
+html[data-theme="outdoor"] .neu-cal-disc-selected {
+  background: #243B8F !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 4px 14px rgba(36, 59, 143, 0.40), inset 0 1px 1px rgba(255, 255, 255, 0.25) !important;
+  border: 1px solid rgba(255, 255, 255, 0.25) !important;
+}
+
+html[data-theme="outdoor"] .neu-cal-disc-today:not(.neu-cal-disc-selected) {
+  box-shadow: -3px -3px 6px rgba(255, 255, 255, 0.95), 3px 3px 6px rgba(176, 150, 90, 0.35), 0 0 0 2px rgba(36, 59, 143, 0.6) !important;
+}
+
+html[data-theme="outdoor"] .neu-cal-pill-primary {
+  background: #243B8F;
+  color: #FFFFFF;
+  box-shadow: 0 4px 14px rgba(36, 59, 143, 0.30);
+  border: none;
+}
+html[data-theme="outdoor"] .neu-cal-pill-primary:active {
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.35);
+}
+
+html[data-theme="outdoor"] .neu-cal-pill-neutral {
+  background: #F7ECCF;
+  color: #1E2F73;
+  box-shadow: -3px -3px 7px rgba(255, 255, 255, 0.95), 3px 3px 7px rgba(176, 150, 90, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+}
+html[data-theme="outdoor"] .neu-cal-pill-neutral:active {
+  box-shadow: inset 2px 2px 4px rgba(176, 150, 90, 0.40), inset -2px -2px 4px rgba(255, 255, 255, 0.95);
+}
+
+html[data-theme="outdoor"] .neu-cal-dot {
+  background-color: #243B8F;
+}
+html[data-theme="outdoor"] .neu-cal-disc-selected .neu-cal-dot {
+  background-color: #FFFFFF;
+}
+
+/* GRAPHITE (Dark): Soft Elevation */
+html[data-theme="dark"] .neu-cal-dialog {
+  background-color: #23272E;
+  box-shadow: 0 16px 36px -8px rgba(0, 0, 0, 0.70), 0 4px 16px rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+html[data-theme="dark"] .neu-cal-title {
+  color: #F3F4F6;
+}
+html[data-theme="dark"] .neu-cal-sub {
+  color: #9CA3AF;
+}
+html[data-theme="dark"] .neu-cal-weekday {
+  color: #9CA3AF;
+}
+
+html[data-theme="dark"] .neu-cal-btn {
+  background: #2C313A;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.45);
+  color: #F3F4F6;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+html[data-theme="dark"] .neu-cal-btn:active {
+  background: #242930;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+html[data-theme="dark"] .neu-cal-disc {
+  background: #2C313A;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45);
+  color: #F3F4F6;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+html[data-theme="dark"] .neu-cal-disc:active {
+  background: #242930;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.6);
+}
+
+html[data-theme="dark"] .neu-cal-disc-selected {
+  background: #65A30D !important;
+  color: #1A2E05 !important;
+  font-weight: 700 !important;
+  box-shadow: 0 0 14px rgba(101, 163, 13, 0.50), 0 2px 6px rgba(0, 0, 0, 0.35) !important;
+  border: 1px solid rgba(182, 255, 46, 0.5) !important;
+}
+
+html[data-theme="dark"] .neu-cal-disc-today:not(.neu-cal-disc-selected) {
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45), 0 0 0 2px rgba(101, 163, 13, 0.7) !important;
+}
+
+html[data-theme="dark"] .neu-cal-pill-primary {
+  background: #65A30D;
+  color: #1A2E05;
+  font-weight: 700;
+  box-shadow: 0 4px 14px rgba(101, 163, 13, 0.40);
+  border: 1px solid rgba(182, 255, 46, 0.45);
+}
+html[data-theme="dark"] .neu-cal-pill-primary:active {
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.45);
+}
+
+html[data-theme="dark"] .neu-cal-pill-neutral {
+  background: #2C313A;
+  color: #F3F4F6;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+html[data-theme="dark"] .neu-cal-pill-neutral:active {
+  background: #242930;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+html[data-theme="dark"] .neu-cal-dot {
+  background-color: #B6FF2E;
+}
+html[data-theme="dark"] .neu-cal-disc-selected .neu-cal-dot {
+  background-color: #1A2E05;
+}
+
+/* PREMIUM (Purple/Pink): Soft Elevation */
+html[data-theme="premium"] .neu-cal-dialog {
+  background-color: #251732;
+  box-shadow: 0 16px 36px -8px rgba(0, 0, 0, 0.70), 0 4px 16px rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+}
+
+html[data-theme="premium"] .neu-cal-title {
+  color: #FFFFFF;
+}
+html[data-theme="premium"] .neu-cal-sub {
+  color: #D1B3E0;
+}
+html[data-theme="premium"] .neu-cal-weekday {
+  color: #D1B3E0;
+}
+
+html[data-theme="premium"] .neu-cal-btn {
+  background: #332244;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.45);
+  color: #FFFFFF;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+}
+html[data-theme="premium"] .neu-cal-btn:active {
+  background: #2A1A38;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+html[data-theme="premium"] .neu-cal-disc {
+  background: #332244;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45);
+  color: #FFE3F1;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+}
+html[data-theme="premium"] .neu-cal-disc:active {
+  background: #2A1A38;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.6);
+}
+
+html[data-theme="premium"] .neu-cal-disc-selected {
+  background: #EC4899 !important;
+  color: #2A081C !important;
+  font-weight: 700 !important;
+  box-shadow: 0 0 14px rgba(236, 72, 153, 0.50), 0 2px 6px rgba(0, 0, 0, 0.35) !important;
+  border: 1px solid rgba(255, 255, 255, 0.35) !important;
+}
+
+html[data-theme="premium"] .neu-cal-disc-today:not(.neu-cal-disc-selected) {
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45), 0 0 0 2px rgba(236, 72, 153, 0.7) !important;
+}
+
+html[data-theme="premium"] .neu-cal-pill-primary {
+  background: #EC4899;
+  color: #2A081C;
+  font-weight: 700;
+  box-shadow: 0 4px 14px rgba(236, 72, 153, 0.40);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+}
+html[data-theme="premium"] .neu-cal-pill-primary:active {
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.45);
+}
+
+html[data-theme="premium"] .neu-cal-pill-neutral {
+  background: #332244;
+  color: #FFE3F1;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+}
+html[data-theme="premium"] .neu-cal-pill-neutral:active {
+  background: #2A1A38;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+html[data-theme="premium"] .neu-cal-dot {
+  background-color: #EC4899;
+}
+html[data-theme="premium"] .neu-cal-disc-selected .neu-cal-dot {
+  background-color: #2A081C;
+}
+
+/* Reduced motion for neumorphic calendar */
+@media (prefers-reduced-motion: reduce) {
+  .neu-cal-btn,
+  .neu-cal-disc,
+  .neu-cal-pill-primary,
+  .neu-cal-pill-neutral {
+    transition: none !important;
+    animation: none !important;
+    transform: none !important;
+  }
+}
+

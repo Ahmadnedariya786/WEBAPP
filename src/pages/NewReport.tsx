@@ -9,6 +9,7 @@ import { Calendar, Save, Trash2, Download, Share2, CheckCircle, Plus, X, Copy, L
 import { cn, formatDate, localTodayIso } from '../lib/utils';
 import { isDuplicateReportError, mapSupabaseError } from '../services/supabaseService';
 import { ScanPills } from '../components/ScanFill';
+import { NeumorphicCalendarDialog } from '../components/ui/NeumorphicCalendarDialog';
 
 // Constants
 const ACTIVITY_KEYS = [
@@ -299,12 +300,6 @@ export const NewReport: React.FC = () => {
 
   const ALL_HALQAS = halqas.map((h: any) => h.name);
 
-  // Calendar: derive year/month from currently selected date or today
-  const calendarBase = date || localTodayIso();
-  const [calYear, calMonth] = calendarBase.split('-').map(Number);
-  const calMonthIndex = calMonth - 1; // 0-based
-  const daysInCalMonth = new Date(calYear, calMonthIndex + 1, 0).getDate();
-  const calFirstOffset = new Date(calYear, calMonthIndex, 1).getDay(); // 0=Sun
 
   return (
     <div className="space-y-6 pb-12 relative">
@@ -480,6 +475,7 @@ export const NewReport: React.FC = () => {
       {/* Date Picker (Trigger Card) */}
       <GlassCard className="order-3 xl:order-none p-4">
         <div 
+          id="btn-date-picker-trigger"
           className="flex items-center gap-4 cursor-pointer"
           onClick={() => setShowCalendar(true)}
         >
@@ -495,65 +491,13 @@ export const NewReport: React.FC = () => {
         </div>
       </GlassCard>
 
-      {/* POPUP DIALOG for Calendar */}
-      <AnimatePresence>
-        {showCalendar && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="max-w-sm w-full rounded-2xl bg-card/90 backdrop-blur-2xl p-4 shadow-2xl"
-            >
-              <div className="grid grid-cols-7 gap-1 text-center mb-4">
-                {['રવિ', 'સોમ', 'મંગળ', 'બુધ', 'ગુરુ', 'શુક્ર', 'શનિ'].map((d, i) => (
-                  <div key={i} className="text-xs text-sub font-gujarati">{d}</div>
-                ))}
-              </div>
-              {/* Month/year heading */}
-              <div className="text-center mb-3 font-gujarati font-bold text-txt">
-                {['જાન્યુઆરી', 'ફેબ્રુઆરી', 'માર્ચ', 'એપ્રિલ', 'મે', 'જૂન', 'જુલાઈ', 'ઓગસ્ટ', 'સપ્ટેમ્બર', 'ઓક્ટોબર', 'નવેમ્બર', 'ડિસેમ્બર'][calMonthIndex]} {calYear}
-              </div>
-              <div className="grid grid-cols-7 gap-1 mb-6">
-                {/* Offset empty cells so day 1 lands on correct weekday */}
-                {Array.from({ length: calFirstOffset }).map((_, i) => (
-                  <div key={`e${i}`} />
-                ))}
-                {Array.from({ length: daysInCalMonth }, (_, i) => i + 1).map(d => {
-                  const todayStr = localTodayIso();
-                  const fullDate = `${calYear}-${String(calMonth).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-                  const isSelected = date === fullDate;
-                  const isToday = fullDate === todayStr;
-                  return (
-                    <button
-                      key={d}
-                      onClick={() => { setDate(fullDate); setShowCalendar(false); }}
-                      className={cn(
-                        "h-10 w-10 mx-auto rounded-full text-sm flex items-center justify-center font-num transition-transform duration-200",
-                        isSelected
-                          ? "bg-acc text-white shadow"
-                          : isToday
-                            ? "ring-1 ring-acc/50 text-txt"
-                            : "text-txt hover:bg-acc/10"
-                      )}
-                    >
-                      {d}
-                    </button>
-                  );
-                })}
-              </div>
-              <div className="flex gap-3">
-                <LiquidButton variant="neutral" className="flex-1 font-gujarati py-2.5" onClick={() => { setDate(''); setShowCalendar(false); }}>
-                  સાફ કરો
-                </LiquidButton>
-                <LiquidButton variant="primary" className="flex-1 font-gujarati py-2.5" onClick={() => { setDate(localTodayIso()); setShowCalendar(false); }}>
-                  આજે
-                </LiquidButton>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+      {/* S27 Neumorphic Calendar Dialog */}
+      <NeumorphicCalendarDialog
+        isOpen={showCalendar}
+        onClose={() => setShowCalendar(false)}
+        selectedDate={date}
+        onSelectDate={(newDate) => setDate(newDate)}
+      />
 
       {/* Stats Grid */}
       <section className="order-3 xl:order-none grid grid-cols-2 md:grid-cols-4 gap-3">
