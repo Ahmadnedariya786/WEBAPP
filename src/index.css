@@ -1769,19 +1769,49 @@ html[data-theme="premium"] .action-cluster-primary-btn:hover {
   animation: route-enter 180ms ease-out forwards;
 }
 
-/* ── S42-MASTER: All overlays strictly viewport-fixed & immune to ancestor transforms ── */
+/* ── S43-MASTER: All overlays strictly viewport-fixed, top-anchored & immune to ancestor transforms ── */
 .viewport-fixed-overlay {
   position: fixed !important;
   inset: 0 !important;
   margin: 0 !important;
-  z-index: 50 !important;
+  z-index: 70 !important;
   display: flex !important;
-  align-items: center !important;
+  align-items: flex-start !important;
   justify-content: center !important;
-  padding-top: calc(16px + env(safe-area-inset-top, 0px)) !important;
+  padding-top: calc(12px + env(safe-area-inset-top, 0px)) !important;
   padding-right: calc(16px + env(safe-area-inset-right, 0px)) !important;
-  padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px)) !important;
+  padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px)) !important;
   padding-left: calc(16px + env(safe-area-inset-left, 0px)) !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+}
+
+/* N3: Panel max-height fallback line (100vh) before 100dvh line for older WebViews */
+.viewport-fixed-overlay > [role="dialog"],
+.viewport-fixed-overlay > div,
+.neu-cal-dialog {
+  max-height: calc(100vh - 24px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)) !important;
+  max-height: calc(100dvh - 24px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)) !important;
+}
+
+/* N2: Standalone nav/FAB hide rule using ONLY body.has-overlay-open (do not comma-join with :has()) */
+body.has-overlay-open .bottom-nav-root,
+body.has-overlay-open #btn-floating-undo,
+body.has-overlay-open .fab {
+  display: none !important;
+}
+
+/* Secondary hide rule for modern browsers with native :has() support */
+body:has([role="dialog"]) .bottom-nav-root,
+body:has([role="dialog"]) #btn-floating-undo,
+body:has([role="dialog"]) .fab,
+body:has(#calendar-dialog-overlay) .bottom-nav-root,
+body:has(#calendar-dialog-overlay) #btn-floating-undo,
+body:has(#calendar-dialog-overlay) .fab,
+body:has(.viewport-fixed-overlay) .bottom-nav-root,
+body:has(.viewport-fixed-overlay) #btn-floating-undo,
+body:has(.viewport-fixed-overlay) .fab {
+  display: none !important;
 }
 
 body:has([role="dialog"]),
@@ -1791,6 +1821,29 @@ body:has(.viewport-fixed-overlay) {
   .route-transition-enter {
     animation: none !important;
     transform: none !important;
+  }
+}
+
+/* Mobile (<900px) calendar disc shadow simplification: halving paint cost */
+@media (max-width: 899px) {
+  html[data-theme="outdoor"] .neu-cal-dialog {
+    box-shadow: 0 10px 24px -4px rgba(36, 59, 143, 0.15) !important;
+  }
+  html[data-theme="dark"] .neu-cal-dialog {
+    box-shadow: 0 10px 24px -4px rgba(0, 0, 0, 0.6) !important;
+  }
+  html[data-theme="premium"] .neu-cal-dialog {
+    box-shadow: 0 10px 24px -4px rgba(0, 0, 0, 0.6) !important;
+  }
+
+  html[data-theme="outdoor"] .neu-cal-disc-selected {
+    box-shadow: 0 2px 8px rgba(36, 59, 143, 0.4) !important;
+  }
+  html[data-theme="dark"] .neu-cal-disc-selected {
+    box-shadow: 0 2px 8px rgba(132, 204, 22, 0.45) !important;
+  }
+  html[data-theme="premium"] .neu-cal-disc-selected {
+    box-shadow: 0 2px 8px rgba(236, 72, 153, 0.45) !important;
   }
 }
 

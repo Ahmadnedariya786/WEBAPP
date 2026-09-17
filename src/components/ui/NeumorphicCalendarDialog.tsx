@@ -29,7 +29,7 @@ const GUJARATI_MONTHS = [
 
 const GUJARATI_WEEKDAYS = ['રવિ', 'સોમ', 'મંગળ', 'બુધ', 'ગુરુ', 'શુક્ર', 'શનિ'];
 
-export const NeumorphicCalendarDialog: React.FC<NeumorphicCalendarDialogProps> = ({
+export const NeumorphicCalendarDialog = React.memo<NeumorphicCalendarDialogProps>(({
   isOpen,
   onClose,
   selectedDate,
@@ -175,10 +175,10 @@ export const NeumorphicCalendarDialog: React.FC<NeumorphicCalendarDialogProps> =
         >
           <motion.div
             ref={panelRef}
-            initial={{ scale: 0.95, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.95, opacity: 0 }}
-            transition={{ duration: 0.18, ease: 'easeOut' }}
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.98 }}
+            transition={{ duration: 0.15, ease: 'easeOut' }}
             onClick={(e) => e.stopPropagation()}
             className="neu-cal-dialog flex flex-col select-none max-h-[90vh] overflow-y-auto"
             id="calendar-dialog-container"
@@ -303,8 +303,8 @@ export const NeumorphicCalendarDialog: React.FC<NeumorphicCalendarDialogProps> =
               })}
             </div>
 
-            {/* Footer: Neumorphic Pills "સાફ કરો" and "આજે" */}
-            <div className="flex gap-2.5 px-1 pt-1">
+            {/* Footer: Neumorphic Sticky Footer Pills "સાફ કરો" and "આજે" */}
+            <div className="sticky bottom-0 z-10 grid grid-cols-2 gap-3 p-3 mt-2 border-t border-brd/20 bg-card rounded-b-[24px]">
               <button
                 type="button"
                 id="neu-cal-clear-btn"
@@ -312,7 +312,7 @@ export const NeumorphicCalendarDialog: React.FC<NeumorphicCalendarDialogProps> =
                   onSelectDate('');
                   onClose();
                 }}
-                className="flex-1 h-[44px] rounded-full neu-cal-pill-neutral font-gujarati text-sm font-semibold flex items-center justify-center cursor-pointer transition-all active:scale-95"
+                className="w-full min-h-[48px] h-[48px] rounded-full neu-cal-pill-neutral font-gujarati text-sm font-semibold flex items-center justify-center cursor-pointer transition-all active:scale-95"
               >
                 સાફ કરો
               </button>
@@ -324,7 +324,7 @@ export const NeumorphicCalendarDialog: React.FC<NeumorphicCalendarDialogProps> =
                   onSelectDate(todayIso);
                   onClose();
                 }}
-                className="flex-1 h-[44px] rounded-full neu-cal-pill-primary font-gujarati text-sm font-semibold flex items-center justify-center cursor-pointer transition-all active:scale-95"
+                className="w-full min-h-[48px] h-[48px] rounded-full neu-cal-pill-primary font-gujarati text-sm font-semibold flex items-center justify-center cursor-pointer transition-all active:scale-95"
               >
                 આજે
               </button>
@@ -334,4 +334,6 @@ export const NeumorphicCalendarDialog: React.FC<NeumorphicCalendarDialogProps> =
       )}
     </AnimatePresence>
   );
-};
+});
+
+NeumorphicCalendarDialog.displayName = 'NeumorphicCalendarDialog';

@@ -14,6 +14,7 @@ export function lockScroll(): void {
     savedScrollY = window.scrollY || window.pageYOffset || document.documentElement.scrollTop || 0;
     document.body.style.overflow = 'hidden';
     document.body.style.overscrollBehavior = 'contain';
+    document.body.classList.add('has-overlay-open');
   }
   lockCount++;
 }
@@ -24,6 +25,7 @@ export function unlockScroll(): void {
   if (lockCount === 0) {
     document.body.style.overflow = '';
     document.body.style.overscrollBehavior = '';
+    document.body.classList.remove('has-overlay-open');
     window.scrollTo({
       top: savedScrollY,
       left: 0,
@@ -45,6 +47,7 @@ export function forceUnlockIfNoOverlays(): void {
     lockCount = 0;
     document.body.style.overflow = '';
     document.body.style.overscrollBehavior = '';
+    document.body.classList.remove('has-overlay-open');
   }
 }
 
@@ -68,13 +71,12 @@ export function useOverlayScrollLock({
       lockScroll();
       isLockedRef.current = true;
 
-      // Panel opens scrolled to its own top
-      if (panelRef?.current) {
-        panelRef.current.scrollTop = 0;
-      }
-
-      // Initial focus
+      // Defer panel scrollTop = 0 & focus trap to requestAnimationFrame after first paint (zero layout thrash)
       const timer = requestAnimationFrame(() => {
+        if (panelRef?.current) {
+          panelRef.current.scrollTop = 0;
+        }
+
         if (initialFocusRef?.current) {
           initialFocusRef.current.focus();
         } else if (panelRef?.current) {

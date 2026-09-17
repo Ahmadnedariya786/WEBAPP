@@ -61,7 +61,7 @@ export const ScanPills: React.FC<ScanPillsProps> = ({
     };
   }, []);
 
-  const processAndScan = async (file: File) => {
+  const processAndScan = async (file: File, source: 'camera' | 'gallery' = 'gallery') => {
     if (!file) {
       setScanStage('idle');
       return;
@@ -80,7 +80,7 @@ export const ScanPills: React.FC<ScanPillsProps> = ({
 
     try {
       // Stage 1: EXIF normalize + compress max 1200px JPEG q0.75
-      const processed = await processImageFile(file);
+      const processed = await processImageFile(file, source);
 
       // Stage 2: Call /api/scan-extract with AbortController 30s timeout & single retry
       setScanStage('scanning');
@@ -149,7 +149,7 @@ export const ScanPills: React.FC<ScanPillsProps> = ({
       setReviewData(parsedReviewData);
       setIsOverlayOpen(true);
     } catch (err: any) {
-      console.error('Scan & extract failure:', err);
+      console.error(`[ScanPath] ${source} error:`, err);
       showToast('સ્કેન નિષ્ફળ ❌ — સાફ રોશનીમાં ફોટો લઈને ફરી પ્રયત્ન કરો');
     } finally {
       // N1: Reset scanStage to 'idle' in finally-block covering success, error, and cancel paths
@@ -276,7 +276,7 @@ export const ScanPills: React.FC<ScanPillsProps> = ({
         id="camera-scan-input"
         style={{ position: 'absolute', left: '-9999px', width: '1px', height: '1px', opacity: 0, pointerEvents: 'none' }}
         onChange={(e) => {
-          if (e.target.files?.[0]) processAndScan(e.target.files[0]);
+          if (e.target.files?.[0]) processAndScan(e.target.files[0], 'camera');
           e.target.value = '';
         }}
         disabled={isScanning}
@@ -288,7 +288,7 @@ export const ScanPills: React.FC<ScanPillsProps> = ({
         id="gallery-scan-input"
         style={{ position: 'absolute', left: '-9999px', width: '1px', height: '1px', opacity: 0, pointerEvents: 'none' }}
         onChange={(e) => {
-          if (e.target.files?.[0]) processAndScan(e.target.files[0]);
+          if (e.target.files?.[0]) processAndScan(e.target.files[0], 'gallery');
           e.target.value = '';
         }}
         disabled={isScanning}

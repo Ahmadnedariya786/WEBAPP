@@ -85,10 +85,10 @@ export const ReviewOverlay: React.FC<ReviewOverlayProps> = ({
       >
         <motion.div
           ref={panelRef}
-          initial={{ scale: 0.95, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          exit={{ scale: 0.95, opacity: 0 }}
-          transition={{ duration: 0.18, ease: 'easeOut' }}
+          initial={{ opacity: 0, scale: 0.98 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.98 }}
+          transition={{ duration: 0.15, ease: 'easeOut' }}
           onClick={(e) => e.stopPropagation()}
           className="w-full max-w-3xl max-h-[85vh] bg-card rounded-[28px] shadow-2xl flex flex-col border border-brd/30 overflow-hidden select-none"
           role="dialog"
@@ -310,17 +310,17 @@ export const ReviewOverlay: React.FC<ReviewOverlayProps> = ({
           </div>
 
           {/* Action Footer Buttons */}
-          <div className="p-4 border-t border-brd/20 bg-card/90 backdrop-blur flex gap-3 justify-end shrink-0">
+          <div className="sticky bottom-0 z-10 grid grid-cols-2 gap-3 p-4 border-t border-brd/20 bg-card shrink-0">
             <LiquidButton
               variant="neutral"
-              className="flex-1 sm:flex-initial px-6 py-2.5 font-gujarati text-sm"
+              className="w-full min-h-[48px] h-[48px] px-4 font-gujarati text-sm flex items-center justify-center"
               onClick={onClose}
             >
               રદ કરો
             </LiquidButton>
             <LiquidButton
               variant="primary"
-              className="flex-1 sm:flex-initial px-6 py-2.5 font-gujarati text-sm flex items-center justify-center gap-1.5"
+              className="w-full min-h-[48px] h-[48px] px-4 font-gujarati text-sm flex items-center justify-center gap-1.5"
               onClick={() => onConfirmFill(data)}
             >
               <Check size={16} />

@@ -16,7 +16,7 @@ export interface ProcessedImage {
   sizeKb?: number;
 }
 
-export async function processImageFile(file: File): Promise<ProcessedImage> {
+export async function processImageFile(file: File, source?: 'camera' | 'gallery'): Promise<ProcessedImage> {
   const startTime = performance.now();
 
   if (!file.type.startsWith('image/')) {
@@ -43,7 +43,7 @@ export async function processImageFile(file: File): Promise<ProcessedImage> {
         naturalWidth = imgSource.width;
         naturalHeight = imgSource.height;
       } catch {
-        // Fallback to Image() path
+        // Fallback to Image() path (HEIC/unsupported format or broken bitmap)
         imgSource = await loadImageElement(file);
         naturalWidth = (imgSource as HTMLImageElement).naturalWidth;
         naturalHeight = (imgSource as HTMLImageElement).naturalHeight;
@@ -123,6 +123,7 @@ export async function processImageFile(file: File): Promise<ProcessedImage> {
 
   // D3: Log size in dev
   if (import.meta.env.DEV) {
+    console.log(`[ScanPath] ${source || 'image'} | payload ${payloadKb} KB`);
     console.log(`[ScanPayload] Outgoing payload size: ${payloadKb} KB (< 400KB: ${payloadBytes < 400 * 1024}) in ${durationMs}ms`);
   }
 

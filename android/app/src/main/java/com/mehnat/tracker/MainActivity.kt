@@ -134,6 +134,10 @@ class MainActivity : AppCompatActivity() {
                     }
 
                     cameraImageUri = photoUri
+                    getSharedPreferences("camera_prefs", Context.MODE_PRIVATE)
+                        .edit()
+                        .putString("saved_camera_uri", photoUri.toString())
+                        .apply()
 
                     val captureIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE).apply {
                         putExtra(MediaStore.EXTRA_OUTPUT, photoUri)
@@ -146,12 +150,20 @@ class MainActivity : AppCompatActivity() {
                         return true
                     } catch (e: Exception) {
                         cameraImageUri = null
+                        getSharedPreferences("camera_prefs", Context.MODE_PRIVATE)
+                            .edit()
+                            .remove("saved_camera_uri")
+                            .apply()
                         this@MainActivity.filePathCallback?.onReceiveValue(null)
                         this@MainActivity.filePathCallback = null
                         return false
                     }
                 } else {
                     cameraImageUri = null
+                    getSharedPreferences("camera_prefs", Context.MODE_PRIVATE)
+                        .edit()
+                        .remove("saved_camera_uri")
+                        .apply()
                     val contentIntent = Intent(Intent.ACTION_GET_CONTENT).apply {
                         addCategory(Intent.CATEGORY_OPENABLE)
                         type = "image/*"
@@ -294,15 +306,16 @@ class MainActivity : AppCompatActivity() {
             }
 
             if (resultCode == Activity.RESULT_OK) {
-                val results: Array<Uri>? = when {
-                    data?.data != null -> arrayOf(data.data!!)
-                    data?.clipData != null && data.clipData!!.itemCount > 0 -> {
-                        val count = data.clipData!!.itemCount
-                        Array(count) { i -> data.clipData!!.getItemAt(i).uri }
-                    }
-                    cameraImageUri != null -> arrayOf(cameraImageUri!!)
-                    else -> null
-                }
+                val clipDataUri = if (data?.clipData != null && data.clipData!!.itemCount > 0) {
+                    data.clipData!!.getItemAt(0).uri
+                } else null
+
+                val prefs = getSharedPreferences("camera_prefs", Context.MODE_PRIVATE)
+                val savedUriStr = prefs.getString("saved_camera_uri", null)
+                val savedCameraUri = cameraImageUri ?: (if (savedUriStr != null) Uri.parse(savedUriStr) else null)
+
+                val uri = data?.data ?: clipDataUri ?: savedCameraUri
+                val results: Array<Uri>? = if (uri != null) arrayOf(uri) else null
                 callback.onReceiveValue(results)
             } else {
                 callback.onReceiveValue(null)
@@ -310,6 +323,10 @@ class MainActivity : AppCompatActivity() {
 
             filePathCallback = null
             cameraImageUri = null
+            getSharedPreferences("camera_prefs", Context.MODE_PRIVATE)
+                .edit()
+                .remove("saved_camera_uri")
+                .apply()
             return
         }
         super.onActivityResult(requestCode, resultCode, data)
