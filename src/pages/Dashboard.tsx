@@ -2,7 +2,7 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { t } from '../i18n';
 import { PageHeading } from '../components/ui/PageHeading';
-import { TrendingUp, ListFilter, ArrowDownNarrowWide } from 'lucide-react';
+import { TrendingUp, ListOrdered, ArrowDownWideNarrow } from 'lucide-react';
 import { useAppStore } from '../store/appStore';
 import { formatDate, localTodayIso } from '../lib/utils';
 
@@ -155,8 +155,7 @@ export const Dashboard: React.FC = () => {
     const list = ACTIVITY_KEYS.map((item, index) => ({
       ...item,
       originalIndex: index + 1,
-      // N1 directive: Row 1 matches "નબાળોની પાબંદી"
-      label: item.key === 'activity.namaz' ? 'નબાળોની પાબંદી' : t(item.key as any),
+      label: t(item.key as any),
     }));
 
     if (sortBy === 'desc') {
@@ -222,10 +221,10 @@ export const Dashboard: React.FC = () => {
 
             {/* Two Donut Rings side by side */}
             <div className="flex items-start justify-around gap-2">
-              {/* Donut 1: N1 directive exact label "નબાળોની પાબંદી 85/100" */}
+              {/* Donut 1: Canonical label "નમાઝોની પાબંદી 85/100" */}
               <DonutRing
                 progress={85}
-                label="નબાળોની પાબંદી 85/100"
+                label={`${t('activity.namaz')} 85/100`}
                 delay={prefersReducedMotion ? 0 : 0.1}
               />
               {/* Donut 2: "મુલાકાત કેટલી થઈ (%)" */}
@@ -253,20 +252,21 @@ export const Dashboard: React.FC = () => {
                 પ્રવૃત્તિ સારાંશ (બધા હલકા)
               </h3>
 
-              {/* Two Sort Pills in Theme Neumorphic Style */}
+              {/* Two Sort Pills with Distinct Icons & Visual Distinction */}
               <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={() => setSortBy('activity')}
-                  className={`dashboard-sort-pill px-3 py-1.5 rounded-full text-xs font-gujarati cursor-pointer outline-none ${
+                  className={`dashboard-sort-pill px-3 py-1.5 rounded-full text-xs font-gujarati cursor-pointer outline-none transition-all ${
                     sortBy === 'activity'
-                      ? 'dashboard-sort-pill-active font-semibold'
+                      ? 'dashboard-sort-pill-active font-semibold shadow-sm'
                       : 'dashboard-sort-pill-inactive font-medium'
                   }`}
+                  aria-label="પ્રવૃત્તિ ક્રમ"
                   aria-pressed={sortBy === 'activity'}
                 >
-                  <span className="flex items-center gap-1">
-                    <ListFilter size={12} />
+                  <span className="flex items-center gap-1.5">
+                    <ListOrdered size={14} className="shrink-0" />
                     પ્રવૃત્તિ
                   </span>
                 </button>
@@ -274,15 +274,16 @@ export const Dashboard: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setSortBy('desc')}
-                  className={`dashboard-sort-pill px-3 py-1.5 rounded-full text-xs font-gujarati cursor-pointer outline-none ${
+                  className={`dashboard-sort-pill px-3 py-1.5 rounded-full text-xs font-gujarati cursor-pointer outline-none transition-all ${
                     sortBy === 'desc'
-                      ? 'dashboard-sort-pill-active font-semibold'
+                      ? 'dashboard-sort-pill-active font-semibold shadow-sm'
                       : 'dashboard-sort-pill-inactive font-medium'
                   }`}
+                  aria-label="અવરોહી ક્રમ"
                   aria-pressed={sortBy === 'desc'}
                 >
-                  <span className="flex items-center gap-1">
-                    <ArrowDownNarrowWide size={12} />
+                  <span className="flex items-center gap-1.5">
+                    <ArrowDownWideNarrow size={14} className="shrink-0" />
                     અવરોહી
                   </span>
                 </button>

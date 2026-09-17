@@ -1184,47 +1184,59 @@ html[data-theme="premium"] .dashboard-rank-chip {
   color: #F3E8FF;
 }
 
-/* Sort Pills Neumorphic Style */
+/* Sort Pills: Active = Theme Accent Filled + On-Accent Text; Inactive = Outlined Muted */
 .dashboard-sort-pill {
-  transition: all 180ms ease;
+  transition: all 180ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 html[data-theme="outdoor"] .dashboard-sort-pill-inactive {
-  background: #F2EDE0;
+  background: transparent;
   color: #4A5C98;
-  border: 1px solid rgba(30, 47, 115, 0.12);
-  box-shadow: 1px 1px 3px rgba(176, 150, 90, 0.20), inset 1px 1px 2px #FFFFFF;
+  border: 1.5px solid rgba(74, 92, 152, 0.35);
+  box-shadow: none;
+}
+html[data-theme="outdoor"] .dashboard-sort-pill-inactive:hover {
+  background: rgba(36, 59, 143, 0.06);
+  color: #1E2F73;
 }
 html[data-theme="outdoor"] .dashboard-sort-pill-active {
   background: #243B8F;
   color: #FFFFFF;
-  border: 1px solid #243B8F;
-  box-shadow: 0 2px 8px rgba(36, 59, 143, 0.35);
+  border: 1.5px solid #243B8F;
+  box-shadow: 0 3px 10px rgba(36, 59, 143, 0.35);
 }
 
 html[data-theme="dark"] .dashboard-sort-pill-inactive {
-  background: #2A303A;
+  background: transparent;
   color: #9CA3AF;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  border: 1.5px solid rgba(156, 163, 175, 0.28);
+  box-shadow: none;
+}
+html[data-theme="dark"] .dashboard-sort-pill-inactive:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #F3F4F6;
 }
 html[data-theme="dark"] .dashboard-sort-pill-active {
   background: #84CC16;
   color: #1A2E05;
-  border: 1px solid #84CC16;
-  box-shadow: 0 2px 8px rgba(132, 204, 22, 0.35);
+  border: 1.5px solid #84CC16;
+  box-shadow: 0 3px 10px rgba(132, 204, 22, 0.35);
 }
 
 html[data-theme="premium"] .dashboard-sort-pill-inactive {
-  background: #311E4E;
+  background: transparent;
   color: #B8B2CE;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+  border: 1.5px solid rgba(184, 178, 206, 0.28);
+  box-shadow: none;
+}
+html[data-theme="premium"] .dashboard-sort-pill-inactive:hover {
+  background: rgba(236, 72, 153, 0.08);
+  color: #FFFFFF;
 }
 html[data-theme="premium"] .dashboard-sort-pill-active {
   background: #EC4899;
   color: #FFFFFF;
-  border: 1px solid #EC4899;
-  box-shadow: 0 2px 8px rgba(236, 72, 153, 0.40);
+  border: 1.5px solid #EC4899;
+  box-shadow: 0 3px 10px rgba(236, 72, 153, 0.40);
 }
 
 @media (prefers-reduced-motion: reduce) {

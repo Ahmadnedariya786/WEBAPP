@@ -144,14 +144,14 @@ async function runProof() {
     await page.goto(`${BASE_URL}/dashboard`, { waitUntil: 'networkidle0' });
     await new Promise(r => setTimeout(r, 800));
 
-    // Test 1: Donut 1 exact label 'નબાળોની પાબંદી 85/100'
+    // Test 1: Donut 1 exact label 'નમાઝોની પાબંદી 85/100'
     const donut1Label = await page.evaluate(() => {
       const labels = Array.from(document.querySelectorAll('.dashboard-target-card span.font-gujarati'));
       return labels[0]?.textContent.trim();
     });
-    const test1Passed = donut1Label === 'નબાળોની પાબંદી 85/100';
+    const test1Passed = donut1Label === 'નમાઝોની પાબંદી 85/100';
     results.tests.push({
-      name: "N1: Donut 1 label reads exactly 'નબાળોની પાબંદી 85/100'",
+      name: "N1: Donut 1 label reads exactly 'નમાઝોની પાબંદી 85/100'",
       passed: test1Passed,
       actual: donut1Label
     });
@@ -215,7 +215,7 @@ async function runProof() {
       const labels = Array.from(document.querySelectorAll('.dashboard-activities-card .truncate'));
       return labels[0]?.textContent.trim();
     });
-    const test5Passed = firstItemLabel === 'નબાળોની પાબંદી';
+    const test5Passed = firstItemLabel === 'નમાઝોની પાબંદી';
     results.tests.push({
       name: "Clicking 'પ્રવૃત્તિ' sort pill restores default activity order",
       passed: test5Passed,
