@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Outlet, useNavigate } from 'react-router-dom';
+import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { Settings as SettingsIcon, RefreshCw } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import ThemeSwitcher from '../ui/ThemeSwitcher';
@@ -8,6 +8,7 @@ import { BottomNav } from './BottomNav';
 
 export const Layout: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { refreshAll } = useAppStore();
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -22,8 +23,8 @@ export const Layout: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-bg text-txt">
-      {/* Top Bar */}
-      <header className="sticky top-0 z-40 px-4 sm:px-6 py-4 bg-transparent flex flex-wrap gap-2 items-center justify-between">
+      {/* Top Bar: Solid Opaque Theme Header */}
+      <header className="app-header sticky top-0 z-40 px-4 sm:px-6 py-3.5 flex flex-wrap gap-2 items-center justify-between border-b transition-colors duration-200">
         <div className="flex flex-col gap-1">
           <h1 className="text-[22px] font-extrabold text-txt font-gujarati uppercase tracking-wide min-w-0 truncate">
             Mehnat Tracker
@@ -56,9 +57,11 @@ export const Layout: React.FC = () => {
         </div>
       </header>
 
-      {/* Main Content */}
+      {/* Main Content with Single-Side Route Transition (Zero Ghost Double-Exposure) */}
       <main className="p-4 sm:p-6 pb-36 md:pb-40 relative w-full sm:max-w-2xl lg:max-w-6xl mx-auto">
-        <Outlet />
+        <div key={location.pathname} className="route-transition-enter">
+          <Outlet />
+        </div>
       </main>
 
       {/* S35 Bottom Navigation: Concave Cradle Cutout with Seated Center FAB */}

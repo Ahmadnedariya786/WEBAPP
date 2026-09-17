@@ -17,7 +17,7 @@ interface PageHeadingProps {
  */
 export const PageHeading: React.FC<PageHeadingProps> = ({ title, icon }) => (
   <div
-    className="flex flex-col"
+    className="page-heading-container flex flex-col bg-transparent"
     style={{ marginTop: 4, marginBottom: 20, background: 'transparent' }}
   >
     <h2

@@ -258,14 +258,15 @@ export const ScanPills: React.FC<ScanPillsProps> = ({
         disabled={isScanning}
       />
 
-      {/* Two Trigger Pills */}
-      <div className="flex items-center gap-2.5">
+      {/* Two Trigger Pills: Equal Height (items-stretch, min-h-[56px]) */}
+      <div className="flex items-stretch gap-2.5">
         <button
           type="button"
           onClick={() => cameraInputRef.current?.click()}
           disabled={isScanning}
           id="btn-camera-scan"
-          className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-2xl bg-card hover:bg-card/90 active:scale-[0.98] border border-brd/30 shadow-sm text-txt font-gujarati text-sm font-semibold transition-all disabled:opacity-60 disabled:pointer-events-none"
+          aria-label="કેમેરાથી સ્કાન"
+          className="flex-1 min-h-[56px] flex items-center justify-center gap-2 py-2.5 px-3 rounded-2xl bg-card hover:bg-card/90 active:scale-[0.98] border border-brd/30 shadow-sm text-txt font-gujarati text-sm font-semibold transition-all disabled:opacity-60 disabled:pointer-events-none text-center"
         >
           {isScanning ? (
             <Loader2 size={16} className="animate-spin text-acc shrink-0" />
@@ -280,7 +281,8 @@ export const ScanPills: React.FC<ScanPillsProps> = ({
           onClick={() => galleryInputRef.current?.click()}
           disabled={isScanning}
           id="btn-gallery-scan"
-          className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-2xl bg-card hover:bg-card/90 active:scale-[0.98] border border-brd/30 shadow-sm text-txt font-gujarati text-sm font-semibold transition-all disabled:opacity-60 disabled:pointer-events-none"
+          aria-label="ગેલરીથી ઇમ્પોર્ટ"
+          className="flex-1 min-h-[56px] flex items-center justify-center gap-2 py-2.5 px-3 rounded-2xl bg-card hover:bg-card/90 active:scale-[0.98] border border-brd/30 shadow-sm text-txt font-gujarati text-sm font-semibold transition-all disabled:opacity-60 disabled:pointer-events-none text-center"
         >
           {isScanning ? (
             <Loader2 size={16} className="animate-spin text-acc shrink-0" />

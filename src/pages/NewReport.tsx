@@ -394,6 +394,134 @@ export const NewReport: React.FC = () => {
 
   const ALL_HALQAS = halqas.map((h: any) => h.name);
 
+  // Desktop table scrollbar autohide state
+  const tableScrollRef = useRef<HTMLDivElement>(null);
+  const scrollTimeoutRef = useRef<any>(null);
+
+  const handleTableScroll = () => {
+    if (tableScrollRef.current) {
+      tableScrollRef.current.classList.add('is-scrolling');
+      if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
+      scrollTimeoutRef.current = setTimeout(() => {
+        if (tableScrollRef.current) {
+          tableScrollRef.current.classList.remove('is-scrolling');
+        }
+      }, 1200);
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
+    };
+  }, []);
+
+  // S41-MASTER Note N1: Single source of truth for BlockC (notes + action cluster)
+  // Duplicated instances (desktop + mobile) bind to identical state with zero duplicate IDs
+  const renderBlockC = (instanceKey: string) => (
+    <div className="space-y-5" key={instanceKey}>
+      {/* D4: Card 3 "ખાસ નોંધ" */}
+      <div className="bg-card rounded-[20px] p-4 sm:p-5 border border-brd/30 shadow-sm space-y-2.5 new-report-card">
+        <label className="font-gujarati text-[14px] font-bold text-txt block">
+          ખાસ નોંધ
+        </label>
+        <textarea 
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          aria-label="ખાસ નોંધ"
+          placeholder="અહીં લખો..."
+          className="w-full app-input outline-none resize-none min-h-[72px] font-gujarati text-txt placeholder:text-sub/50 p-3 rounded-[14px] text-sm border border-brd/30 transition-all focus:border-acc"
+        />
+      </div>
+
+      {/* D5: Action Cluster */}
+      <div className="space-y-3 pt-1">
+        {/* PRIMARY: "સાચવો" = Full-width 48px accent button */}
+        <button
+          type="button"
+          onClick={() => { 
+            if (!sessionRole) { 
+              useAppStore.setState({ authDialogOpen: true, authPendingAction: null }); 
+              return; 
+            } 
+            handleSave(); 
+          }}
+          aria-label="સાચવો"
+          className="action-cluster-primary-btn"
+        >
+          {!sessionRole ? (
+            <Lock size={18} className="shrink-0" />
+          ) : saveSuccess ? (
+            <Check size={20} className="shrink-0 stroke-[3]" />
+          ) : (
+            <Save size={18} className="shrink-0" />
+          )}
+          <span className="font-gujarati font-bold text-base">સાચવો</span>
+        </button>
+
+        {/* SECONDARY: 2×2 icon-pill grid at ALL widths */}
+        <div className="grid grid-cols-2 gap-2.5">
+          <button
+            type="button"
+            onClick={handleWhatsApp}
+            aria-label="WhatsApp પર શેર કરો"
+            className="action-cluster-grid-btn"
+          >
+            <Share2 size={15} className="text-acc shrink-0" />
+            <span className="font-gujarati">WhatsApp પર શેર કરો</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleCopy}
+            aria-label="કૉપી કરો"
+            className="action-cluster-grid-btn"
+          >
+            <Copy size={15} className="text-acc shrink-0" />
+            <span className="font-gujarati">કૉપી કરો</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleDownloadExcel}
+            aria-label="Excel ડાઉનલોડ કરો"
+            className="action-cluster-grid-btn"
+          >
+            <Download size={15} className="text-acc shrink-0" />
+            <span className="font-gujarati">Excel ડાઉનલોડ કરો</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleDownloadPdf}
+            aria-label="PDF ડાઉનલોડ કરો"
+            className="action-cluster-grid-btn"
+          >
+            <Download size={15} className="text-acc shrink-0" />
+            <span className="font-gujarati">PDF ડાઉનલોડ કરો</span>
+          </button>
+        </div>
+
+        {/* DANGER LAST: "ડાલી નાખો" muted outline, red token text */}
+        <button
+          type="button"
+          onClick={() => { 
+            if (!sessionRole) { 
+              useAppStore.setState({ authDialogOpen: true, authPendingAction: null }); 
+              return; 
+            } 
+            setShowClearConfirm(true); 
+          }}
+          aria-label="ડાલી નાખો"
+          className="action-cluster-danger-btn"
+        >
+          {!sessionRole ? <Lock size={16} className="shrink-0" /> : <Trash2 size={16} className="shrink-0" />}
+          <span className="font-gujarati">ડાલી નાખો</span>
+        </button>
+      </div>
+    </div>
+  );
+
   return (
     <div className="new-report-container w-full max-w-[1400px] mx-auto space-y-6 pb-36 relative">
       {/* Toast & Undo Pill */}
@@ -759,234 +887,278 @@ export const NewReport: React.FC = () => {
             </div>
           </div>
 
-          {/* D4: Card 3 "ખાસ નોંધ" */}
-          <div className="bg-card rounded-[20px] p-4 sm:p-5 border border-brd/30 shadow-sm space-y-2.5 new-report-card">
-            <label className="font-gujarati text-[14px] font-bold text-txt block">
-              ખાસ નોંધ
-            </label>
-            <textarea 
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              aria-label="ખાસ નોંધ"
-              placeholder="અહીં લખો..."
-              className="w-full app-input outline-none resize-none min-h-[72px] font-gujarati text-txt placeholder:text-sub/50 p-3 rounded-[14px] text-sm border border-brd/30 transition-all focus:border-acc"
-            />
-          </div>
-
-          {/* D5: Action Cluster (Inside form column at ALL widths) */}
-          <div className="space-y-3 pt-1">
-            {/* PRIMARY: "સાચવો" = Full-width 48px accent button */}
-            <button
-              type="button"
-              onClick={() => { 
-                if (!sessionRole) { 
-                  useAppStore.setState({ authDialogOpen: true, authPendingAction: null }); 
-                  return; 
-                } 
-                handleSave(); 
-              }}
-              aria-label="સાચવો"
-              className="action-cluster-primary-btn"
-            >
-              {!sessionRole ? (
-                <Lock size={18} className="shrink-0" />
-              ) : saveSuccess ? (
-                <Check size={20} className="shrink-0 stroke-[3]" />
-              ) : (
-                <Save size={18} className="shrink-0" />
-              )}
-              <span className="font-gujarati font-bold text-base">સાચવો</span>
-            </button>
-
-            {/* SECONDARY: 2×2 icon-pill grid at ALL widths */}
-            <div className="grid grid-cols-2 gap-2.5">
-              <button
-                type="button"
-                onClick={handleWhatsApp}
-                aria-label="WhatsApp પર શેર કરો"
-                className="action-cluster-grid-btn"
-              >
-                <Share2 size={15} className="text-acc shrink-0" />
-                <span className="font-gujarati">WhatsApp પર શેર કરો</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={handleCopy}
-                aria-label="કૉપી કરો"
-                className="action-cluster-grid-btn"
-              >
-                <Copy size={15} className="text-acc shrink-0" />
-                <span className="font-gujarati">કૉપી કરો</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={handleDownloadExcel}
-                aria-label="Excel ડાઉનલોડ કરો"
-                className="action-cluster-grid-btn"
-              >
-                <Download size={15} className="text-acc shrink-0" />
-                <span className="font-gujarati">Excel ડાઉનલોડ કરો</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={handleDownloadPdf}
-                aria-label="PDF ડાઉનલોડ કરો"
-                className="action-cluster-grid-btn"
-              >
-                <Download size={15} className="text-acc shrink-0" />
-                <span className="font-gujarati">PDF ડાઉનલોડ કરો</span>
-              </button>
-            </div>
-
-            {/* DANGER LAST: "ડાલી નાખો" muted outline, red token text */}
-            <button
-              type="button"
-              onClick={() => { 
-                if (!sessionRole) { 
-                  useAppStore.setState({ authDialogOpen: true, authPendingAction: null }); 
-                  return; 
-                } 
-                setShowClearConfirm(true); 
-              }}
-              aria-label="ડાલી નાખો"
-              className="action-cluster-danger-btn"
-            >
-              {!sessionRole ? <Lock size={16} className="shrink-0" /> : <Trash2 size={16} className="shrink-0" />}
-              <span className="font-gujarati">ડાલી નાખો</span>
-            </button>
+          {/* Desktop BlockC: rendered only on desktop >=900px (hidden lg:block, single source of truth, no duplicate IDs) */}
+          <div className="hidden lg:block">
+            {renderBlockC('desktop')}
           </div>
         </div>
 
-        {/* ── Table Column: "૧૩ મહેનત પ્રવૃત્તિઓ" (col-span-12 lg:col-span-7) ── */}
-        <div className="lg:col-span-7">
-          <div className="bg-card rounded-[20px] overflow-hidden border border-brd/40 shadow-sm new-report-card">
-            {/* Table Scrollable Container with Custom 6px Scrollbar */}
-            <div className="overflow-x-auto report-table-scroll">
-              <table className="w-full text-left border-collapse min-w-[500px] lg:min-w-0">
-                <thead>
-                  <tr className="report-table-header-row">
-                    {/* Sticky Activity Column Header */}
-                    <th className="py-3.5 px-4 report-table-sticky-header w-[40%] min-w-[170px]">
-                      <div className="flex items-center gap-1.5 font-gujarati font-semibold text-[13px] tracking-wide">
-                        <ListChecks size={15} className="shrink-0" />
-                        <span>૧૩ મહેનત પ્રવૃત્તિઓ</span>
-                      </div>
-                    </th>
-                    {/* Flexible Halqa Data Columns */}
-                    <th className="py-3.5 px-3 text-center min-w-[110px] flex-1">
-                      <span className="font-gujarati font-semibold text-[12px] opacity-95">
+        {/* ── Right Column: Mobile BlockB + Mobile BlockC (<900px) OR Desktop BlockB (≥900px) ── */}
+        <div className="lg:col-span-7 space-y-5">
+          {/* Mobile BlockB: 13 stacked activity cards (<900px, lg:hidden, zero horizontal scroll) */}
+          <div className="space-y-3 lg:hidden overflow-x-hidden">
+            {ACTIVITY_KEYS.map((key, idx) => {
+              const isScanFilled = recentlyFilledKeys.has(`${key}.gujishta`) || 
+                                   recentlyFilledKeys.has(`${key}.azaim`) || 
+                                   recentlyFilledKeys.has(`${key}.maujuda`);
+              return (
+                <div 
+                  key={key} 
+                  className={cn(
+                    "activity-mobile-card space-y-2.5 transition-all duration-300",
+                    isScanFilled && "ring-2 ring-acc shadow-md"
+                  )}
+                  style={{
+                    animationDelay: `${idx * 40}ms`
+                  }}
+                >
+                  {/* Row 1: 22px rank chip + activity label 14sp */}
+                  <div className="flex items-center gap-2.5">
+                    <span className="w-[22px] h-[22px] rounded-full text-white text-[11px] font-bold flex items-center justify-center shrink-0 font-num bg-acc shadow-xs">
+                      {idx + 1}
+                    </span>
+                    <span className="font-gujarati font-semibold text-[14px] text-txt truncate">
+                      {t(key as any)}
+                    </span>
+                  </div>
+
+                  {/* Row 2: 3-column input grid */}
+                  <div className="grid grid-cols-3 gap-2">
+                    {/* Col 1: Gujishta */}
+                    <div className="space-y-1">
+                      <span className="text-[10px] font-gujarati text-sub font-medium block text-center truncate">
                         {t('header.gujishta' as any)}
                       </span>
-                    </th>
-                    <th className="py-3.5 px-3 text-center min-w-[110px] flex-1">
-                      <span className="font-gujarati font-semibold text-[12px] opacity-95">
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        value={activities[key]?.gujishta || ''}
+                        onChange={(e) => handleActivityChange(key, 'gujishta', e.target.value)}
+                        aria-label={`${t(key as any)} ${t('header.gujishta' as any)}`}
+                        placeholder="-"
+                        className={cn(
+                          "w-full rounded-xl app-input py-2 text-[16px] text-center font-num font-semibold outline-none focus:border-acc transition-all",
+                          recentlyFilledKeys.has(`${key}.gujishta`) && "bg-acc/20 ring-2 ring-acc"
+                        )}
+                      />
+                    </div>
+
+                    {/* Col 2: Azaim */}
+                    <div className="space-y-1">
+                      <span className="text-[10px] font-gujarati text-sub font-medium block text-center truncate">
                         {t('header.azaim' as any)}
                       </span>
-                    </th>
-                    <th className="py-3.5 px-3 text-center min-w-[110px] flex-1">
-                      <span className="font-gujarati font-semibold text-[12px] opacity-95">
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        value={activities[key]?.azaim || ''}
+                        onChange={(e) => handleActivityChange(key, 'azaim', e.target.value)}
+                        aria-label={`${t(key as any)} ${t('header.azaim' as any)}`}
+                        placeholder="-"
+                        className={cn(
+                          "w-full rounded-xl app-input py-2 text-[16px] text-center font-num font-semibold outline-none focus:border-acc transition-all",
+                          recentlyFilledKeys.has(`${key}.azaim`) && "bg-acc/20 ring-2 ring-acc"
+                        )}
+                      />
+                    </div>
+
+                    {/* Col 3: Maujuda */}
+                    <div className="space-y-1">
+                      <span className="text-[10px] font-gujarati text-sub font-medium block text-center truncate">
                         {t('header.maujuda' as any)}
                       </span>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-brd/30">
-                  {ACTIVITY_KEYS.map((key, idx) => (
-                    <tr key={key} className="hover:bg-acc/5 transition-colors">
-                      {/* Sticky Activity Column */}
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        value={activities[key]?.maujuda || ''}
+                        onChange={(e) => handleActivityChange(key, 'maujuda', e.target.value)}
+                        aria-label={`${t(key as any)} ${t('header.maujuda' as any)}`}
+                        placeholder="-"
+                        className={cn(
+                          "w-full rounded-xl app-input py-2 text-[16px] text-center font-num font-bold outline-none focus:border-acc transition-all",
+                          recentlyFilledKeys.has(`${key}.maujuda`) && "bg-acc/20 ring-2 ring-acc"
+                        )}
+                      />
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+
+            {/* Activity 13 Card: Mashwara */}
+            <div 
+              className={cn(
+                "activity-mobile-card space-y-2.5 transition-all duration-300",
+                recentlyFilledKeys.has('mashwara') && "ring-2 ring-acc shadow-md"
+              )}
+              style={{
+                animationDelay: `${12 * 40}ms`
+              }}
+            >
+              {/* Row 1: 22px rank chip + label 14sp */}
+              <div className="flex items-center gap-2.5">
+                <span className="w-[22px] h-[22px] rounded-full text-white text-[11px] font-bold flex items-center justify-center shrink-0 font-num bg-acc shadow-xs">
+                  13
+                </span>
+                <span className="font-gujarati font-semibold text-[14px] text-txt truncate">
+                  {t('activity.mashwara_when_where' as any)}
+                </span>
+              </div>
+
+              {/* Row 2: Full-width text input */}
+              <div>
+                <input
+                  type="text"
+                  value={activities['mashwara']?.maujuda || ''}
+                  onChange={(e) => handleActivityChange('mashwara', 'maujuda', e.target.value)}
+                  aria-label={t('activity.mashwara_when_where' as any)}
+                  placeholder="કિંમત લખો..."
+                  className={cn(
+                    "w-full rounded-xl app-input py-2.5 px-3.5 text-sm font-gujarati border border-brd/30 outline-none focus:border-acc transition-all",
+                    recentlyFilledKeys.has('mashwara') && "bg-acc/20 ring-2 ring-acc"
+                  )}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Mobile BlockC: rendered only on mobile <900px (lg:hidden, single source of truth, no duplicate IDs) */}
+          <div className="lg:hidden">
+            {renderBlockC('mobile')}
+          </div>
+
+          {/* Desktop BlockB: 13-activity table (≥900px, hidden lg:block) */}
+          <div className="hidden lg:block">
+            <div className="bg-card rounded-[20px] overflow-hidden border border-brd/40 shadow-sm new-report-card">
+              {/* Table Scrollable Container with Custom 6px Scrollbar */}
+              <div 
+                ref={tableScrollRef}
+                onScroll={handleTableScroll}
+                className="overflow-x-auto report-table-scroll"
+              >
+                <table className="w-full text-left border-collapse min-w-[500px] lg:min-w-0">
+                  <thead>
+                    <tr className="report-table-header-row">
+                      {/* Sticky Activity Column Header */}
+                      <th className="py-3.5 px-4 report-table-sticky-header w-[40%] min-w-[170px]">
+                        <div className="flex items-center gap-1.5 font-gujarati font-semibold text-[13px] tracking-wide">
+                          <ListChecks size={15} className="shrink-0" />
+                          <span>૧૩ મહેનત પ્રવૃત્તિઓ</span>
+                        </div>
+                      </th>
+                      {/* Flexible Halqa Data Columns */}
+                      <th className="py-3.5 px-3 text-center min-w-[110px] flex-1">
+                        <span className="font-gujarati font-semibold text-[12px] opacity-95">
+                          {t('header.gujishta' as any)}
+                        </span>
+                      </th>
+                      <th className="py-3.5 px-3 text-center min-w-[110px] flex-1">
+                        <span className="font-gujarati font-semibold text-[12px] opacity-95">
+                          {t('header.azaim' as any)}
+                        </span>
+                      </th>
+                      <th className="py-3.5 px-3 text-center min-w-[110px] flex-1">
+                        <span className="font-gujarati font-semibold text-[12px] opacity-95">
+                          {t('header.maujuda' as any)}
+                        </span>
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-brd/30">
+                    {ACTIVITY_KEYS.map((key, idx) => (
+                      <tr key={key} className="hover:bg-acc/5 transition-colors">
+                        {/* Sticky Activity Column */}
+                        <td className="py-3 px-4 report-table-sticky-col">
+                          <div className="flex items-center gap-2.5">
+                            <span
+                              className="w-[22px] h-[22px] rounded-full text-white text-[11px] font-bold flex items-center justify-center shrink-0 font-num bg-acc shadow-xs"
+                            >
+                              {idx + 1}
+                            </span>
+                            <span className="font-gujarati font-medium text-[14px] text-txt truncate">
+                              {t(key as any)}
+                            </span>
+                          </div>
+                        </td>
+
+                        {/* Gujishta Input */}
+                        <td className="py-2.5 px-2.5 text-center">
+                          <input
+                            type="text"
+                            value={activities[key]?.gujishta || ''}
+                            onChange={(e) => handleActivityChange(key, 'gujishta', e.target.value)}
+                            aria-label={`${t(key as any)} ${t('header.gujishta' as any)}`}
+                            placeholder="-"
+                            className={cn(
+                              "w-full max-w-[100px] mx-auto block rounded-xl app-input py-2 text-sm text-center font-num outline-none focus:border-acc transition-all",
+                              recentlyFilledKeys.has(`${key}.gujishta`) && "bg-acc/20 ring-2 ring-acc"
+                            )}
+                          />
+                        </td>
+
+                        {/* Azaim Input */}
+                        <td className="py-2.5 px-2.5 text-center">
+                          <input
+                            type="text"
+                            value={activities[key]?.azaim || ''}
+                            onChange={(e) => handleActivityChange(key, 'azaim', e.target.value)}
+                            aria-label={`${t(key as any)} ${t('header.azaim' as any)}`}
+                            placeholder="-"
+                            className={cn(
+                              "w-full max-w-[100px] mx-auto block rounded-xl app-input py-2 text-sm text-center font-num outline-none focus:border-acc transition-all",
+                              recentlyFilledKeys.has(`${key}.azaim`) && "bg-acc/20 ring-2 ring-acc"
+                            )}
+                          />
+                        </td>
+
+                        {/* Maujuda Input */}
+                        <td className="py-2.5 px-2.5 text-center">
+                          <input
+                            type="text"
+                            value={activities[key]?.maujuda || ''}
+                            onChange={(e) => handleActivityChange(key, 'maujuda', e.target.value)}
+                            aria-label={`${t(key as any)} ${t('header.maujuda' as any)}`}
+                            placeholder="-"
+                            className={cn(
+                              "w-full max-w-[100px] mx-auto block rounded-xl app-input py-2 text-sm text-center font-num font-bold outline-none focus:border-acc transition-all",
+                              recentlyFilledKeys.has(`${key}.maujuda`) && "bg-acc/20 ring-2 ring-acc"
+                            )}
+                          />
+                        </td>
+                      </tr>
+                    ))}
+
+                    {/* Row 13: Mashwara Text Input */}
+                    <tr className="hover:bg-acc/5 transition-colors">
                       <td className="py-3 px-4 report-table-sticky-col">
                         <div className="flex items-center gap-2.5">
                           <span
                             className="w-[22px] h-[22px] rounded-full text-white text-[11px] font-bold flex items-center justify-center shrink-0 font-num bg-acc shadow-xs"
                           >
-                            {idx + 1}
+                            13
                           </span>
-                          <span className="font-gujarati font-medium text-[14px] text-txt truncate">
-                            {t(key as any)}
+                          <span className="font-gujarati font-bold text-[14px] text-txt truncate">
+                            {t('activity.mashwara_when_where' as any)}
                           </span>
                         </div>
                       </td>
-
-                      {/* Gujishta Input */}
-                      <td className="py-2.5 px-2.5 text-center">
+                      <td colSpan={3} className="py-2.5 px-3">
                         <input
                           type="text"
-                          value={activities[key]?.gujishta || ''}
-                          onChange={(e) => handleActivityChange(key, 'gujishta', e.target.value)}
-                          aria-label={`${t(key as any)} ${t('header.gujishta' as any)}`}
-                          placeholder="-"
+                          value={activities['mashwara']?.maujuda || ''}
+                          onChange={(e) => handleActivityChange('mashwara', 'maujuda', e.target.value)}
+                          aria-label={t('activity.mashwara_when_where' as any)}
+                          placeholder="કિંમત લખો..."
                           className={cn(
-                            "w-full max-w-[100px] mx-auto block rounded-xl app-input py-2 text-sm text-center font-num outline-none focus:border-acc transition-all",
-                            recentlyFilledKeys.has(`${key}.gujishta`) && "bg-acc/20 ring-2 ring-acc"
-                          )}
-                        />
-                      </td>
-
-                      {/* Azaim Input */}
-                      <td className="py-2.5 px-2.5 text-center">
-                        <input
-                          type="text"
-                          value={activities[key]?.azaim || ''}
-                          onChange={(e) => handleActivityChange(key, 'azaim', e.target.value)}
-                          aria-label={`${t(key as any)} ${t('header.azaim' as any)}`}
-                          placeholder="-"
-                          className={cn(
-                            "w-full max-w-[100px] mx-auto block rounded-xl app-input py-2 text-sm text-center font-num outline-none focus:border-acc transition-all",
-                            recentlyFilledKeys.has(`${key}.azaim`) && "bg-acc/20 ring-2 ring-acc"
-                          )}
-                        />
-                      </td>
-
-                      {/* Maujuda Input */}
-                      <td className="py-2.5 px-2.5 text-center">
-                        <input
-                          type="text"
-                          value={activities[key]?.maujuda || ''}
-                          onChange={(e) => handleActivityChange(key, 'maujuda', e.target.value)}
-                          aria-label={`${t(key as any)} ${t('header.maujuda' as any)}`}
-                          placeholder="-"
-                          className={cn(
-                            "w-full max-w-[100px] mx-auto block rounded-xl app-input py-2 text-sm text-center font-num font-bold outline-none focus:border-acc transition-all",
-                            recentlyFilledKeys.has(`${key}.maujuda`) && "bg-acc/20 ring-2 ring-acc"
+                            "row13-text-input app-input border border-brd/30 focus:border-acc",
+                            recentlyFilledKeys.has('mashwara') && "bg-acc/20 ring-2 ring-acc"
                           )}
                         />
                       </td>
                     </tr>
-                  ))}
-
-                  {/* Row 13: Mashwara Text Input */}
-                  <tr className="hover:bg-acc/5 transition-colors">
-                    <td className="py-3 px-4 report-table-sticky-col">
-                      <div className="flex items-center gap-2.5">
-                        <span
-                          className="w-[22px] h-[22px] rounded-full text-white text-[11px] font-bold flex items-center justify-center shrink-0 font-num bg-acc shadow-xs"
-                        >
-                          13
-                        </span>
-                        <span className="font-gujarati font-bold text-[14px] text-txt truncate">
-                          {t('activity.mashwara_when_where' as any)}
-                        </span>
-                      </div>
-                    </td>
-                    <td colSpan={3} className="py-2.5 px-3">
-                      <input
-                        type="text"
-                        value={activities['mashwara']?.maujuda || ''}
-                        onChange={(e) => handleActivityChange('mashwara', 'maujuda', e.target.value)}
-                        aria-label={t('activity.mashwara_when_where' as any)}
-                        placeholder="કિંમત લખો..."
-                        className={cn(
-                          "row13-text-input app-input border border-brd/30 focus:border-acc",
-                          recentlyFilledKeys.has('mashwara') && "bg-acc/20 ring-2 ring-acc"
-                        )}
-                      />
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         </div>

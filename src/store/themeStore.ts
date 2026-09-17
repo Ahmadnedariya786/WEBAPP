@@ -31,3 +31,7 @@ export const useThemeStore = create<S>((set) => ({
   },
 }));
 document.documentElement.setAttribute('data-theme', useThemeStore.getState().theme);
+
+if (typeof window !== 'undefined') {
+  (window as any).__setTheme = (t: Theme) => useThemeStore.getState().setTheme(t);
+}
