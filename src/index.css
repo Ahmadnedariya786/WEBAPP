@@ -937,10 +937,13 @@ html[data-theme="premium"] .page-heading-title {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .bottom-nav-fab,
-  .bottom-nav-btn {
+  .bottom-nav-fab {
     transition: none !important;
     transform: translate(-50%, -50%) !important;
+  }
+  .bottom-nav-btn {
+    transition: none !important;
+    transform: none !important;
   }
   .bottom-nav-btn:active {
     transform: none !important;
