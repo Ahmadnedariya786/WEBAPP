@@ -1,81 +1,160 @@
-import React, { useRef, useState, useLayoutEffect } from 'react';
+import React, { useRef, useState, useLayoutEffect, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { FileText, Clock, BarChart2 } from 'lucide-react';
 import { t } from '../../i18n';
 import { cn } from '../../lib/utils';
 
-/**
- * Calculates a mathematically smooth SVG path for the cradle navigation bar:
- * - Rounded pill corners (rCorner)
- * - Flat top edges on left and right wings
- * - Convex shoulder fillets (shoulderRadius = 14px)
- * - Concave cradle arc (cradleRadius = 33px for 56px FAB + 5px halo gap)
- * - Tangent continuity across all transitions (zero jagged corners)
- */
-function getCradleBarPath(w: number, h = 64, rCorner = 28): string {
-  const x0 = w / 2;
-  const cradleRadius = 33; // 28px FAB radius + 5px halo gap
-  const shoulderRadius = 14; // smooth convex fillet blending into top edge
-  const dy = shoulderRadius; // vertical offset of shoulder center from cradle center (y = 0)
-  const dist = cradleRadius + shoulderRadius; // 47px
-  const dx = Math.sqrt(dist * dist - dy * dy); // ~44.866px
+// Register @property in JavaScript if supported for robust cross-engine transition
+if (typeof CSS !== 'undefined' && typeof CSS.registerProperty === 'function') {
+  try {
+    CSS.registerProperty({
+      name: '--slot-x',
+      syntax: '<length>',
+      inherits: false,
+      initialValue: '164px',
+    });
+  } catch {
+    // Ignore if already registered
+  }
+}
 
-  // Tangency point between shoulder circle and cradle circle
-  const tx = dx * (cradleRadius / dist); // ~31.502px
-  const ty = shoulderRadius * (cradleRadius / dist); // ~9.830px
+interface NavItemConfig {
+  path: string;
+  label: 'nav.dashboard' | 'nav.new_report' | 'nav.past_reports';
+  icon: typeof BarChart2;
+}
 
-  return [
-    `M ${rCorner} 0`,
-    `L ${x0 - dx} 0`,
-    `A ${shoulderRadius} ${shoulderRadius} 0 0 1 ${x0 - tx} ${ty}`,
-    `A ${cradleRadius} ${cradleRadius} 0 0 0 ${x0 + tx} ${ty}`,
-    `A ${shoulderRadius} ${shoulderRadius} 0 0 1 ${x0 + dx} 0`,
-    `L ${w - rCorner} 0`,
-    `A ${rCorner} ${rCorner} 0 0 1 ${w} ${rCorner}`,
-    `L ${w} ${h - rCorner}`,
-    `A ${rCorner} ${rCorner} 0 0 1 ${w - rCorner} ${h}`,
-    `L ${rCorner} ${h}`,
-    `A ${rCorner} ${rCorner} 0 0 1 0 ${h - rCorner}`,
-    `L 0 ${rCorner}`,
-    `A ${rCorner} ${rCorner} 0 0 1 ${rCorner} 0`,
-    `Z`,
-  ].join(' ');
+const NAV_SLOTS: NavItemConfig[] = [
+  { path: '/dashboard', label: 'nav.dashboard', icon: BarChart2 },
+  { path: '/', label: 'nav.new_report', icon: FileText },
+  { path: '/past-reports', label: 'nav.past_reports', icon: Clock },
+];
+
+interface Ripple {
+  id: number;
+  x: number;
+  y: number;
 }
 
 export const BottomNav: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const containerRef = useRef<HTMLDivElement>(null);
+  const slotRefs = [
+    useRef<HTMLButtonElement>(null),
+    useRef<HTMLButtonElement>(null),
+    useRef<HTMLButtonElement>(null),
+  ];
 
-  // Initial estimate clamped between 288px and 448px
-  const [barWidth, setBarWidth] = useState<number>(() => {
-    if (typeof window !== 'undefined') {
-      return Math.min(Math.max(window.innerWidth - 32, 288), 448);
-    }
-    return 360;
+  // Active route index mapping: 0 = Dashboard, 1 = New Report, 2 = Past Reports
+  const getActiveIndex = () => {
+    if (location.pathname === '/dashboard') return 0;
+    if (location.pathname === '/past-reports') return 2;
+    if (location.pathname === '/' || location.pathname === '/new-report') return 1;
+    return 1;
+  };
+
+  const activeIndex = getActiveIndex();
+
+  // Slot horizontal centers in px (defaults for 328px width: 54.67, 164, 273.33)
+  const [slotCenters, setSlotCenters] = useState<number[]>([54.67, 164, 273.33]);
+
+  // Icon cross-fade state: 120ms fade out old icon -> 100ms delay -> swap -> 120ms fade in new icon
+  const [displayedIndex, setDisplayedIndex] = useState<number>(activeIndex);
+  const [iconOpacity, setIconOpacity] = useState<number>(1);
+
+  // Ripple state per slot
+  const [ripples, setRipples] = useState<{ [key: number]: Ripple[] }>({
+    0: [],
+    1: [],
+    2: [],
   });
 
+  // Measure dynamic slot centers based on actual button layout
+  const measureSlotCenters = () => {
+    if (!containerRef.current) return;
+    const containerRect = containerRef.current.getBoundingClientRect();
+    if (containerRect.width === 0) return;
+
+    const newCenters = slotRefs.map((ref, idx) => {
+      if (ref.current) {
+        const btnRect = ref.current.getBoundingClientRect();
+        return btnRect.left - containerRect.left + btnRect.width / 2;
+      }
+      return ((idx * 2 + 1) * containerRect.width) / 6;
+    });
+
+    setSlotCenters(newCenters);
+  };
+
   useLayoutEffect(() => {
+    measureSlotCenters();
     const el = containerRef.current;
     if (!el) return;
-
-    const measure = () => {
-      const w = el.offsetWidth;
-      if (w > 0) setBarWidth(w);
-    };
-
-    measure();
-    const ro = new ResizeObserver(measure);
+    const ro = new ResizeObserver(measureSlotCenters);
     ro.observe(el);
-
     return () => ro.disconnect();
   }, []);
 
-  const pathD = getCradleBarPath(barWidth, 64, 28);
+  // Icon cross-fade transition
+  useEffect(() => {
+    if (activeIndex === displayedIndex) return;
 
-  const isDashboardActive = location.pathname === '/dashboard';
-  const isPastReportsActive = location.pathname === '/past-reports';
-  const isFabActive = location.pathname === '/' || location.pathname === '/new-report';
+    const prefersReducedMotion =
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    if (prefersReducedMotion) {
+      setDisplayedIndex(activeIndex);
+      setIconOpacity(1);
+      return;
+    }
+
+    // Step 1: Fade out old icon (120ms)
+    setIconOpacity(0);
+
+    // Step 2: Swap to new icon after 100ms and fade in (120ms)
+    const swapTimer = setTimeout(() => {
+      setDisplayedIndex(activeIndex);
+      setIconOpacity(1);
+    }, 100);
+
+    return () => clearTimeout(swapTimer);
+  }, [activeIndex, displayedIndex]);
+
+  const activeCenterX = slotCenters[activeIndex] ?? 164;
+  const ActiveIcon = NAV_SLOTS[displayedIndex]?.icon ?? FileText;
+
+  // Handle slot tap with expanding ripple
+  const handleSlotTap = (index: number, e: React.MouseEvent<HTMLButtonElement>) => {
+    const prefersReducedMotion =
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    if (!prefersReducedMotion) {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      const id = Date.now() + Math.random();
+
+      setRipples((prev) => ({
+        ...prev,
+        [index]: [...(prev[index] || []), { id, x, y }],
+      }));
+
+      setTimeout(() => {
+        setRipples((prev) => ({
+          ...prev,
+          [index]: (prev[index] || []).filter((r) => r.id !== id),
+        }));
+      }, 450);
+    }
+
+    const target = NAV_SLOTS[index];
+    if (target && location.pathname !== target.path) {
+      navigate(target.path);
+    }
+  };
 
   return (
     <nav
@@ -89,87 +168,87 @@ export const BottomNav: React.FC = () => {
         ref={containerRef}
         className="relative w-full h-16 pointer-events-auto select-none"
       >
-        {/* Seamless Concave Cradle Background */}
-        <svg
-          className="bottom-nav-svg absolute inset-0 w-full h-full overflow-visible pointer-events-none"
-          viewBox={`0 0 ${barWidth} 64`}
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path d={pathD} className="bottom-nav-fill" />
-        </svg>
+        {/* Shadow Wrapper for Masked Bar */}
+        <div className="bottom-nav-shadow-wrapper absolute inset-0 w-full h-full pointer-events-none">
+          {/* Moving Cradle Cutout via CSS Mask Radial-Gradient */}
+          <div
+            className="bottom-nav-bar w-full h-full"
+            style={{
+              '--slot-x': `${activeCenterX}px`,
+            } as React.CSSProperties}
+          />
+        </div>
 
-        {/* Seated Center FAB (Half-raised above bar top edge with 5px halo gap) */}
+        {/* Sliding 56px Raised Accent Circle with 5px Halo Ring & Soft Glow */}
         <button
           type="button"
-          onClick={() => navigate('/')}
-          aria-label={t('nav.new_report')}
-          className={cn(
-            'bottom-nav-fab absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2',
-            'w-14 h-14 rounded-full flex items-center justify-center z-20',
-            'cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-acc focus-visible:ring-offset-2',
-            isFabActive && 'bottom-nav-fab-active'
-          )}
+          aria-label={t(NAV_SLOTS[activeIndex].label)}
+          onClick={() => navigate(NAV_SLOTS[activeIndex].path)}
+          className="bottom-nav-circle absolute left-0 top-0 w-14 h-14 rounded-full flex items-center justify-center z-20 cursor-pointer outline-none active:scale-[0.96]"
+          style={{
+            transform: `translate3d(${activeCenterX - 28}px, -28px, 0)`,
+          }}
         >
-          <FileText size={22} strokeWidth={2.2} className="bottom-nav-fab-icon" />
+          <div
+            className="bottom-nav-circle-icon flex items-center justify-center pointer-events-none"
+            style={{
+              opacity: iconOpacity,
+              transition: 'opacity 120ms ease',
+            }}
+          >
+            <ActiveIcon size={24} strokeWidth={2.4} />
+          </div>
         </button>
 
         {/* 3-Slot Navigation Buttons */}
-        <div className="relative z-10 w-full h-full flex items-center justify-between px-3 sm:px-6">
-          {/* Slot 1: ડેશબોર્ડ (Dashboard) */}
-          <button
-            type="button"
-            onClick={() => navigate('/dashboard')}
-            className={cn(
-              'bottom-nav-btn flex-1 min-w-[56px] min-h-[48px] h-full flex flex-col items-center justify-center',
-              'cursor-pointer outline-none transition-colors transition-transform duration-150 ease-out',
-              isDashboardActive ? 'bottom-nav-btn-active' : 'bottom-nav-btn-inactive'
-            )}
-          >
-            <BarChart2
-              size={20}
-              strokeWidth={isDashboardActive ? 2.4 : 1.9}
-              className="bottom-nav-btn-icon"
-            />
-            <span className="bottom-nav-btn-label font-gujarati text-[11px] leading-tight mt-1 whitespace-nowrap">
-              {t('nav.dashboard')}
-            </span>
-            <span
-              className={cn(
-                'bottom-nav-dot w-1.5 h-1.5 rounded-full mt-0.5 transition-opacity duration-150',
-                isDashboardActive ? 'opacity-100' : 'opacity-0 pointer-events-none'
-              )}
-            />
-          </button>
+        <div className="bottom-nav-slots relative z-10 w-full h-full flex items-center justify-between">
+          {NAV_SLOTS.map((slot, index) => {
+            const isActive = index === activeIndex;
 
-          {/* Center spacer reserving the cradle dip width (88px) */}
-          <div className="w-[88px] h-full shrink-0 pointer-events-none" aria-hidden="true" />
+            return (
+              <button
+                key={slot.path}
+                ref={slotRefs[index]}
+                type="button"
+                onClick={(e) => handleSlotTap(index, e)}
+                aria-label={t(slot.label)}
+                className={cn(
+                  'bottom-nav-slot flex-1 min-w-[56px] min-h-[48px] h-full flex flex-col items-center justify-end pb-2 relative overflow-hidden',
+                  'cursor-pointer outline-none select-none',
+                  isActive ? 'bottom-nav-slot-active' : 'bottom-nav-slot-inactive'
+                )}
+              >
+                {/* Translucent Tap Ripple */}
+                {(ripples[index] || []).map((r) => (
+                  <span
+                    key={r.id}
+                    className="bottom-nav-ripple absolute pointer-events-none rounded-full"
+                    style={{ left: r.x, top: r.y }}
+                  />
+                ))}
 
-          {/* Slot 3: પાછલા રિપોર્ટ્સ (Past Reports) */}
-          <button
-            type="button"
-            onClick={() => navigate('/past-reports')}
-            className={cn(
-              'bottom-nav-btn flex-1 min-w-[56px] min-h-[48px] h-full flex flex-col items-center justify-center',
-              'cursor-pointer outline-none transition-colors transition-transform duration-150 ease-out',
-              isPastReportsActive ? 'bottom-nav-btn-active' : 'bottom-nav-btn-inactive'
-            )}
-          >
-            <Clock
-              size={20}
-              strokeWidth={isPastReportsActive ? 2.4 : 1.9}
-              className="bottom-nav-btn-icon"
-            />
-            <span className="bottom-nav-btn-label font-gujarati text-[11px] leading-tight mt-1 whitespace-nowrap">
-              {t('nav.past_reports')}
-            </span>
-            <span
-              className={cn(
-                'bottom-nav-dot w-1.5 h-1.5 rounded-full mt-0.5 transition-opacity duration-150',
-                isPastReportsActive ? 'opacity-100' : 'opacity-0 pointer-events-none'
-              )}
-            />
-          </button>
+                {/* Inactive Icon: 24px, muted; cross-fades out when active */}
+                <div
+                  className={cn(
+                    'bottom-nav-slot-icon h-6 flex items-center justify-center mb-0.5 transition-all duration-200 ease-out',
+                    isActive ? 'opacity-0 scale-50 pointer-events-none' : 'opacity-100 scale-100'
+                  )}
+                >
+                  <slot.icon size={24} strokeWidth={2} />
+                </div>
+
+                {/* Gujarati Label (Semibold & strong token when active, muted when inactive) */}
+                <span
+                  className={cn(
+                    'bottom-nav-slot-label font-gujarati text-[11px] leading-tight whitespace-nowrap transition-colors duration-200',
+                    isActive ? 'font-semibold' : 'font-medium'
+                  )}
+                >
+                  {t(slot.label)}
+                </span>
+              </button>
+            );
+          })}
         </div>
       </div>
     </nav>

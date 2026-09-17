@@ -929,169 +929,153 @@ html[data-theme="premium"] .page-heading-title {
 .bottom-nav-fab:active {
   transform: translate(-50%, -50%) scale(0.96) !important;
 }
-.bottom-nav-btn {
-  transition: transform 150ms cubic-bezier(0.4, 0, 0.2, 1), color 150ms cubic-bezier(0.4, 0, 0.2, 1);
+/* ── S36 Bottom Navigation: Sliding Raised Circle & Moving Cradle Cutout ── */
+@property --slot-x {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 164px;
 }
-.bottom-nav-btn:active {
-  transform: scale(0.96);
+
+.bottom-nav-bar {
+  --slot-x: 164px;
+  width: 100%;
+  height: 64px;
+  border-radius: 28px;
+  -webkit-mask-image: radial-gradient(circle 33px at var(--slot-x, 164px) 0, transparent 32px, black 33.5px);
+  mask-image: radial-gradient(circle 33px at var(--slot-x, 164px) 0, transparent 32px, black 33.5px);
+  transition: --slot-x 400ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.bottom-nav-circle {
+  transition: transform 400ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.bottom-nav-ripple {
+  width: 20px;
+  height: 20px;
+  margin-left: -10px;
+  margin-top: -10px;
+  transform: scale(0);
+  animation: nav-ripple-expand 400ms ease-out forwards;
+}
+
+@keyframes nav-ripple-expand {
+  0% {
+    transform: scale(0);
+    opacity: 0.35;
+  }
+  100% {
+    transform: scale(8);
+    opacity: 0;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .bottom-nav-fab {
+  .bottom-nav-circle,
+  .bottom-nav-bar,
+  .bottom-nav-slot-icon,
+  .bottom-nav-circle-icon,
+  .bottom-nav-slot-label {
     transition: none !important;
-    transform: translate(-50%, -50%) !important;
+    animation: none !important;
   }
-  .bottom-nav-btn {
-    transition: none !important;
-    transform: none !important;
-  }
-  .bottom-nav-btn:active {
-    transform: none !important;
-  }
-  .bottom-nav-fab:active {
-    transform: translate(-50%, -50%) !important;
+  .bottom-nav-ripple {
+    display: none !important;
   }
 }
 
 /* Outdoor Theme */
-html[data-theme="outdoor"] .bottom-nav-svg {
+html[data-theme="outdoor"] .bottom-nav-shadow-wrapper {
   filter: drop-shadow(0 10px 28px rgba(36, 59, 143, 0.12)) drop-shadow(0 2px 8px rgba(176, 150, 90, 0.22));
 }
-html[data-theme="outdoor"] .bottom-nav-fill {
-  fill: #FBF7EC;
-  stroke: rgba(30, 47, 115, 0.12);
-  stroke-width: 1;
+html[data-theme="outdoor"] .bottom-nav-bar {
+  background-color: #FBF7EC;
+  border: 1px solid rgba(30, 47, 115, 0.12);
 }
-html[data-theme="outdoor"] .bottom-nav-fab {
+html[data-theme="outdoor"] .bottom-nav-circle {
   background-color: #243B8F;
   color: #FFFFFF;
-  box-shadow: 0 8px 20px rgba(36, 59, 143, 0.35);
+  box-shadow: 0 0 0 5px #F5F0E1, 0 8px 24px rgba(36, 59, 143, 0.35);
 }
-html[data-theme="outdoor"] .bottom-nav-fab:active {
-  box-shadow: 0 4px 12px rgba(36, 59, 143, 0.45);
-}
-html[data-theme="outdoor"] .bottom-nav-fab-icon {
+html[data-theme="outdoor"] .bottom-nav-circle-icon {
   color: #FFFFFF;
 }
-html[data-theme="outdoor"] .bottom-nav-btn-active {
-  color: #1E2F73;
-}
-html[data-theme="outdoor"] .bottom-nav-btn-active .bottom-nav-btn-icon {
-  color: #243B8F;
-}
-html[data-theme="outdoor"] .bottom-nav-btn-active .bottom-nav-btn-label {
+html[data-theme="outdoor"] .bottom-nav-slot-active .bottom-nav-slot-label {
   color: #1E2F73;
   font-weight: 600;
 }
-html[data-theme="outdoor"] .bottom-nav-btn-active .bottom-nav-dot {
-  background-color: #243B8F;
-}
-html[data-theme="outdoor"] .bottom-nav-btn-inactive {
+html[data-theme="outdoor"] .bottom-nav-slot-inactive .bottom-nav-slot-label,
+html[data-theme="outdoor"] .bottom-nav-slot-inactive .bottom-nav-slot-icon {
   color: #4A5C98;
 }
-html[data-theme="outdoor"] .bottom-nav-btn-inactive .bottom-nav-btn-icon {
-  color: #4A5C98;
-}
-html[data-theme="outdoor"] .bottom-nav-btn-inactive .bottom-nav-btn-label {
-  color: #4A5C98;
-  font-weight: 500;
-}
-html[data-theme="outdoor"] .bottom-nav-btn:hover {
+html[data-theme="outdoor"] .bottom-nav-slot:hover .bottom-nav-slot-label {
   color: #1E2F73;
+}
+html[data-theme="outdoor"] .bottom-nav-ripple {
+  background-color: rgba(36, 59, 143, 0.25);
 }
 
 /* Graphite (Dark) Theme */
-html[data-theme="dark"] .bottom-nav-svg {
+html[data-theme="dark"] .bottom-nav-shadow-wrapper {
   filter: drop-shadow(0 12px 32px rgba(0, 0, 0, 0.65)) drop-shadow(0 2px 8px rgba(0, 0, 0, 0.45));
 }
-html[data-theme="dark"] .bottom-nav-fill {
-  fill: #20242B;
-  stroke: rgba(255, 255, 255, 0.08);
-  stroke-width: 1;
+html[data-theme="dark"] .bottom-nav-bar {
+  background-color: #20242B;
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
-html[data-theme="dark"] .bottom-nav-fab {
+html[data-theme="dark"] .bottom-nav-circle {
   background-color: #84CC16;
   color: #1A2E05;
-  box-shadow: 0 8px 22px rgba(132, 204, 22, 0.40);
+  box-shadow: 0 0 0 5px #1F2329, 0 8px 24px rgba(132, 204, 22, 0.40);
 }
-html[data-theme="dark"] .bottom-nav-fab:active {
-  box-shadow: 0 4px 12px rgba(132, 204, 22, 0.50);
-}
-html[data-theme="dark"] .bottom-nav-fab-icon {
+html[data-theme="dark"] .bottom-nav-circle-icon {
   color: #1A2E05;
 }
-html[data-theme="dark"] .bottom-nav-btn-active {
-  color: #F3F4F6;
-}
-html[data-theme="dark"] .bottom-nav-btn-active .bottom-nav-btn-icon {
-  color: #84CC16;
-}
-html[data-theme="dark"] .bottom-nav-btn-active .bottom-nav-btn-label {
+html[data-theme="dark"] .bottom-nav-slot-active .bottom-nav-slot-label {
   color: #F3F4F6;
   font-weight: 600;
 }
-html[data-theme="dark"] .bottom-nav-btn-active .bottom-nav-dot {
-  background-color: #84CC16;
-}
-html[data-theme="dark"] .bottom-nav-btn-inactive {
+html[data-theme="dark"] .bottom-nav-slot-inactive .bottom-nav-slot-label,
+html[data-theme="dark"] .bottom-nav-slot-inactive .bottom-nav-slot-icon {
   color: #A1A7B5;
 }
-html[data-theme="dark"] .bottom-nav-btn-inactive .bottom-nav-btn-icon {
-  color: #A1A7B5;
-}
-html[data-theme="dark"] .bottom-nav-btn-inactive .bottom-nav-btn-label {
-  color: #A1A7B5;
-  font-weight: 500;
-}
-html[data-theme="dark"] .bottom-nav-btn:hover {
+html[data-theme="dark"] .bottom-nav-slot:hover .bottom-nav-slot-label {
   color: #F3F4F6;
+}
+html[data-theme="dark"] .bottom-nav-ripple {
+  background-color: rgba(132, 204, 22, 0.25);
 }
 
 /* Premium Theme */
-html[data-theme="premium"] .bottom-nav-svg {
+html[data-theme="premium"] .bottom-nav-shadow-wrapper {
   filter: drop-shadow(0 14px 36px rgba(0, 0, 0, 0.70)) drop-shadow(0 2px 10px rgba(236, 72, 153, 0.18));
 }
-html[data-theme="premium"] .bottom-nav-fill {
-  fill: #241640;
-  stroke: rgba(255, 255, 255, 0.08);
-  stroke-width: 1;
+html[data-theme="premium"] .bottom-nav-bar {
+  background-color: #241640;
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
-html[data-theme="premium"] .bottom-nav-fab {
+html[data-theme="premium"] .bottom-nav-circle {
   background-color: #EC4899;
   color: #FFFFFF;
-  box-shadow: 0 8px 22px rgba(236, 72, 153, 0.45);
+  box-shadow: 0 0 0 5px #171238, 0 8px 24px rgba(236, 72, 153, 0.45);
 }
-html[data-theme="premium"] .bottom-nav-fab:active {
-  box-shadow: 0 4px 12px rgba(236, 72, 153, 0.55);
-}
-html[data-theme="premium"] .bottom-nav-fab-icon {
+html[data-theme="premium"] .bottom-nav-circle-icon {
   color: #FFFFFF;
 }
-html[data-theme="premium"] .bottom-nav-btn-active {
-  color: #FFFFFF;
-}
-html[data-theme="premium"] .bottom-nav-btn-active .bottom-nav-btn-icon {
-  color: #EC4899;
-}
-html[data-theme="premium"] .bottom-nav-btn-active .bottom-nav-btn-label {
+html[data-theme="premium"] .bottom-nav-slot-active .bottom-nav-slot-label {
   color: #FFFFFF;
   font-weight: 600;
 }
-html[data-theme="premium"] .bottom-nav-btn-active .bottom-nav-dot {
-  background-color: #EC4899;
-}
-html[data-theme="premium"] .bottom-nav-btn-inactive {
+html[data-theme="premium"] .bottom-nav-slot-inactive .bottom-nav-slot-label,
+html[data-theme="premium"] .bottom-nav-slot-inactive .bottom-nav-slot-icon {
   color: #B8B2CE;
 }
-html[data-theme="premium"] .bottom-nav-btn-inactive .bottom-nav-btn-icon {
-  color: #B8B2CE;
-}
-html[data-theme="premium"] .bottom-nav-btn-inactive .bottom-nav-btn-label {
-  color: #B8B2CE;
-  font-weight: 500;
-}
-html[data-theme="premium"] .bottom-nav-btn:hover {
+html[data-theme="premium"] .bottom-nav-slot:hover .bottom-nav-slot-label {
   color: #FFFFFF;
 }
+html[data-theme="premium"] .bottom-nav-ripple {
+  background-color: rgba(236, 72, 153, 0.25);
+}
+
 
 
