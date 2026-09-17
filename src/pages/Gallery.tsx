@@ -1,6 +1,7 @@
 import React from 'react';
 import { LiquidButton } from '../components/ui/LiquidButton';
 import { GlassCard } from '../components/ui/GlassCard';
+import { PageHeading } from '../components/ui/PageHeading';
 import { LiquidSwitch } from '../components/ui/LiquidSwitch';
 import ThemeSwitcher from '../components/ui/ThemeSwitcher';
 import { t } from '../i18n';
@@ -13,10 +14,7 @@ export const Gallery: React.FC = () => {
     <div className="max-w-md mx-auto p-6 space-y-8 pb-24">
       <header className="flex flex-wrap gap-4 items-center justify-between mb-8">
         <div className="min-w-0 flex-1">
-          <div className="flex flex-col gap-1">
-            <h1 className="text-[22px] font-extrabold text-txt font-gujarati uppercase min-w-0 truncate">{t('gallery.title')}</h1>
-            <div className="h-1 w-12 bg-acc rounded-full" />
-          </div>
+            <PageHeading title={t('gallery.title')} />
           <p className="text-sm text-sub font-gujarati truncate">{t('gallery.subtitle')}</p>
         </div>
         <div className="shrink-0">

@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAppStore } from '../store/appStore';
 import { t } from '../i18n';
 import { GlassCard } from '../components/ui/GlassCard';
+import { PageHeading } from '../components/ui/PageHeading';
 import { LiquidButton } from '../components/ui/LiquidButton';
 import { Calendar, Save, Trash2, Download, Share2, CheckCircle, Plus, X, Copy, ListChecks, MapPin, Lock, RotateCcw } from 'lucide-react';
 import { cn, formatDate, localTodayIso } from '../lib/utils';
@@ -422,11 +423,8 @@ export const NewReport: React.FC = () => {
         )}
       </AnimatePresence>
 
-      <header className="flex flex-wrap gap-2 justify-between items-center mb-6">
-        <div className="flex flex-col gap-1">
-          <h2 className="text-[22px] font-extrabold text-txt font-gujarati uppercase min-w-0 truncate">{t('nav.new_report')}</h2>
-          <div className="h-1 w-12 bg-acc rounded-full" />
-        </div>
+      <header className="flex flex-wrap gap-2 justify-between items-center">
+        <PageHeading title={t('nav.new_report')} />
       </header>
 
       <div className="flex flex-col xl:flex-row gap-6 xl:gap-8 xl:items-start">

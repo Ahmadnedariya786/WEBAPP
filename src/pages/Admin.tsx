@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { t } from '../i18n';
 import { GlassCard } from '../components/ui/GlassCard';
+import { PageHeading } from '../components/ui/PageHeading';
 import { LiquidButton } from '../components/ui/LiquidButton';
 import { Shield, Users, Activity, Database, Lock, ChevronLeft, CheckCircle, Key, KeyRound, Trash2, Copy, Share2, LogOut, MapPin, Plus } from 'lucide-react';
 import { getLogs, clearLogs, type SystemLog, logActivity, cn } from '../lib/utils';
@@ -355,13 +356,7 @@ export const Admin: React.FC = () => {
         <div className="space-y-6">
           <header className="flex flex-wrap items-center gap-x-2 gap-y-3">
             <div className="flex flex-col gap-1">
-              <div className="flex items-center gap-2">
-                <Shield className="text-acc shrink-0" />
-                <h2 className="text-[22px] font-extrabold text-txt font-gujarati uppercase truncate min-w-0">
-                  {t('admin.dashboard_title' as any)}
-                </h2>
-              </div>
-              <div className="h-1 w-12 bg-acc rounded-full" />
+              <PageHeading title={t('admin.dashboard_title' as any)} icon={<Shield className="text-acc shrink-0" />} />
             </div>
             <div className="flex-1 min-w-0"></div>
             <button onClick={handleLogout} className="h-9 px-3 shrink-0 rounded-full text-sm font-semibold font-gujarati bg-card hover:bg-card/80 border border-brd/10 text-txt transition-colors inline-flex items-center gap-1.5 whitespace-nowrap">
@@ -405,10 +400,7 @@ export const Admin: React.FC = () => {
               <button onClick={() => setActiveScreen('main')} className="w-10 h-10 shrink-0 flex items-center justify-center rounded-full glass-panel text-sub">
                 <ChevronLeft size={20} />
               </button>
-              <div className="flex flex-col gap-1">
-                <h2 className="text-[22px] font-extrabold text-txt font-gujarati uppercase truncate min-w-0">{t('admin.manage_users' as any)}</h2>
-                <div className="h-1 w-12 bg-acc rounded-full" />
-              </div>
+              <PageHeading title={t('admin.manage_users' as any)} />
             </div>
             <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
               {codes.some(c => c.revoked_at) && (
@@ -523,10 +515,7 @@ export const Admin: React.FC = () => {
               <button onClick={() => setActiveScreen('main')} className="w-10 h-10 shrink-0 flex items-center justify-center rounded-full glass-panel text-sub">
                 <ChevronLeft size={20} />
               </button>
-              <div className="flex flex-col gap-1">
-                <h2 className="text-[22px] font-extrabold text-txt font-gujarati uppercase truncate min-w-0">{t('admin.system_logs' as any)}</h2>
-                <div className="h-1 w-12 bg-acc rounded-full" />
-              </div>
+              <PageHeading title={t('admin.system_logs' as any)} />
             </div>
           </header>
           
@@ -563,7 +552,7 @@ export const Admin: React.FC = () => {
               <button onClick={() => setActiveScreen('main')} className="w-10 h-10 shrink-0 flex items-center justify-center rounded-full glass-panel text-sub">
                 <ChevronLeft size={20} />
               </button>
-              <h2 className="text-xl font-bold font-gujarati truncate min-w-0">હલકા સંચાલન</h2>
+              <PageHeading title="હલકા સંચાલન" />
             </div>
           </header>
 

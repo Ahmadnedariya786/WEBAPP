@@ -756,3 +756,20 @@ html[data-theme="premium"] .neu-cal-disc-selected .neu-cal-dot {
   }
 }
 
+/* ── S33 Page Heading Theme Skins ── */
+html[data-theme="outdoor"] .page-heading-title { color: #1E2F73; }
+html[data-theme="outdoor"] .page-heading-bar   { background-color: #243B8F; }
+
+html[data-theme="dark"] .page-heading-title     { color: #F5F5F5; }
+html[data-theme="dark"] .page-heading-bar       { background-color: #84CC16; }
+
+html[data-theme="premium"] .page-heading-title  { color: #F5F5F5; }
+html[data-theme="premium"] .page-heading-bar    { background-color: #EC4899; }
+
+/* S33 Mobile: Scale heading to 24px at ≤360px */
+@media (max-width: 360px) {
+  .page-heading-title {
+    font-size: 24px !important;
+  }
+}
+

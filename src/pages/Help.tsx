@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { t } from '../i18n';
 import { GlassCard } from '../components/ui/GlassCard';
+import { PageHeading } from '../components/ui/PageHeading';
 import { HelpCircle, Book, Mail, ChevronDown } from 'lucide-react';
 import { cn } from '../lib/utils';
 
@@ -23,13 +24,7 @@ export const Help: React.FC = () => {
   return (
     <div className="space-y-6 pb-12">
       <header className="flex flex-wrap gap-2 justify-between items-center">
-        <div className="flex flex-col gap-1">
-          <h2 className="text-[22px] font-extrabold text-txt font-gujarati uppercase min-w-0 truncate flex items-center gap-2">
-            <HelpCircle className="text-acc shrink-0" />
-            <span className="truncate">{t('help.title' as any)}</span>
-          </h2>
-          <div className="h-1 w-12 bg-acc rounded-full" />
-        </div>
+        <PageHeading title={t('help.title' as any)} icon={<HelpCircle className="text-acc shrink-0" />} />
       </header>
 
       <div className="space-y-4">

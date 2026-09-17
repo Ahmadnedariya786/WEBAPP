@@ -6,6 +6,7 @@ import { useAppStore } from '../store/appStore';
 import type { SavedReport } from '../store/appStore';
 import { t } from '../i18n';
 import { GlassCard } from '../components/ui/GlassCard';
+import { PageHeading } from '../components/ui/PageHeading';
 import { LiquidButton } from '../components/ui/LiquidButton';
 import { Calendar, Users, MapPin, Download, Share2, Edit3, Trash2, Search, CheckCircle, Plus, Lock } from 'lucide-react';
 import { formatDate } from '../lib/utils';
@@ -222,10 +223,7 @@ export const PastReports: React.FC = () => {
       </AnimatePresence>
 
       <header className="flex flex-wrap gap-2 justify-between items-center">
-        <div className="flex flex-col gap-1">
-          <h2 className="text-[22px] font-extrabold text-txt font-gujarati uppercase min-w-0 truncate">{t('nav.past_reports')}</h2>
-          <div className="h-1 w-12 bg-acc rounded-full" />
-        </div>
+        <PageHeading title={t('nav.past_reports')} />
       </header>
 
       {/* Top Actions */}
