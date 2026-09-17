@@ -1250,6 +1250,473 @@ html[data-theme="premium"] .dashboard-sort-pill-active {
   }
 }
 
+/* ══════════════════════════════════════════════════════════════
+   S39-FINAL — NEW REPORT SECTION REDESIGN (Mobile + Laptop + 2560px)
+   ══════════════════════════════════════════════════════════════ */
+
+/* Main Container Width Override for NewReport */
+main:has(.new-report-container) {
+  max-width: 1400px !important;
+}
+
+/* D1: Flow Stepper (Relative Position, Fits 360px without wrap) */
+.flow-stepper-container {
+  position: relative;
+  width: 100%;
+}
+
+.flow-stepper-dot {
+  width: 22px;
+  height: 22px;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
+  transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.flow-stepper-connector {
+  height: 2px;
+  flex: 1 1 0%;
+  min-width: 8px;
+  border-radius: 9999px;
+  transition: background-color 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Outdoor Stepper */
+html[data-theme="outdoor"] .flow-stepper-dot-done {
+  background-color: #243B8F;
+  color: #FFFFFF;
+}
+html[data-theme="outdoor"] .flow-stepper-dot-current {
+  background-color: transparent;
+  border: 2px solid #243B8F;
+  color: #243B8F;
+}
+html[data-theme="outdoor"] .flow-stepper-dot-pending {
+  background-color: rgba(30, 47, 115, 0.08);
+  border: 1px solid rgba(30, 47, 115, 0.15);
+  color: #5A6BA8;
+}
+html[data-theme="outdoor"] .flow-stepper-label-active {
+  color: #1E2F73;
+  font-weight: 600;
+}
+html[data-theme="outdoor"] .flow-stepper-label-pending {
+  color: #5A6BA8;
+}
+html[data-theme="outdoor"] .flow-stepper-connector-done {
+  background-color: #243B8F;
+}
+html[data-theme="outdoor"] .flow-stepper-connector-pending {
+  background-color: rgba(30, 47, 115, 0.15);
+}
+
+/* Dark (Graphite) Stepper */
+html[data-theme="dark"] .flow-stepper-dot-done {
+  background-color: #84CC16;
+  color: #1A2E05;
+}
+html[data-theme="dark"] .flow-stepper-dot-current {
+  background-color: transparent;
+  border: 2px solid #84CC16;
+  color: #84CC16;
+}
+html[data-theme="dark"] .flow-stepper-dot-pending {
+  background-color: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  color: #9CA3AF;
+}
+html[data-theme="dark"] .flow-stepper-label-active {
+  color: #F3F4F6;
+  font-weight: 600;
+}
+html[data-theme="dark"] .flow-stepper-label-pending {
+  color: #9CA3AF;
+}
+html[data-theme="dark"] .flow-stepper-connector-done {
+  background-color: #84CC16;
+}
+html[data-theme="dark"] .flow-stepper-connector-pending {
+  background-color: rgba(255, 255, 255, 0.12);
+}
+
+/* Premium Stepper */
+html[data-theme="premium"] .flow-stepper-dot-done {
+  background-color: #EC4899;
+  color: #FFFFFF;
+}
+html[data-theme="premium"] .flow-stepper-dot-current {
+  background-color: transparent;
+  border: 2px solid #EC4899;
+  color: #EC4899;
+}
+html[data-theme="premium"] .flow-stepper-dot-pending {
+  background-color: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #B8B2CE;
+}
+html[data-theme="premium"] .flow-stepper-label-active {
+  color: #FFFFFF;
+  font-weight: 600;
+}
+html[data-theme="premium"] .flow-stepper-label-pending {
+  color: #B8B2CE;
+}
+html[data-theme="premium"] .flow-stepper-connector-done {
+  background-color: #EC4899;
+}
+html[data-theme="premium"] .flow-stepper-connector-pending {
+  background-color: rgba(255, 255, 255, 0.14);
+}
+
+/* D3: Card 2 "ગણતરી" Colored Count-Zone */
+.count-zone-card {
+  border-radius: 20px;
+  transition: background-color 200ms ease, box-shadow 200ms ease;
+}
+
+html[data-theme="outdoor"] .count-zone-card {
+  background-color: #243B8F;
+  color: #FFFFFF;
+  box-shadow: 0 10px 28px -4px rgba(36, 59, 143, 0.30), 0 2px 8px rgba(176, 150, 90, 0.16);
+}
+html[data-theme="outdoor"] .count-zone-top-label {
+  color: rgba(255, 255, 255, 0.80);
+}
+html[data-theme="outdoor"] .count-zone-top-value {
+  color: #FFFFFF;
+}
+html[data-theme="outdoor"] .count-zone-tile {
+  background-color: #FFFFFF;
+  border: 1px solid rgba(36, 59, 143, 0.15);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  color: #1E2F73;
+}
+html[data-theme="outdoor"] .count-zone-tile-label {
+  color: #4A5C98;
+}
+html[data-theme="outdoor"] .count-zone-tile-input {
+  background-color: transparent;
+  color: #1E2F73;
+}
+
+html[data-theme="dark"] .count-zone-card {
+  background-color: #20242B;
+  color: #F3F4F6;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 12px 32px -4px rgba(0, 0, 0, 0.65);
+}
+html[data-theme="dark"] .count-zone-top-label {
+  color: #9CA3AF;
+}
+html[data-theme="dark"] .count-zone-top-value {
+  color: #84CC16;
+}
+html[data-theme="dark"] .count-zone-tile {
+  background-color: #2C313A;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+  color: #F3F4F6;
+}
+html[data-theme="dark"] .count-zone-tile-label {
+  color: #9CA3AF;
+}
+html[data-theme="dark"] .count-zone-tile-input {
+  background-color: transparent;
+  color: #F3F4F6;
+}
+
+html[data-theme="premium"] .count-zone-card {
+  background: linear-gradient(135deg, #EC4899, #7C3AED);
+  color: #FFFFFF;
+  box-shadow: 0 14px 34px -4px rgba(236, 72, 153, 0.40);
+}
+html[data-theme="premium"] .count-zone-top-label {
+  color: rgba(255, 255, 255, 0.85);
+}
+html[data-theme="premium"] .count-zone-top-value {
+  color: #FFFFFF;
+}
+html[data-theme="premium"] .count-zone-tile {
+  background-color: rgba(255, 255, 255, 0.14);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  color: #FFFFFF;
+}
+html[data-theme="premium"] .count-zone-tile-label {
+  color: rgba(255, 255, 255, 0.85);
+}
+html[data-theme="premium"] .count-zone-tile-input {
+  background-color: transparent;
+  color: #FFFFFF;
+}
+
+/* KPI Tile Input Tick Animation */
+.tile-input-tick {
+  animation: tile-tick 150ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+@keyframes tile-tick {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+/* D6: Table "૧૩ મહેનત પ્રવૃત્તિઓ" & Custom 6px Scrollbar */
+.report-table-scroll {
+  scrollbar-width: thin;
+  scroll-snap-type: x proximity;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Custom 6px Scrollbar */
+.report-table-scroll::-webkit-scrollbar {
+  height: 6px;
+  width: 6px;
+}
+.report-table-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.report-table-scroll::-webkit-scrollbar-button {
+  display: none !important;
+  width: 0;
+  height: 0;
+}
+html[data-theme="outdoor"] .report-table-scroll {
+  scrollbar-color: rgba(30, 47, 115, 0.35) transparent;
+}
+html[data-theme="outdoor"] .report-table-scroll::-webkit-scrollbar-thumb {
+  background: rgba(30, 47, 115, 0.35);
+  border-radius: 9999px;
+}
+html[data-theme="dark"] .report-table-scroll {
+  scrollbar-color: rgba(156, 163, 175, 0.35) transparent;
+}
+html[data-theme="dark"] .report-table-scroll::-webkit-scrollbar-thumb {
+  background: rgba(156, 163, 175, 0.35);
+  border-radius: 9999px;
+}
+html[data-theme="premium"] .report-table-scroll {
+  scrollbar-color: rgba(236, 72, 153, 0.35) transparent;
+}
+html[data-theme="premium"] .report-table-scroll::-webkit-scrollbar-thumb {
+  background: rgba(236, 72, 153, 0.35);
+  border-radius: 9999px;
+}
+
+/* Sticky Activity Column */
+.report-table-sticky-col {
+  position: sticky;
+  left: 0;
+  z-index: 10;
+  box-shadow: 4px 0 8px -2px rgba(0, 0, 0, 0.12);
+}
+.report-table-sticky-header {
+  position: sticky;
+  left: 0;
+  z-index: 20;
+  box-shadow: 4px 0 8px -2px rgba(0, 0, 0, 0.15);
+}
+
+/* Sticky Column Background Matching Rows */
+html[data-theme="outdoor"] .report-table-sticky-col {
+  background-color: #FBF7EC;
+}
+html[data-theme="outdoor"] tr:hover .report-table-sticky-col {
+  background-color: #F5EFE0;
+}
+html[data-theme="outdoor"] .report-table-header-row,
+html[data-theme="outdoor"] .report-table-sticky-header {
+  background-color: #243B8F !important;
+  color: #FFFFFF !important;
+}
+
+html[data-theme="dark"] .report-table-sticky-col {
+  background-color: #23272E;
+}
+html[data-theme="dark"] tr:hover .report-table-sticky-col {
+  background-color: #2A2F38;
+}
+html[data-theme="dark"] .report-table-header-row,
+html[data-theme="dark"] .report-table-sticky-header {
+  background-color: #20242B !important;
+  color: #F3F4F6 !important;
+}
+
+html[data-theme="premium"] .report-table-sticky-col {
+  background-color: #241640;
+}
+html[data-theme="premium"] tr:hover .report-table-sticky-col {
+  background-color: #2F1E50;
+}
+html[data-theme="premium"] .report-table-header-row,
+html[data-theme="premium"] .report-table-sticky-header {
+  background: linear-gradient(135deg, #EC4899, #7C3AED) !important;
+  color: #FFFFFF !important;
+}
+
+/* Row 13 Text Input Styling */
+.row13-text-input {
+  width: 100%;
+  border-radius: 12px;
+  padding: 8px 14px;
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  transition: all 180ms ease;
+}
+
+/* Action Cluster 2x2 Grid Pill Buttons */
+.action-cluster-grid-btn {
+  min-height: 44px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  outline: none;
+  transition: all 180ms cubic-bezier(0.4, 0, 0.2, 1);
+  text-align: center;
+}
+
+html[data-theme="outdoor"] .action-cluster-grid-btn {
+  background-color: #FFFDF6;
+  border: 1.5px solid rgba(30, 47, 115, 0.15);
+  color: #1E2F73;
+  box-shadow: 1px 1px 3px rgba(176, 150, 90, 0.15);
+}
+html[data-theme="outdoor"] .action-cluster-grid-btn:hover {
+  background-color: rgba(36, 59, 143, 0.08);
+  border-color: rgba(36, 59, 143, 0.35);
+}
+html[data-theme="outdoor"] .action-cluster-grid-btn:active {
+  transform: scale(0.98);
+}
+
+html[data-theme="dark"] .action-cluster-grid-btn {
+  background-color: #2C313A;
+  border: 1.5px solid rgba(255, 255, 255, 0.08);
+  color: #F3F4F6;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.35);
+}
+html[data-theme="dark"] .action-cluster-grid-btn:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+  border-color: rgba(132, 204, 22, 0.4);
+}
+html[data-theme="dark"] .action-cluster-grid-btn:active {
+  transform: scale(0.98);
+}
+
+html[data-theme="premium"] .action-cluster-grid-btn {
+  background-color: #311E4E;
+  border: 1.5px solid rgba(255, 255, 255, 0.10);
+  color: #FFFFFF;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+}
+html[data-theme="premium"] .action-cluster-grid-btn:hover {
+  background-color: rgba(236, 72, 153, 0.15);
+  border-color: rgba(236, 72, 153, 0.45);
+}
+html[data-theme="premium"] .action-cluster-grid-btn:active {
+  transform: scale(0.98);
+}
+
+/* Primary Save Button */
+.action-cluster-primary-btn {
+  height: 48px;
+  width: 100%;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  outline: none;
+  transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+html[data-theme="outdoor"] .action-cluster-primary-btn {
+  background-color: #243B8F;
+  color: #FFFFFF;
+  border: none;
+  box-shadow: 0 4px 14px rgba(36, 59, 143, 0.30);
+}
+html[data-theme="outdoor"] .action-cluster-primary-btn:hover {
+  background-color: #1E2F73;
+}
+html[data-theme="dark"] .action-cluster-primary-btn {
+  background-color: #84CC16;
+  color: #1A2E05;
+  border: none;
+  box-shadow: 0 4px 14px rgba(132, 204, 22, 0.35);
+}
+html[data-theme="dark"] .action-cluster-primary-btn:hover {
+  background-color: #72B012;
+}
+html[data-theme="premium"] .action-cluster-primary-btn {
+  background: linear-gradient(135deg, #EC4899, #7C3AED);
+  color: #FFFFFF;
+  border: none;
+  box-shadow: 0 4px 14px rgba(236, 72, 153, 0.40);
+}
+html[data-theme="premium"] .action-cluster-primary-btn:hover {
+  opacity: 0.95;
+}
+
+/* Danger Delete Button */
+.action-cluster-danger-btn {
+  height: 44px;
+  width: 100%;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  outline: none;
+  background-color: transparent;
+  border: 1.5px solid rgba(239, 68, 68, 0.35);
+  color: #EF4444;
+  transition: all 180ms ease;
+}
+.action-cluster-danger-btn:hover {
+  background-color: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.55);
+}
+
+/* Card Entrance Stagger */
+.new-report-card {
+  transition: transform 200ms ease, box-shadow 200ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flow-stepper-dot,
+  .flow-stepper-connector,
+  .count-zone-card,
+  .tile-input-tick,
+  .action-cluster-primary-btn,
+  .action-cluster-grid-btn,
+  .action-cluster-danger-btn,
+  .new-report-card {
+    transition: none !important;
+    animation: none !important;
+    transform: none !important;
+  }
+}
+
+
 
 
 

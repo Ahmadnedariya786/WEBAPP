@@ -3,10 +3,11 @@ import * as XLSX from 'xlsx';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAppStore } from '../store/appStore';
 import { t } from '../i18n';
-import { GlassCard } from '../components/ui/GlassCard';
 import { PageHeading } from '../components/ui/PageHeading';
-import { LiquidButton } from '../components/ui/LiquidButton';
-import { Calendar, Save, Trash2, Download, Share2, CheckCircle, Plus, X, Copy, ListChecks, MapPin, Lock, RotateCcw } from 'lucide-react';
+import { 
+  Calendar, Save, Trash2, Download, Share2, CheckCircle, 
+  Plus, X, Copy, Lock, RotateCcw, Check, ListChecks 
+} from 'lucide-react';
 import { cn, formatDate, localTodayIso } from '../lib/utils';
 import { isDuplicateReportError, mapSupabaseError } from '../services/supabaseService';
 import { ScanPills } from '../components/ScanFill';
@@ -19,14 +20,36 @@ const ACTIVITY_KEYS = [
   'activity.jamaat_3', 'activity.jamaat_10', 'activity.jamaat_40', 'activity.jamaat_4m'
 ];
 
+const KPI_KEYS: { key: keyof typeof initialStats; label: string }[] = [
+  { key: 'std_10', label: 'ધોરણ ૧૦' },
+  { key: 'std_11', label: 'ધોરણ ૧૧' },
+  { key: 'std_12', label: 'ધોરણ ૧૨' },
+  { key: 'college', label: 'કોલેજ' },
+  { key: 'engineering', label: 'એન્જિનિયર' },
+  { key: 'medical', label: 'મેડિકલ' }
+];
+
+const initialStats = {
+  std_10: 0,
+  std_11: 0,
+  std_12: 0,
+  college: 0,
+  engineering: 0,
+  medical: 0,
+  muslim_teachers: 0
+};
+
 export const NewReport: React.FC = () => {
-  const { draftReport, setDraftReport, clearDraft, halqas, customHalqas, addCustomHalqa, removeCustomHalqa, addReport, sessionRole } = useAppStore();
+  const { 
+    draftReport, setDraftReport, clearDraft, halqas, customHalqas, 
+    addCustomHalqa, removeCustomHalqa, addReport, sessionRole 
+  } = useAppStore();
   
   // Toasts
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
 
-  // S23: Scan & Fill State
+  // Scan & Fill State
   const [recentlyFilledKeys, setRecentlyFilledKeys] = useState<Set<string>>(new Set());
   const [undoSnapshot, setUndoSnapshot] = useState<any | null>(null);
   const undoTimeoutRef = useRef<any>(null);
@@ -39,9 +62,7 @@ export const NewReport: React.FC = () => {
     sessionStorage.setItem('currentDate', date);
   }, [date]);
 
-  const [stats, setStats] = useState({
-    std_10: 0, std_11: 0, std_12: 0, college: 0, engineering: 0, medical: 0, muslim_teachers: 0
-  });
+  const [stats, setStats] = useState(initialStats);
   const [activities, setActivities] = useState<Record<string, { gujishta: string, azaim: string, maujuda: string }>>({});
   const [mashwara, setMashwara] = useState('');
   const [notes, setNotes] = useState('');
@@ -54,10 +75,79 @@ export const NewReport: React.FC = () => {
   const [showCalendar, setShowCalendar] = useState(false);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
 
-  // Total Students Calculation
-  const totalStudents = stats.std_10 + stats.std_11 + stats.std_12 + stats.college;
+  // Save feedback state
+  const [saveSuccess, setSaveSuccess] = useState(false);
+  const [recentTileKey, setRecentTileKey] = useState<string | null>(null);
 
-  // Real Actions
+  // Total Students Calculation & Count-up Animation
+  const totalStudents = stats.std_10 + stats.std_11 + stats.std_12 + stats.college;
+  const [displayCount, setDisplayCount] = useState(totalStudents);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      setDisplayCount(totalStudents);
+      return;
+    }
+    const start = displayCount;
+    const end = totalStudents;
+    if (start === end) return;
+    const duration = 400; // 400ms count-up
+    const startTime = performance.now();
+    const step = (currentTime: number) => {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const easeOut = 1 - Math.pow(1 - progress, 3);
+      setDisplayCount(Math.round(start + (end - start) * easeOut));
+      if (progress < 1) {
+        requestAnimationFrame(step);
+      }
+    };
+    requestAnimationFrame(step);
+  }, [totalStudents]);
+
+  // Stepper completion calculation
+  const stepperState = React.useMemo(() => {
+    const isHalqaDone = !!halqa;
+    const isDateDone = isHalqaDone && !!date;
+    const isStatsDone = isHalqaDone && (totalStudents > 0 || stats.muslim_teachers > 0);
+    const isNotesDone = isHalqaDone && notes.trim().length > 0;
+    const isSaveReady = isHalqaDone && (isStatsDone || isNotesDone || Object.keys(activities).length > 0);
+
+    return [
+      {
+        id: 1,
+        label: 'હલકો',
+        isDone: isHalqaDone,
+        isCurrent: !isHalqaDone
+      },
+      {
+        id: 2,
+        label: 'તારીખ',
+        isDone: isDateDone,
+        isCurrent: isHalqaDone && !isStatsDone && !isNotesDone
+      },
+      {
+        id: 3,
+        label: 'ગણતરી',
+        isDone: isStatsDone,
+        isCurrent: isHalqaDone && isDateDone && !isStatsDone
+      },
+      {
+        id: 4,
+        label: 'નોંધ',
+        isDone: isNotesDone,
+        isCurrent: isHalqaDone && isStatsDone && !isNotesDone
+      },
+      {
+        id: 5,
+        label: 'સાચવો',
+        isDone: saveSuccess,
+        isCurrent: isSaveReady
+      }
+    ];
+  }, [halqa, date, totalStudents, stats.muslim_teachers, notes, activities, saveSuccess]);
+
+  // Actions
   const generateReportText = () => {
     return `બનાસકાંઠા સ્ટુડન્ટ મહેનત ટ્રેકર\nહલકો: ${halqa || '-'} | તારીખ: ${formatDate(date)}\nકુલ સ્ટુડન્ટ: ${totalStudents}\n\nપ્રવૃત્તિ સારાંશ:\n` + 
     ACTIVITY_KEYS.map(k => `${t(k as any)}: ${activities[k]?.maujuda || '-'}`).join('\n') + 
@@ -112,7 +202,7 @@ export const NewReport: React.FC = () => {
   const handleUndo = () => {
     if (!undoSnapshot) return;
     setHalqa(undoSnapshot.halqa || '');
-    setStats(undoSnapshot.stats || { std_10: 0, std_11: 0, std_12: 0, college: 0, engineering: 0, medical: 0, muslim_teachers: 0 });
+    setStats(undoSnapshot.stats || initialStats);
     setActivities(undoSnapshot.activities || {});
     setMashwara(undoSnapshot.mashwara || '');
     setNotes(undoSnapshot.notes || '');
@@ -130,7 +220,7 @@ export const NewReport: React.FC = () => {
     useAppStore.getState().requireAuth(async () => {
       try {
         await addReport({
-          id: '', // Empty ID for new reports, DB will generate UUID
+          id: '',
           halqa,
           date,
           stats,
@@ -138,13 +228,15 @@ export const NewReport: React.FC = () => {
           mashwara: activities['mashwara']?.maujuda || '',
           notes
         });
+        setSaveSuccess(true);
+        setTimeout(() => setSaveSuccess(false), 2000);
         showNotification('રિપોર્ટ સેવ થયો ✅');
         setUndoSnapshot(null);
         if (undoTimeoutRef.current) clearTimeout(undoTimeoutRef.current);
         setHalqa('');
         sessionStorage.removeItem('currentDate');
         setDate(localTodayIso());
-        setStats({ std_10: 0, std_11: 0, std_12: 0, college: 0, engineering: 0, medical: 0, muslim_teachers: 0 });
+        setStats(initialStats);
         setActivities({});
         setMashwara('');
         setNotes('');
@@ -166,7 +258,7 @@ export const NewReport: React.FC = () => {
     setHalqa('');
     sessionStorage.removeItem('currentDate');
     setDate(localTodayIso());
-    setStats({ std_10: 0, std_11: 0, std_12: 0, college: 0, engineering: 0, medical: 0, muslim_teachers: 0 });
+    setStats(initialStats);
     setActivities({});
     setMashwara('');
     setNotes('');
@@ -230,7 +322,6 @@ export const NewReport: React.FC = () => {
   useEffect(() => {
     if (draftReport && !halqa) {
       setHalqa(draftReport.halqa || '');
-      // Date is not restored from draft.
       setStats(draftReport.stats || stats);
       setActivities(draftReport.activities || {});
       setMashwara(draftReport.mashwara || '');
@@ -248,6 +339,8 @@ export const NewReport: React.FC = () => {
   }, [halqa, date, stats, activities, mashwara, notes, setDraftReport]);
 
   const handleStatChange = (key: keyof typeof stats, value: string) => {
+    setRecentTileKey(key);
+    setTimeout(() => setRecentTileKey(null), 200);
     setStats(prev => ({ ...prev, [key]: parseInt(value) || 0 }));
   };
 
@@ -263,7 +356,7 @@ export const NewReport: React.FC = () => {
     setIsAddingHalqa(true);
     try {
       await addCustomHalqa(newHalqaName.trim());
-      await useAppStore.getState().loadData(); // Refetch halqas as requested
+      await useAppStore.getState().loadData();
       setHalqa(newHalqaName.trim());
       setNewHalqaName('');
       setShowHalqaDialog(false);
@@ -290,7 +383,7 @@ export const NewReport: React.FC = () => {
     const uuid = targetHalqa?.id || halqaToDelete;
     try {
       await removeCustomHalqa(uuid);
-      await useAppStore.getState().loadData(); // Refetch halqas
+      await useAppStore.getState().loadData();
       showNotification('હલકો ડિલીટ થયો ✅');
       if (halqa === halqaToDelete) setHalqa('');
       setHalqaToDelete(null);
@@ -301,9 +394,8 @@ export const NewReport: React.FC = () => {
 
   const ALL_HALQAS = halqas.map((h: any) => h.name);
 
-
   return (
-    <div className="space-y-6 pb-12 relative">
+    <div className="new-report-container w-full max-w-[1400px] mx-auto space-y-6 pb-36 relative">
       {/* Toast & Undo Pill */}
       <AnimatePresence>
         {showToast && (
@@ -315,7 +407,7 @@ export const NewReport: React.FC = () => {
               className="w-full max-w-md rounded-2xl bg-card/95 backdrop-blur px-4 py-3 flex items-center justify-between gap-2 shadow-lg border border-brd/10 pointer-events-auto"
             >
               <div className="flex items-center gap-2 min-w-0">
-                <CheckCircle size={18} className="text-acc2 shrink-0" />
+                <CheckCircle size={18} className="text-acc shrink-0" />
                 <span className="flex-1 text-sm text-txt font-gujarati font-medium truncate">{toastMessage}</span>
               </div>
               {undoSnapshot && (
@@ -323,6 +415,7 @@ export const NewReport: React.FC = () => {
                   type="button"
                   onClick={handleUndo}
                   id="btn-toast-undo"
+                  aria-label="અન્ડૂ"
                   className="px-3 py-1 rounded-full bg-acc text-white text-xs font-gujarati font-bold hover:bg-acc/90 active:scale-95 transition-all shrink-0 flex items-center gap-1 shadow-xs cursor-pointer"
                 >
                   <RotateCcw size={12} />
@@ -334,7 +427,7 @@ export const NewReport: React.FC = () => {
         )}
       </AnimatePresence>
 
-      {/* Persistent Floating Undo Pill (visible until save or 30s) */}
+      {/* Persistent Floating Undo Pill */}
       <AnimatePresence>
         {undoSnapshot && !showToast && (
           <div className="fixed bottom-24 right-4 z-[80]">
@@ -345,6 +438,7 @@ export const NewReport: React.FC = () => {
               type="button"
               onClick={handleUndo}
               id="btn-floating-undo"
+              aria-label="અન્ડૂ"
               className="px-4 py-2 rounded-full bg-card/95 backdrop-blur shadow-lg border border-acc/40 text-acc hover:bg-acc hover:text-white text-sm font-gujarati font-bold flex items-center gap-1.5 transition-all cursor-pointer"
             >
               <RotateCcw size={14} />
@@ -364,20 +458,33 @@ export const NewReport: React.FC = () => {
                 <input 
                   autoFocus
                   type="text" 
+                  aria-label="નવા હલકાનું નામ"
                   placeholder="દા.ત. ધાનેરા, વડગામ, દાંતા..." 
                   value={newHalqaName}
                   onChange={(e) => setNewHalqaName(e.target.value)}
                   className="w-full app-input rounded-md px-4 py-3 outline-none shadow-[inset_0_0_0_1px_rgb(var(--brd)/0.15)] font-gujarati focus:shadow-[inset_0_0_0_2px_rgb(var(--acc))] transition-shadow"
                 />
                 <div className="flex flex-wrap gap-3 pt-2 justify-center">
-                  <LiquidButton variant="neutral" className="flex-1 min-w-[120px] px-4 py-2.5 whitespace-nowrap" onClick={() => setShowHalqaDialog(false)} disabled={isAddingHalqa}>
+                  <button 
+                    type="button"
+                    className="flex-1 min-w-[120px] px-4 py-2.5 rounded-xl border border-brd/30 text-txt hover:bg-card/80 font-gujarati text-sm font-medium transition-all"
+                    onClick={() => setShowHalqaDialog(false)} 
+                    disabled={isAddingHalqa}
+                    aria-label="રદ કરો"
+                  >
                     {t('action.cancel' as any)}
-                  </LiquidButton>
-                  <LiquidButton variant="primary" className="flex-1 flex items-center justify-center gap-2 min-w-[120px] px-4 py-2.5 whitespace-nowrap" onClick={handleAddHalqa} disabled={isAddingHalqa}>
+                  </button>
+                  <button 
+                    type="button"
+                    className="flex-1 flex items-center justify-center gap-2 min-w-[120px] px-4 py-2.5 rounded-xl bg-acc text-white font-gujarati text-sm font-semibold hover:bg-acc/90 transition-all shadow-md"
+                    onClick={handleAddHalqa} 
+                    disabled={isAddingHalqa}
+                    aria-label="હલકો ઉમેરો"
+                  >
                     {isAddingHalqa ? (
                       <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                     ) : '+ ઉમેરો'}
-                  </LiquidButton>
+                  </button>
                 </div>
               </div>
             </motion.div>
@@ -391,12 +498,22 @@ export const NewReport: React.FC = () => {
                 <h3 className="text-xl font-bold font-gujarati text-danger">ખાતરી કરો</h3>
                 <p className="font-gujarati text-sub">શું તમે ખરેખર "{halqaToDelete}" કાઢી નાખવા માંગો છો?</p>
                 <div className="flex flex-wrap gap-3 pt-2 justify-center">
-                  <LiquidButton variant="neutral" className="flex-1 min-w-[120px] px-4 py-2.5 whitespace-nowrap" onClick={() => setHalqaToDelete(null)}>
+                  <button 
+                    type="button"
+                    className="flex-1 min-w-[120px] px-4 py-2.5 rounded-xl border border-brd/30 text-txt hover:bg-card/80 font-gujarati text-sm font-medium transition-all"
+                    onClick={() => setHalqaToDelete(null)}
+                    aria-label="રદ કરો"
+                  >
                     {t('action.cancel' as any)}
-                  </LiquidButton>
-                  <LiquidButton variant="danger" className="flex-1 min-w-[120px] px-4 py-2.5 whitespace-nowrap" onClick={confirmDeleteHalqa}>
+                  </button>
+                  <button 
+                    type="button"
+                    className="flex-1 min-w-[120px] px-4 py-2.5 rounded-xl bg-danger text-white font-gujarati text-sm font-semibold hover:bg-danger/90 transition-all shadow-md"
+                    onClick={confirmDeleteHalqa}
+                    aria-label="હા, કાઢી નાખો"
+                  >
                     હા, કાઢી નાખો
-                  </LiquidButton>
+                  </button>
                 </div>
               </div>
             </motion.div>
@@ -410,12 +527,22 @@ export const NewReport: React.FC = () => {
                 <h3 className="text-xl font-bold font-gujarati text-danger">ડ્રાફ્ટ ડિલીટ</h3>
                 <p className="font-gujarati text-sub">શું તમે બધી માહિતી ભૂંસવા માંગો છો?</p>
                 <div className="flex flex-wrap gap-3 pt-2 justify-center">
-                  <LiquidButton variant="neutral" className="flex-1 min-w-[120px] px-4 py-2.5 whitespace-nowrap" onClick={() => setShowClearConfirm(false)}>
+                  <button 
+                    type="button"
+                    className="flex-1 min-w-[120px] px-4 py-2.5 rounded-xl border border-brd/30 text-txt hover:bg-card/80 font-gujarati text-sm font-medium transition-all"
+                    onClick={() => setShowClearConfirm(false)}
+                    aria-label="રદ કરો"
+                  >
                     {t('action.cancel' as any)}
-                  </LiquidButton>
-                  <LiquidButton variant="danger" className="flex-1 min-w-[120px] px-4 py-2.5 whitespace-nowrap" onClick={confirmClear}>
+                  </button>
+                  <button 
+                    type="button"
+                    className="flex-1 min-w-[120px] px-4 py-2.5 rounded-xl bg-danger text-white font-gujarati text-sm font-semibold hover:bg-danger/90 transition-all shadow-md"
+                    onClick={confirmClear}
+                    aria-label="હા, ભૂંસી નાખો"
+                  >
                     હા, ભૂંસી નાખો
-                  </LiquidButton>
+                  </button>
                 </div>
               </div>
             </motion.div>
@@ -423,304 +550,449 @@ export const NewReport: React.FC = () => {
         )}
       </AnimatePresence>
 
+      {/* Page Heading */}
       <header className="flex flex-wrap gap-2 justify-between items-center">
         <PageHeading title={t('nav.new_report')} />
       </header>
 
-      <div className="flex flex-col xl:flex-row gap-6 xl:gap-8 xl:items-start">
-        <div className="contents xl:flex xl:flex-1 xl:flex-col xl:gap-6">
-          {/* Halqa Selector */}
-          <section className="order-1 xl:order-none space-y-3 sticky top-[60px] z-30 bg-bg pb-3 pt-2 -mx-6 px-6 border-b border-brd/30 shadow-sm">
-            <div className="flex overflow-x-auto pb-2 gap-2 snap-x hide-scrollbar">
-              {ALL_HALQAS.map(h => (
-                <div key={h} className="snap-start relative group">
-                  <button
-                    onClick={() => setHalqa(h)}
-                    className={cn(
-                      "whitespace-nowrap px-4 py-2 rounded-full backdrop-blur-sm  duration-300 font-gujarati",
-                      halqa === h 
-                        ? "bg-acc text-white shadow-[inset_0_0_0_1px_rgb(var(--acc)/0.3),0_4px_12px_rgb(var(--acc)/0.3)]" 
-                        : "bg-card text-txt hover:bg-card shadow-[inset_0_0_0_1px_rgb(var(--brd)/0.15)]"
-                    )}
-                  >
-                    {h}
-                  </button>
-                  {customHalqas.includes(h) && (
-                <button 
-                  onClick={(e) => { e.stopPropagation(); if (!sessionRole) { useAppStore.setState({ authDialogOpen: true, authPendingAction: null }); return; } setHalqaToDelete(h); }}
-                  className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-danger text-white flex items-center justify-center shadow-md scale-0 group-hover:scale-100 transition-transform"
-                >
-                  {!sessionRole ? <Lock size={12} /> : <X size={12} />}
-                </button>
-              )}
-            </div>
-          ))}
-          <button 
-            onClick={() => { if (!sessionRole) { useAppStore.setState({ authDialogOpen: true, authPendingAction: null }); return; } setShowHalqaDialog(true); }}
-            className="snap-start whitespace-nowrap px-4 py-2 rounded-full border border-dashed border-sub/30 text-sub hover:bg-sub/10  flex items-center gap-1 font-gujarati"
-          >
-            {!sessionRole ? <Lock size={16} /> : <Plus size={16} />} {t('action.add_halqa' as any)}
-          </button>
-        </div>
-      </section>
-
-      {/* S23: Scan-&-Fill Camera & Gallery Pills (Above Date Card) */}
-      <div className="order-2 xl:order-none">
-        <ScanPills
-          onFill={handleScanFill}
-          showToast={showNotification}
-          currentHalqas={ALL_HALQAS}
-        />
-      </div>
-
-      {/* Date Picker (Trigger Card) */}
-      <GlassCard className="order-3 xl:order-none p-4">
-        <div 
-          id="btn-date-picker-trigger"
-          className="flex items-center gap-4 cursor-pointer"
-          onClick={() => setShowCalendar(true)}
-        >
-          <div className="w-12 h-12 rounded-full bg-acc/10 flex items-center justify-center text-acc shrink-0">
-            <Calendar size={24} />
-          </div>
-          <div className="flex-1">
-            <label className="text-xs tracking-wider text-sub font-medium font-gujarati">{t('label.date' as any)}</label>
-            <div className="w-full font-num text-lg font-bold text-txt">
-              {date ? formatDate(date) : '-'}
-            </div>
-          </div>
-        </div>
-      </GlassCard>
-
-      {/* S27 Neumorphic Calendar Dialog */}
-      <NeumorphicCalendarDialog
-        isOpen={showCalendar}
-        onClose={() => setShowCalendar(false)}
-        selectedDate={date}
-        onSelectDate={(newDate) => setDate(newDate)}
-      />
-
-      {/* Stats Grid */}
-      <section className="order-3 xl:order-none grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div className="stat-card col-span-2 md:col-span-4 p-3.5">
-          <div className="flex justify-between items-center min-h-[40px]">
-            <span className="font-gujarati font-bold text-base md:text-lg stat-total-label">{t('stat.students_count' as any)}</span>
-            <span className="text-3xl font-bold font-num text-acc pr-[12px]">{totalStudents}</span>
-          </div>
-        </div>
-        
-        {['std_10', 'std_11', 'std_12', 'college', 'engineering', 'medical'].map(key => {
-          return (
-            <div key={key} className="stat-card p-3.5">
-              <div className="flex flex-col gap-2">
-                <div className="flex items-center justify-center min-h-[18px]">
-                  <span className="font-gujarati text-[13px] font-medium text-center truncate stat-label">{t(`stat.${key}` as any)}</span>
-                </div>
-                <input 
-                  type="number"
-                  value={(stats as any)[key] || ''}
-                  onChange={(e) => handleStatChange(key as keyof typeof stats, e.target.value)}
-                  className={cn(
-                    "stat-input w-full h-[40px] rounded-lg text-[16px] font-semibold font-num text-center outline-none focus:ring-2 focus:ring-acc/40 transition-all placeholder:text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none",
-                    recentlyFilledKeys.has(`stat.${key}`) && "bg-acc/20 ring-2 ring-acc/60"
+      {/* Main Responsive Grid: 12-col layout on ≥900px (Form: 5 cols, Table: 7 cols) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        {/* ── Form Column (col-span-12 lg:col-span-5) ── */}
+        <div className="lg:col-span-5 space-y-5">
+          
+          {/* D1: Flow Stepper (Relative Position, Fits 360px without wrap) */}
+          <div className="flow-stepper-container bg-card p-3 rounded-2xl border border-brd/30 shadow-sm">
+            <div className="flex items-center justify-between gap-1 w-full overflow-hidden">
+              {stepperState.map((step, idx) => (
+                <React.Fragment key={step.id}>
+                  <div className="flex flex-col items-center gap-1 shrink-0">
+                    <div 
+                      className={cn(
+                        "flow-stepper-dot",
+                        step.isDone 
+                          ? "flow-stepper-dot-done" 
+                          : step.isCurrent 
+                            ? "flow-stepper-dot-current" 
+                            : "flow-stepper-dot-pending"
+                      )}
+                    >
+                      {step.isDone ? <Check size={12} className="stroke-[2.5]" /> : step.id}
+                    </div>
+                    <span 
+                      className={cn(
+                        "text-[12px] font-gujarati whitespace-nowrap leading-none",
+                        step.isDone || step.isCurrent 
+                          ? "flow-stepper-label-active" 
+                          : "flow-stepper-label-pending"
+                      )}
+                    >
+                      {step.label}
+                    </span>
+                  </div>
+                  {idx < stepperState.length - 1 && (
+                    <div 
+                      className={cn(
+                        "flow-stepper-connector self-center mb-4",
+                        step.isDone ? "flow-stepper-connector-done" : "flow-stepper-connector-pending"
+                      )} 
+                    />
                   )}
+                </React.Fragment>
+              ))}
+            </div>
+          </div>
+
+          {/* D2: Card 1 "ક્યાં અને ક્યારે" (Internal order strictly preserved) */}
+          <div className="bg-card rounded-[20px] p-4 sm:p-5 border border-brd/30 shadow-sm space-y-4 new-report-card">
+            <h3 className="font-gujarati font-semibold text-[15px] text-txt">ક્યાં અને ક્યારે</h3>
+
+            {/* 1. Halqa chips + "+ હલકો ઉમેરો" */}
+            <div className="space-y-2">
+              <div className="flex overflow-x-auto pb-2 gap-2 snap-x hide-scrollbar">
+                {ALL_HALQAS.map(h => (
+                  <div key={h} className="snap-start relative group shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => setHalqa(h)}
+                      aria-label={`હલકો ${h}`}
+                      className={cn(
+                        "whitespace-nowrap px-4 py-2 rounded-full font-gujarati text-sm font-medium transition-all duration-200",
+                        halqa === h 
+                          ? "bg-acc text-white shadow-[0_4px_12px_rgb(var(--acc)/0.3)]" 
+                          : "bg-card text-txt hover:bg-card/80 border border-brd/30"
+                      )}
+                    >
+                      {h}
+                    </button>
+                    {customHalqas.includes(h) && (
+                      <button 
+                        type="button"
+                        onClick={(e) => { 
+                          e.stopPropagation(); 
+                          if (!sessionRole) { 
+                            useAppStore.setState({ authDialogOpen: true, authPendingAction: null }); 
+                            return; 
+                          } 
+                          setHalqaToDelete(h); 
+                        }}
+                        aria-label={`હલકો ${h} કાઢી નાખો`}
+                        className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-danger text-white flex items-center justify-center shadow-md scale-0 group-hover:scale-100 transition-transform"
+                      >
+                        {!sessionRole ? <Lock size={12} /> : <X size={12} />}
+                      </button>
+                    )}
+                  </div>
+                ))}
+                <button 
+                  type="button"
+                  onClick={() => { 
+                    if (!sessionRole) { 
+                      useAppStore.setState({ authDialogOpen: true, authPendingAction: null }); 
+                      return; 
+                    } 
+                    setShowHalqaDialog(true); 
+                  }}
+                  aria-label="+ હલકો ઉમેરો"
+                  className="snap-start whitespace-nowrap px-4 py-2 rounded-full border border-dashed border-sub/40 text-sub hover:bg-sub/10 flex items-center gap-1.5 font-gujarati text-sm font-medium shrink-0 transition-colors"
+                >
+                  {!sessionRole ? <Lock size={15} /> : <Plus size={15} />}
+                  <span>+ હલકો ઉમેરો</span>
+                </button>
+              </div>
+            </div>
+
+            {/* 2. Scan pills */}
+            <div>
+              <ScanPills
+                onFill={handleScanFill}
+                showToast={showNotification}
+                currentHalqas={ALL_HALQAS}
+              />
+            </div>
+
+            {/* 3. Existing Date card trigger */}
+            <div 
+              id="btn-date-picker-trigger"
+              onClick={() => setShowCalendar(true)}
+              role="button"
+              tabIndex={0}
+              aria-label="તારીખ પસંદ કરો"
+              className="flex items-center gap-3.5 p-3 rounded-2xl bg-bg/50 border border-brd/20 hover:border-acc/40 cursor-pointer transition-all"
+            >
+              <div className="w-11 h-11 rounded-xl bg-acc/10 flex items-center justify-center text-acc shrink-0">
+                <Calendar size={22} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <span className="block text-xs text-sub font-gujarati">તારીખ:</span>
+                <div className="font-num text-base font-bold text-txt">
+                  {date ? formatDate(date) : '-'}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* S27 Neumorphic Calendar Dialog */}
+          <NeumorphicCalendarDialog
+            isOpen={showCalendar}
+            onClose={() => setShowCalendar(false)}
+            selectedDate={date}
+            onSelectDate={(newDate) => setDate(newDate)}
+          />
+
+          {/* D3: Card 2 "ગણતરી" = COLORED COUNT-ZONE */}
+          <div className="count-zone-card p-4 sm:p-5 new-report-card">
+            {/* Top Row: "સ્ટુડન્ટની સંખ્યા" + 36sp Extrabold Animated Count-up */}
+            <div className="flex items-center justify-between mb-4">
+              <span className="count-zone-top-label font-gujarati text-[13px] font-medium tracking-wide">
+                સ્ટુડન્ટની સંખ્યા
+              </span>
+              <span className="count-zone-top-value font-num font-extrabold text-[36px] leading-none">
+                {displayCount}
+              </span>
+            </div>
+
+            {/* KPI Tiles: 2 columns on ≤640px, 3 columns on >640px (NEVER 6) */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+              {KPI_KEYS.map(({ key, label }) => (
+                <div 
+                  key={key} 
+                  className={cn(
+                    "count-zone-tile rounded-[14px] p-2.5 flex flex-col items-center justify-between gap-1.5 transition-all",
+                    recentTileKey === key && "tile-input-tick",
+                    recentlyFilledKeys.has(`stat.${key}`) && "ring-2 ring-acc"
+                  )}
+                >
+                  <span className="count-zone-tile-label font-gujarati text-[11px] font-medium text-center truncate w-full">
+                    {label}
+                  </span>
+                  <input
+                    type="number"
+                    value={(stats as any)[key] || ''}
+                    onChange={(e) => handleStatChange(key, e.target.value)}
+                    aria-label={label}
+                    placeholder="0"
+                    className="count-zone-tile-input w-full font-num font-semibold text-[18px] text-center outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  />
+                </div>
+              ))}
+
+              {/* Full-width tile: "મુસ્લિમ શિક્ષકોની સંખ્યા" */}
+              <div 
+                className={cn(
+                  "count-zone-tile col-span-2 sm:col-span-3 rounded-[14px] p-2.5 flex items-center justify-between gap-2 transition-all px-4",
+                  recentTileKey === 'muslim_teachers' && "tile-input-tick",
+                  recentlyFilledKeys.has('stat.muslim_teachers') && "ring-2 ring-acc"
+                )}
+              >
+                <span className="count-zone-tile-label font-gujarati text-[12px] font-medium">
+                  મુસ્લિમ શિક્ષકોની સંખ્યા
+                </span>
+                <input
+                  type="number"
+                  value={stats.muslim_teachers || ''}
+                  onChange={(e) => handleStatChange('muslim_teachers', e.target.value)}
+                  aria-label="મુસ્લિમ શિક્ષકોની સંખ્યા"
                   placeholder="0"
+                  className="count-zone-tile-input w-24 font-num font-semibold text-[18px] text-right sm:text-center outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 />
               </div>
             </div>
-          );
-        })}
-        
-        <div className="stat-card col-span-2 md:col-span-4 p-3.5">
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center justify-center min-h-[18px]">
-              <span className="font-gujarati text-[13px] font-medium text-center truncate stat-label">{t('stat.muslim_teachers' as any)}</span>
-            </div>
-            <input 
-              type="number"
-              value={stats.muslim_teachers || ''}
-              onChange={(e) => handleStatChange('muslim_teachers', e.target.value)}
-              className={cn(
-                "stat-input w-full h-[40px] rounded-lg text-[16px] font-semibold font-num text-center outline-none focus:ring-2 focus:ring-acc/40 transition-all placeholder:text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none",
-                recentlyFilledKeys.has('stat.muslim_teachers') && "bg-acc/20 ring-2 ring-acc/60"
-              )}
-              placeholder="0"
+          </div>
+
+          {/* D4: Card 3 "ખાસ નોંધ" */}
+          <div className="bg-card rounded-[20px] p-4 sm:p-5 border border-brd/30 shadow-sm space-y-2.5 new-report-card">
+            <label className="font-gujarati text-[14px] font-bold text-txt block">
+              ખાસ નોંધ
+            </label>
+            <textarea 
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              aria-label="ખાસ નોંધ"
+              placeholder="અહીં લખો..."
+              className="w-full app-input outline-none resize-none min-h-[72px] font-gujarati text-txt placeholder:text-sub/50 p-3 rounded-[14px] text-sm border border-brd/30 transition-all focus:border-acc"
             />
           </div>
+
+          {/* D5: Action Cluster (Inside form column at ALL widths) */}
+          <div className="space-y-3 pt-1">
+            {/* PRIMARY: "સાચવો" = Full-width 48px accent button */}
+            <button
+              type="button"
+              onClick={() => { 
+                if (!sessionRole) { 
+                  useAppStore.setState({ authDialogOpen: true, authPendingAction: null }); 
+                  return; 
+                } 
+                handleSave(); 
+              }}
+              aria-label="સાચવો"
+              className="action-cluster-primary-btn"
+            >
+              {!sessionRole ? (
+                <Lock size={18} className="shrink-0" />
+              ) : saveSuccess ? (
+                <Check size={20} className="shrink-0 stroke-[3]" />
+              ) : (
+                <Save size={18} className="shrink-0" />
+              )}
+              <span className="font-gujarati font-bold text-base">સાચવો</span>
+            </button>
+
+            {/* SECONDARY: 2×2 icon-pill grid at ALL widths */}
+            <div className="grid grid-cols-2 gap-2.5">
+              <button
+                type="button"
+                onClick={handleWhatsApp}
+                aria-label="WhatsApp પર શેર કરો"
+                className="action-cluster-grid-btn"
+              >
+                <Share2 size={15} className="text-acc shrink-0" />
+                <span className="font-gujarati">WhatsApp પર શેર કરો</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleCopy}
+                aria-label="કૉપી કરો"
+                className="action-cluster-grid-btn"
+              >
+                <Copy size={15} className="text-acc shrink-0" />
+                <span className="font-gujarati">કૉપી કરો</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleDownloadExcel}
+                aria-label="Excel ડાઉનલોડ કરો"
+                className="action-cluster-grid-btn"
+              >
+                <Download size={15} className="text-acc shrink-0" />
+                <span className="font-gujarati">Excel ડાઉનલોડ કરો</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleDownloadPdf}
+                aria-label="PDF ડાઉનલોડ કરો"
+                className="action-cluster-grid-btn"
+              >
+                <Download size={15} className="text-acc shrink-0" />
+                <span className="font-gujarati">PDF ડાઉનલોડ કરો</span>
+              </button>
+            </div>
+
+            {/* DANGER LAST: "ડાલી નાખો" muted outline, red token text */}
+            <button
+              type="button"
+              onClick={() => { 
+                if (!sessionRole) { 
+                  useAppStore.setState({ authDialogOpen: true, authPendingAction: null }); 
+                  return; 
+                } 
+                setShowClearConfirm(true); 
+              }}
+              aria-label="ડાલી નાખો"
+              className="action-cluster-danger-btn"
+            >
+              {!sessionRole ? <Lock size={16} className="shrink-0" /> : <Trash2 size={16} className="shrink-0" />}
+              <span className="font-gujarati">ડાલી નાખો</span>
+            </button>
+          </div>
         </div>
-      </section>
 
-      {/* Special Note */}
-      <section className="order-5 xl:order-none space-y-3">
-        <GlassCard className="p-4 space-y-2">
-          <label className="font-gujarati text-sm font-bold text-sub">{t('label.special_note' as any)}</label>
-          <textarea 
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            className="w-full app-input bg-transparent outline-none resize-none min-h-[60px] font-gujarati text-txt placeholder:text-sub/50 p-3 rounded-2xl"
-            placeholder="અહીં લખો..."
-          />
-        </GlassCard>
-      </section>
-
-      {/* Action Buttons (2-col grid, wired toasts) */}
-      <div className="order-6 xl:order-none grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
-        <LiquidButton variant="neutral" className="w-full px-4 min-w-0 h-auto py-2.5 text-danger border-danger/30 bg-danger/10 hover:bg-danger/20" onClick={() => { if (!sessionRole) { useAppStore.setState({ authDialogOpen: true, authPendingAction: null }); return; } setShowClearConfirm(true); }}>
-          {!sessionRole ? <Lock size={16} className="mr-2 shrink-0" /> : <Trash2 size={16} className="mr-2 shrink-0" />} <span className="font-gujarati text-center">{t('action.delete' as any)}</span>
-        </LiquidButton>
-        <LiquidButton variant="primary" className="w-full px-4 min-w-0 h-auto py-2.5" onClick={() => { if (!sessionRole) { useAppStore.setState({ authDialogOpen: true, authPendingAction: null }); return; } handleSave(); }}>
-          {!sessionRole ? <Lock size={16} className="mr-2 shrink-0" /> : <Save size={16} className="mr-2 shrink-0" />} <span className="font-gujarati text-center">{t('action.save' as any)}</span>
-        </LiquidButton>
-        {sessionRole && (
-          <>
-            <LiquidButton variant="neutral" className="w-full px-4 min-w-0 h-auto py-2.5" onClick={handleWhatsApp}>
-              <Share2 size={16} className="mr-2 text-acc shrink-0" /> <span className="font-gujarati text-sm text-center">{t('action.share_whatsapp' as any)}</span>
-            </LiquidButton>
-            <LiquidButton variant="neutral" className="w-full px-4 min-w-0 h-auto py-2.5" onClick={handleCopy}>
-              <Copy size={16} className="mr-2 text-acc shrink-0" /> <span className="font-gujarati text-sm text-center">કોપી કરો</span>
-            </LiquidButton>
-            <LiquidButton variant="neutral" className="w-full px-4 min-w-0 h-auto py-2.5" onClick={handleDownloadExcel}>
-              <Download size={16} className="mr-2 text-acc shrink-0" /> <span className="font-gujarati text-sm text-center">{t('action.export_excel' as any)}</span>
-            </LiquidButton>
-            <LiquidButton variant="neutral" className="w-full px-4 min-w-0 h-auto py-2.5" onClick={handleDownloadPdf}>
-              <Download size={16} className="mr-2 text-acc shrink-0" /> <span className="font-gujarati text-sm text-center">{t('action.export_pdf' as any)}</span>
-            </LiquidButton>
-          </>
-        )}
-      </div>
-        </div>
-
-        <div className="order-4 xl:order-none xl:w-[55%]">
-      {/* 13-row Activities Table */}
-      <section className="space-y-3">
-        <h3 className="font-bold font-gujarati text-lg pl-1 text-txt">{t('header.activities' as any)}</h3>
-        <div className="rounded-2xl overflow-hidden bg-card shadow-lg border border-brd/40">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse min-w-[640px]">
-              <thead>
-                <tr style={{ background: 'rgb(var(--acc))' }}>
-                  <th className="py-4 px-4 w-2/5">
-                    <div className="flex items-center justify-start">
-                      <span className="inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 backdrop-blur-sm font-gujarati font-semibold text-sm whitespace-nowrap" style={{ textShadow: 'var(--on-primary-shadow)', background: 'var(--on-primary-chip-bg)', borderColor: 'var(--on-primary-chip-border)', borderWidth: '1px', color: 'var(--on-primary)' }}>
-                        <ListChecks size={14} />
-                        પ્રવૃત્તિ
-                      </span>
-                    </div>
-                  </th>
-                  <th className="py-4 px-4 text-center">
-                    <div className="flex items-center justify-center">
-                      <span className="inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 backdrop-blur-sm font-gujarati font-semibold text-sm whitespace-nowrap" style={{ textShadow: 'var(--on-primary-shadow)', background: 'var(--on-primary-chip-bg)', borderColor: 'var(--on-primary-chip-border)', borderWidth: '1px', color: 'var(--on-primary)' }}>
-                        <MapPin size={14} />
+        {/* ── Table Column: "૧૩ મહેનત પ્રવૃત્તિઓ" (col-span-12 lg:col-span-7) ── */}
+        <div className="lg:col-span-7">
+          <div className="bg-card rounded-[20px] overflow-hidden border border-brd/40 shadow-sm new-report-card">
+            {/* Table Scrollable Container with Custom 6px Scrollbar */}
+            <div className="overflow-x-auto report-table-scroll">
+              <table className="w-full text-left border-collapse min-w-[500px] lg:min-w-0">
+                <thead>
+                  <tr className="report-table-header-row">
+                    {/* Sticky Activity Column Header */}
+                    <th className="py-3.5 px-4 report-table-sticky-header w-[40%] min-w-[170px]">
+                      <div className="flex items-center gap-1.5 font-gujarati font-semibold text-[13px] tracking-wide">
+                        <ListChecks size={15} className="shrink-0" />
+                        <span>૧૩ મહેનત પ્રવૃત્તિઓ</span>
+                      </div>
+                    </th>
+                    {/* Flexible Halqa Data Columns */}
+                    <th className="py-3.5 px-3 text-center min-w-[110px] flex-1">
+                      <span className="font-gujarati font-semibold text-[12px] opacity-95">
                         {t('header.gujishta' as any)}
                       </span>
-                    </div>
-                  </th>
-                  <th className="py-4 px-4 text-center">
-                    <div className="flex items-center justify-center">
-                      <span className="inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 backdrop-blur-sm font-gujarati font-semibold text-sm whitespace-nowrap" style={{ textShadow: 'var(--on-primary-shadow)', background: 'var(--on-primary-chip-bg)', borderColor: 'var(--on-primary-chip-border)', borderWidth: '1px', color: 'var(--on-primary)' }}>
-                        <MapPin size={14} />
+                    </th>
+                    <th className="py-3.5 px-3 text-center min-w-[110px] flex-1">
+                      <span className="font-gujarati font-semibold text-[12px] opacity-95">
                         {t('header.azaim' as any)}
                       </span>
-                    </div>
-                  </th>
-                  <th className="py-4 px-4 text-center">
-                    <div className="flex items-center justify-center">
-                      <span className="inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 backdrop-blur-sm font-gujarati font-semibold text-sm whitespace-nowrap" style={{ textShadow: 'var(--on-primary-shadow)', background: 'var(--on-primary-chip-bg)', borderColor: 'var(--on-primary-chip-border)', borderWidth: '1px', color: 'var(--on-primary)' }}>
-                        <MapPin size={14} />
+                    </th>
+                    <th className="py-3.5 px-3 text-center min-w-[110px] flex-1">
+                      <span className="font-gujarati font-semibold text-[12px] opacity-95">
                         {t('header.maujuda' as any)}
                       </span>
-                    </div>
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-brd/30">
-                {ACTIVITY_KEYS.map((key, idx) => (
-                  <tr key={key} className="hover:bg-acc/5 transition-colors">
-                    <td className="py-3.5 px-4">
-                      <div className="flex items-center gap-3">
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-brd/30">
+                  {ACTIVITY_KEYS.map((key, idx) => (
+                    <tr key={key} className="hover:bg-acc/5 transition-colors">
+                      {/* Sticky Activity Column */}
+                      <td className="py-3 px-4 report-table-sticky-col">
+                        <div className="flex items-center gap-2.5">
+                          <span
+                            className="w-[22px] h-[22px] rounded-full text-white text-[11px] font-bold flex items-center justify-center shrink-0 font-num bg-acc shadow-xs"
+                          >
+                            {idx + 1}
+                          </span>
+                          <span className="font-gujarati font-medium text-[14px] text-txt truncate">
+                            {t(key as any)}
+                          </span>
+                        </div>
+                      </td>
+
+                      {/* Gujishta Input */}
+                      <td className="py-2.5 px-2.5 text-center">
+                        <input
+                          type="text"
+                          value={activities[key]?.gujishta || ''}
+                          onChange={(e) => handleActivityChange(key, 'gujishta', e.target.value)}
+                          aria-label={`${t(key as any)} ${t('header.gujishta' as any)}`}
+                          placeholder="-"
+                          className={cn(
+                            "w-full max-w-[100px] mx-auto block rounded-xl app-input py-2 text-sm text-center font-num outline-none focus:border-acc transition-all",
+                            recentlyFilledKeys.has(`${key}.gujishta`) && "bg-acc/20 ring-2 ring-acc"
+                          )}
+                        />
+                      </td>
+
+                      {/* Azaim Input */}
+                      <td className="py-2.5 px-2.5 text-center">
+                        <input
+                          type="text"
+                          value={activities[key]?.azaim || ''}
+                          onChange={(e) => handleActivityChange(key, 'azaim', e.target.value)}
+                          aria-label={`${t(key as any)} ${t('header.azaim' as any)}`}
+                          placeholder="-"
+                          className={cn(
+                            "w-full max-w-[100px] mx-auto block rounded-xl app-input py-2 text-sm text-center font-num outline-none focus:border-acc transition-all",
+                            recentlyFilledKeys.has(`${key}.azaim`) && "bg-acc/20 ring-2 ring-acc"
+                          )}
+                        />
+                      </td>
+
+                      {/* Maujuda Input */}
+                      <td className="py-2.5 px-2.5 text-center">
+                        <input
+                          type="text"
+                          value={activities[key]?.maujuda || ''}
+                          onChange={(e) => handleActivityChange(key, 'maujuda', e.target.value)}
+                          aria-label={`${t(key as any)} ${t('header.maujuda' as any)}`}
+                          placeholder="-"
+                          className={cn(
+                            "w-full max-w-[100px] mx-auto block rounded-xl app-input py-2 text-sm text-center font-num font-bold outline-none focus:border-acc transition-all",
+                            recentlyFilledKeys.has(`${key}.maujuda`) && "bg-acc/20 ring-2 ring-acc"
+                          )}
+                        />
+                      </td>
+                    </tr>
+                  ))}
+
+                  {/* Row 13: Mashwara Text Input */}
+                  <tr className="hover:bg-acc/5 transition-colors">
+                    <td className="py-3 px-4 report-table-sticky-col">
+                      <div className="flex items-center gap-2.5">
                         <span
-                          className="w-8 h-8 rounded-lg text-white text-sm font-bold flex items-center justify-center shrink-0 font-num"
-                          style={{ background: 'rgb(var(--acc))' }}
+                          className="w-[22px] h-[22px] rounded-full text-white text-[11px] font-bold flex items-center justify-center shrink-0 font-num bg-acc shadow-xs"
                         >
-                          {idx + 1}
+                          13
                         </span>
-                        <span className="font-gujarati font-medium text-sm text-txt">{t(key as any)}</span>
+                        <span className="font-gujarati font-bold text-[14px] text-txt truncate">
+                          {t('activity.mashwara_when_where' as any)}
+                        </span>
                       </div>
                     </td>
-                    <td className="py-3.5 px-4">
+                    <td colSpan={3} className="py-2.5 px-3">
                       <input
                         type="text"
-                        value={activities[key]?.gujishta || ''}
-                        onChange={(e) => handleActivityChange(key, 'gujishta', e.target.value)}
+                        value={activities['mashwara']?.maujuda || ''}
+                        onChange={(e) => handleActivityChange('mashwara', 'maujuda', e.target.value)}
+                        aria-label={t('activity.mashwara_when_where' as any)}
+                        placeholder="કિંમત લખો..."
                         className={cn(
-                          "w-full max-w-[110px] mx-auto block rounded-xl app-input py-2.5 text-sm text-center font-num outline-none focus:border-acc focus:ring-2 focus:ring-acc/40 transition-all",
-                          recentlyFilledKeys.has(`${key}.gujishta`) && "bg-acc/20 ring-2 ring-acc/60"
+                          "row13-text-input app-input border border-brd/30 focus:border-acc",
+                          recentlyFilledKeys.has('mashwara') && "bg-acc/20 ring-2 ring-acc"
                         )}
-                        placeholder="-"
-                      />
-                    </td>
-                    <td className="py-3.5 px-4">
-                      <input
-                        type="text"
-                        value={activities[key]?.azaim || ''}
-                        onChange={(e) => handleActivityChange(key, 'azaim', e.target.value)}
-                        className={cn(
-                          "w-full max-w-[110px] mx-auto block rounded-xl app-input py-2.5 text-sm text-center font-num outline-none focus:border-acc focus:ring-2 focus:ring-acc/40 transition-all",
-                          recentlyFilledKeys.has(`${key}.azaim`) && "bg-acc/20 ring-2 ring-acc/60"
-                        )}
-                        placeholder="-"
-                      />
-                    </td>
-                    <td className="py-3.5 px-4">
-                      <input
-                        type="text"
-                        value={activities[key]?.maujuda || ''}
-                        onChange={(e) => handleActivityChange(key, 'maujuda', e.target.value)}
-                        className={cn(
-                          "w-full max-w-[110px] mx-auto block rounded-xl app-input py-2.5 text-sm text-center font-num font-bold outline-none focus:ring-2 focus:ring-acc/40 transition-all",
-                          recentlyFilledKeys.has(`${key}.maujuda`) && "bg-acc/20 ring-2 ring-acc/60"
-                        )}
-                        placeholder="-"
                       />
                     </td>
                   </tr>
-                ))}
-                {/* 13th Row: Mashwara */}
-                <tr className="hover:bg-acc/5 transition-colors">
-                  <td className="py-3.5 px-4">
-                    <div className="flex items-center gap-3">
-                      <span
-                        className="w-8 h-8 rounded-lg text-white text-sm font-bold flex items-center justify-center shrink-0 font-num"
-                        style={{ background: 'rgb(var(--acc))' }}
-                      >
-                        13
-                      </span>
-                      <span className="font-gujarati font-bold text-sm text-txt">{t('activity.mashwara_when_where' as any)}</span>
-                    </div>
-                  </td>
-                  <td colSpan={3} className="py-3.5 px-4">
-                    <input
-                      type="text"
-                      value={activities['mashwara']?.maujuda || ''}
-                      onChange={(e) => handleActivityChange('mashwara', 'maujuda', e.target.value)}
-                      className={cn(
-                        "w-full rounded-xl app-input px-4 py-2.5 text-sm font-gujarati outline-none focus:border-acc focus:ring-2 focus:ring-acc/40 transition-all placeholder-opacity-50",
-                        recentlyFilledKeys.has('mashwara') && "bg-acc/20 ring-2 ring-acc/60"
-                      )}
-                      placeholder="વિગત લખો..."
-                    />
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
-      </section>
-
-        </div>
       </div>
-      
-      {/* Hidden Print Block */}
+
+      {/* Hidden Print Block for PDF Generation */}
       <div id="print-report" className="hidden">
         <h1 className="text-2xl font-bold mb-4 border-b border-black pb-2">બનાસકાંઠા સ્ટુડન્ટ મહેનત રિપોર્ટ</h1>
         <div className="flex justify-between mb-4 font-bold text-lg">
@@ -731,38 +1003,20 @@ export const NewReport: React.FC = () => {
         <h2 className="text-xl font-bold mb-2">સ્ટુડન્ટ આંકડા (કુલ: {totalStudents})</h2>
         <table className="w-full border-collapse border border-black mb-6 text-sm">
           <tbody>
+            {KPI_KEYS.map(({ key, label }) => (
+              <tr key={key}>
+                <td className="border border-black p-2 font-bold w-1/2">{label}</td>
+                <td className="border border-black p-2">{(stats as any)[key] || 0}</td>
+              </tr>
+            ))}
             <tr>
-              <td className="border border-black p-2 font-bold w-1/2">{t('stat.std_10' as any)}</td>
-              <td className="border border-black p-2">{stats.std_10}</td>
-            </tr>
-            <tr>
-              <td className="border border-black p-2 font-bold">{t('stat.std_11' as any)}</td>
-              <td className="border border-black p-2">{stats.std_11}</td>
-            </tr>
-            <tr>
-              <td className="border border-black p-2 font-bold">{t('stat.std_12' as any)}</td>
-              <td className="border border-black p-2">{stats.std_12}</td>
-            </tr>
-            <tr>
-              <td className="border border-black p-2 font-bold">{t('stat.college' as any)}</td>
-              <td className="border border-black p-2">{stats.college}</td>
-            </tr>
-            <tr>
-              <td className="border border-black p-2 font-bold">{t('stat.engineering' as any)}</td>
-              <td className="border border-black p-2">{stats.engineering}</td>
-            </tr>
-            <tr>
-              <td className="border border-black p-2 font-bold">{t('stat.medical' as any)}</td>
-              <td className="border border-black p-2">{stats.medical}</td>
-            </tr>
-            <tr>
-              <td className="border border-black p-2 font-bold">{t('stat.muslim_teachers' as any)}</td>
+              <td className="border border-black p-2 font-bold">મુસ્લિમ શિક્ષકોની સંખ્યા</td>
               <td className="border border-black p-2">{stats.muslim_teachers}</td>
             </tr>
           </tbody>
         </table>
 
-        <h2 className="text-xl font-bold mb-2">પ્રવૃત્તિ સારાંશ</h2>
+        <h2 className="text-xl font-bold mb-2">૧૩ મહેનત પ્રવૃત્તિઓ</h2>
         <table className="w-full border-collapse border border-black mb-6 text-sm text-center">
           <thead>
             <tr className="bg-card">
@@ -793,19 +1047,6 @@ export const NewReport: React.FC = () => {
           {notes || '-'}
         </div>
       </div>
-
-      <style>{`
-        .hide-scrollbar::-webkit-scrollbar {
-          display: none;
-        }
-        .hide-scrollbar {
-          -ms-overflow-style: none;
-          scrollbar-width: none;
-        }
-      `}</style>
     </div>
   );
 };
-
-
-
