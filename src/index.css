@@ -756,17 +756,35 @@ html[data-theme="premium"] .neu-cal-disc-selected .neu-cal-dot {
   }
 }
 
-/* ── S33 Page Heading Theme Skins ── */
-html[data-theme="outdoor"] .page-heading-title { color: #1E2F73; }
-html[data-theme="outdoor"] .page-heading-bar   { background-color: #243B8F; }
+/* ── S34 Page Heading Depth Upgrade (supersedes S33) ── */
+html[data-theme="outdoor"] .page-heading-title {
+  color: #1E2F73;
+  text-shadow: 1px 1px 2px rgba(176, 150, 90, 0.25);
+}
+html[data-theme="outdoor"] .page-heading-bar {
+  background: linear-gradient(90deg, #243B8F 0%, #3850A2 100%);
+  box-shadow: 0 2px 4px rgba(36, 59, 143, 0.35);
+}
 
-html[data-theme="dark"] .page-heading-title     { color: #F5F5F5; }
-html[data-theme="dark"] .page-heading-bar       { background-color: #84CC16; }
+html[data-theme="dark"] .page-heading-title {
+  color: #F5F5F5;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.45);
+}
+html[data-theme="dark"] .page-heading-bar {
+  background: linear-gradient(90deg, #65A30D 0%, #84CC16 100%);
+  box-shadow: 0 2px 4px rgba(101, 163, 13, 0.40);
+}
 
-html[data-theme="premium"] .page-heading-title  { color: #F5F5F5; }
-html[data-theme="premium"] .page-heading-bar    { background-color: #EC4899; }
+html[data-theme="premium"] .page-heading-title {
+  color: #F5F5F5;
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.55);
+}
+html[data-theme="premium"] .page-heading-bar {
+  background: linear-gradient(90deg, #171238 0%, #EC4899 100%);
+  box-shadow: 0 2px 5px rgba(236, 72, 153, 0.45);
+}
 
-/* S33 Mobile: Scale heading to 24px at ≤360px */
+/* S34 Mobile: Scale heading to 24px at ≤360px */
 @media (max-width: 360px) {
   .page-heading-title {
     font-size: 24px !important;
