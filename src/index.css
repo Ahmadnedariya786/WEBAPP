@@ -495,13 +495,23 @@ html[data-theme="premium"] .admin-dialog-btn:active:not(:disabled) {
   .neu-check-in { animation: none !important; transform: scale(1); opacity: 1; }
 }
 
-/* ── S27 Neumorphic Calendar Styles ── */
+/* ── S34 Neumorphic Calendar Styles (Quiet-Day Grid + Dropdown Pills) ── */
 .neu-cal-dialog {
   width: 100%;
   max-width: 360px;
   border-radius: 1.5rem;
   padding: 1.125rem 0.875rem;
   transition: background-color 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.neu-cal-dropdown-pill {
+  border-radius: 9999px;
+  transition: all 0.15s ease;
+}
+.neu-cal-select {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
 }
 
 /* OUTDOOR (Light): True Light Neumorphism */
@@ -531,30 +541,51 @@ html[data-theme="outdoor"] .neu-cal-btn:active {
   box-shadow: inset 2px 2px 4px rgba(176, 150, 90, 0.30), inset -2px -2px 4px #FFFFFF;
 }
 
-html[data-theme="outdoor"] .neu-cal-disc {
+html[data-theme="outdoor"] .neu-cal-dropdown-pill {
   background: #F7F2E6;
-  box-shadow: -3px -3px 6px #FFFFFF, 3px 3px 6px rgba(176, 150, 90, 0.30);
+  box-shadow: -2px -2px 5px #FFFFFF, 2px 2px 5px rgba(176, 150, 90, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.90);
   color: #1E2F73;
-  border: 1px solid rgba(255, 255, 255, 0.85);
 }
-html[data-theme="outdoor"] .neu-cal-disc:active {
-  box-shadow: inset 2px 2px 4px rgba(176, 150, 90, 0.30), inset -2px -2px 4px #FFFFFF;
+html[data-theme="outdoor"] .neu-cal-dropdown-pill:focus-within {
+  box-shadow: inset 1px 1px 3px rgba(176, 150, 90, 0.30), inset -1px -1px 3px #FFFFFF;
+}
+html[data-theme="outdoor"] .neu-cal-select option {
+  background: #FBF7EC;
+  color: #1E2F73;
 }
 
+/* Quiet-day grid: flat centered numbers, no raised disc, subtle tint on hover */
+html[data-theme="outdoor"] .neu-cal-disc {
+  background: transparent;
+  box-shadow: none;
+  border: 1px solid transparent;
+  color: #1E2F73;
+}
+html[data-theme="outdoor"] .neu-cal-disc:hover,
+html[data-theme="outdoor"] .neu-cal-disc:active {
+  background: rgba(36, 59, 143, 0.08);
+}
 html[data-theme="outdoor"] .neu-cal-disc.opacity-35 {
   color: #1E2F73;
   opacity: 0.35;
 }
 
+/* Selected: Filled theme-accent circle with soft outer blueberry glow */
 html[data-theme="outdoor"] .neu-cal-disc-selected {
   background: #243B8F !important;
   color: #FFFFFF !important;
-  box-shadow: 0 4px 14px rgba(36, 59, 143, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.25) !important;
+  font-weight: 700 !important;
+  box-shadow: 0 0 16px rgba(36, 59, 143, 0.45) !important;
   border: 1px solid rgba(255, 255, 255, 0.25) !important;
 }
 
+/* Today: Thin accent ring on the flat number */
 html[data-theme="outdoor"] .neu-cal-disc-today:not(.neu-cal-disc-selected) {
-  box-shadow: -3px -3px 6px #FFFFFF, 3px 3px 6px rgba(176, 150, 90, 0.30), 0 0 0 2px #243B8F !important;
+  background: transparent !important;
+  box-shadow: 0 0 0 1.5px #243B8F !important;
+  border: 1px solid transparent !important;
+  color: #1E2F73 !important;
 }
 
 html[data-theme="outdoor"] .neu-cal-pill-primary {
@@ -612,31 +643,56 @@ html[data-theme="dark"] .neu-cal-btn:active {
   box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5);
 }
 
-html[data-theme="dark"] .neu-cal-disc {
+html[data-theme="dark"] .neu-cal-dropdown-pill {
   background: #2C313A;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45);
-  color: #F3F4F6;
   border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #F3F4F6;
 }
-html[data-theme="dark"] .neu-cal-disc:active {
-  background: #242930;
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.6);
+html[data-theme="dark"] .neu-cal-dropdown-pill:focus-within {
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5);
+  border-color: rgba(132, 204, 22, 0.4);
+}
+html[data-theme="dark"] .neu-cal-select option {
+  background: #23272E;
+  color: #F3F4F6;
 }
 
+/* Quiet-day grid: flat centered numbers, subtle tint on hover */
+html[data-theme="dark"] .neu-cal-disc {
+  background: transparent;
+  box-shadow: none;
+  border: 1px solid transparent;
+  color: #F3F4F6;
+}
+html[data-theme="dark"] .neu-cal-disc:hover,
+html[data-theme="dark"] .neu-cal-disc:active {
+  background: rgba(255, 255, 255, 0.08);
+}
+html[data-theme="dark"] .neu-cal-disc.opacity-35 {
+  color: #F3F4F6;
+  opacity: 0.35;
+}
+
+/* Selected: Filled lime circle with soft lime outer glow */
 html[data-theme="dark"] .neu-cal-disc-selected {
-  background: #65A30D !important;
+  background: #84CC16 !important;
   color: #1A2E05 !important;
   font-weight: 700 !important;
-  box-shadow: 0 0 14px rgba(101, 163, 13, 0.50), 0 2px 6px rgba(0, 0, 0, 0.35) !important;
+  box-shadow: 0 0 16px rgba(132, 204, 22, 0.50) !important;
   border: 1px solid rgba(182, 255, 46, 0.5) !important;
 }
 
+/* Today: Thin accent ring on the flat number */
 html[data-theme="dark"] .neu-cal-disc-today:not(.neu-cal-disc-selected) {
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45), 0 0 0 2px rgba(101, 163, 13, 0.7) !important;
+  background: transparent !important;
+  box-shadow: 0 0 0 1.5px #84CC16 !important;
+  border: 1px solid transparent !important;
+  color: #F3F4F6 !important;
 }
 
 html[data-theme="dark"] .neu-cal-pill-primary {
-  background: #65A30D;
+  background: #84CC16;
   color: #1A2E05;
   font-weight: 700;
   box-shadow: 0 4px 14px rgba(101, 163, 13, 0.40);
@@ -658,7 +714,7 @@ html[data-theme="dark"] .neu-cal-pill-neutral:active {
 }
 
 html[data-theme="dark"] .neu-cal-dot {
-  background-color: #B6FF2E;
+  background-color: #84CC16;
 }
 html[data-theme="dark"] .neu-cal-disc-selected .neu-cal-dot {
   background-color: #1A2E05;
@@ -692,27 +748,52 @@ html[data-theme="premium"] .neu-cal-btn:active {
   box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5);
 }
 
-html[data-theme="premium"] .neu-cal-disc {
+html[data-theme="premium"] .neu-cal-dropdown-pill {
   background: #332244;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45);
-  color: #FFE3F1;
   border: 1px solid rgba(255, 255, 255, 0.10);
+  color: #FFE3F1;
 }
-html[data-theme="premium"] .neu-cal-disc:active {
-  background: #2A1A38;
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.6);
+html[data-theme="premium"] .neu-cal-dropdown-pill:focus-within {
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5);
+  border-color: rgba(236, 72, 153, 0.4);
+}
+html[data-theme="premium"] .neu-cal-select option {
+  background: #251732;
+  color: #FFE3F1;
 }
 
+/* Quiet-day grid: flat centered numbers, subtle tint on hover */
+html[data-theme="premium"] .neu-cal-disc {
+  background: transparent;
+  box-shadow: none;
+  border: 1px solid transparent;
+  color: #FFE3F1;
+}
+html[data-theme="premium"] .neu-cal-disc:hover,
+html[data-theme="premium"] .neu-cal-disc:active {
+  background: rgba(255, 255, 255, 0.08);
+}
+html[data-theme="premium"] .neu-cal-disc.opacity-35 {
+  color: #FFE3F1;
+  opacity: 0.35;
+}
+
+/* Selected: Filled pink circle with soft pink outer glow */
 html[data-theme="premium"] .neu-cal-disc-selected {
   background: #EC4899 !important;
-  color: #2A081C !important;
+  color: #FFFFFF !important;
   font-weight: 700 !important;
-  box-shadow: 0 0 14px rgba(236, 72, 153, 0.50), 0 2px 6px rgba(0, 0, 0, 0.35) !important;
+  box-shadow: 0 0 16px rgba(236, 72, 153, 0.50) !important;
   border: 1px solid rgba(255, 255, 255, 0.35) !important;
 }
 
+/* Today: Thin accent ring on the flat number */
 html[data-theme="premium"] .neu-cal-disc-today:not(.neu-cal-disc-selected) {
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45), 0 0 0 2px rgba(236, 72, 153, 0.7) !important;
+  background: transparent !important;
+  box-shadow: 0 0 0 1.5px #EC4899 !important;
+  border: 1px solid transparent !important;
+  color: #FFE3F1 !important;
 }
 
 html[data-theme="premium"] .neu-cal-pill-primary {
@@ -741,7 +822,7 @@ html[data-theme="premium"] .neu-cal-dot {
   background-color: #EC4899;
 }
 html[data-theme="premium"] .neu-cal-disc-selected .neu-cal-dot {
-  background-color: #2A081C;
+  background-color: #FFFFFF;
 }
 
 /* Reduced motion for neumorphic calendar */
@@ -749,7 +830,8 @@ html[data-theme="premium"] .neu-cal-disc-selected .neu-cal-dot {
   .neu-cal-btn,
   .neu-cal-disc,
   .neu-cal-pill-primary,
-  .neu-cal-pill-neutral {
+  .neu-cal-pill-neutral,
+  .neu-cal-dropdown-pill {
     transition: none !important;
     animation: none !important;
     transform: none !important;

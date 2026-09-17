@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react';
 import { useAppStore } from '../../store/appStore';
 import { localTodayIso, cn } from '../../lib/utils';
 
@@ -49,6 +49,18 @@ export const NeumorphicCalendarDialog: React.FC<NeumorphicCalendarDialogProps> =
     const [, m] = base.split('-').map(Number);
     return (m ? m - 1 : new Date().getMonth());
   });
+
+  // Year options: current year ±5
+  const yearOptions = useMemo(() => {
+    const current = new Date().getFullYear();
+    const yrs: number[] = [];
+    const min = Math.min(current - 5, navYear);
+    const max = Math.max(current + 5, navYear);
+    for (let y = min; y <= max; y++) {
+      yrs.push(y);
+    }
+    return yrs;
+  }, [navYear]);
 
   // Sync nav view whenever dialog opens or selectedDate changes externally
   useEffect(() => {
@@ -166,22 +178,62 @@ export const NeumorphicCalendarDialog: React.FC<NeumorphicCalendarDialogProps> =
             className="neu-cal-dialog flex flex-col select-none"
             id="calendar-dialog-container"
           >
-            {/* Header Row: Prev button, Centered Title + Subtitle, Next button */}
-            <div className="flex items-center justify-between gap-2 mb-3 px-1">
+            {/* Header Row: Prev button, Centered Title + Dropdown Pills + Subtitle, Next button */}
+            <div className="flex items-center justify-between gap-1.5 mb-3 px-1">
               <button
                 type="button"
                 id="neu-cal-prev-btn"
                 onClick={handlePrevMonth}
                 aria-label="Previous Month"
-                className="w-[44px] h-[44px] rounded-full neu-cal-btn flex items-center justify-center cursor-pointer transition-all active:scale-95 shrink-0"
+                className="w-[40px] h-[40px] rounded-full neu-cal-btn flex items-center justify-center cursor-pointer transition-all active:scale-95 shrink-0"
               >
-                <ChevronLeft size={20} />
+                <ChevronLeft size={18} />
               </button>
 
-              <div className="flex-1 text-center min-w-0">
-                <h3 className="neu-cal-title font-gujarati font-bold text-base leading-tight truncate">
-                  {GUJARATI_MONTHS[navMonth]} {navYear}
-                </h3>
+              <div className="flex-1 text-center min-w-0 flex flex-col items-center">
+                <div className="flex items-center justify-center gap-1.5 flex-wrap">
+                  <h3 className="neu-cal-title font-gujarati font-bold text-sm sm:text-base leading-tight truncate">
+                    {GUJARATI_MONTHS[navMonth]} {navYear}
+                  </h3>
+                  <div className="flex items-center gap-1 shrink-0">
+                    {/* Month Dropdown Pill */}
+                    <div className="neu-cal-dropdown-pill relative inline-flex items-center">
+                      <select
+                        id="neu-cal-month-select"
+                        aria-label="મહિનો પસંદ કરો"
+                        value={navMonth}
+                        onChange={(e) => setNavMonth(Number(e.target.value))}
+                        className="neu-cal-select font-gujarati text-xs cursor-pointer appearance-none bg-transparent pr-4 pl-2 py-1 outline-none font-semibold"
+                      >
+                        {GUJARATI_MONTHS.map((m, idx) => (
+                          <option key={idx} value={idx}>
+                            {m}
+                          </option>
+                        ))}
+                      </select>
+                      <ChevronDown size={11} className="neu-cal-select-chevron pointer-events-none absolute right-1.5 opacity-60" />
+                    </div>
+
+                    {/* Year Dropdown Pill */}
+                    <div className="neu-cal-dropdown-pill relative inline-flex items-center">
+                      <select
+                        id="neu-cal-year-select"
+                        aria-label="વર્ષ પસંદ કરો"
+                        value={navYear}
+                        onChange={(e) => setNavYear(Number(e.target.value))}
+                        className="neu-cal-select font-num text-xs cursor-pointer appearance-none bg-transparent pr-4 pl-2 py-1 outline-none font-semibold"
+                      >
+                        {yearOptions.map((y) => (
+                          <option key={y} value={y}>
+                            {y}
+                          </option>
+                        ))}
+                      </select>
+                      <ChevronDown size={11} className="neu-cal-select-chevron pointer-events-none absolute right-1.5 opacity-60" />
+                    </div>
+                  </div>
+                </div>
+
                 <p className="neu-cal-sub font-gujarati text-[11px] font-medium leading-normal mt-0.5">
                   {monthReportsCount} રિપોર્ટ્સ
                 </p>
@@ -192,9 +244,9 @@ export const NeumorphicCalendarDialog: React.FC<NeumorphicCalendarDialogProps> =
                 id="neu-cal-next-btn"
                 onClick={handleNextMonth}
                 aria-label="Next Month"
-                className="w-[44px] h-[44px] rounded-full neu-cal-btn flex items-center justify-center cursor-pointer transition-all active:scale-95 shrink-0"
+                className="w-[40px] h-[40px] rounded-full neu-cal-btn flex items-center justify-center cursor-pointer transition-all active:scale-95 shrink-0"
               >
-                <ChevronRight size={20} />
+                <ChevronRight size={18} />
               </button>
             </div>
 
