@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Lock, Loader2, CheckCircle } from 'lucide-react';
 import { useAppStore } from '../../store/appStore';
 import { supabaseService } from '../../services/supabaseService';
+import { useOverlayScrollLock } from '../../lib/useOverlayScrollLock';
 
 export const AuthDialog: React.FC = () => {
   const { authDialogOpen, closeAuthDialog, setSession, authPendingAction } = useAppStore();
@@ -11,6 +12,9 @@ export const AuthDialog: React.FC = () => {
   const [toastMessage, setToastMessage] = useState('');
   const [showToast, setShowToast] = useState(false);
   const [unlockSuccess, setUnlockSuccess] = useState(false);
+
+  const panelRef = useRef<HTMLDivElement>(null);
+  useOverlayScrollLock({ isOpen: authDialogOpen, onClose: closeAuthDialog, panelRef });
 
   React.useEffect(() => {
     const handleToast = (e: any) => showNotification(e.detail);
@@ -68,31 +72,33 @@ export const AuthDialog: React.FC = () => {
       )}
 
       {authDialogOpen && (
-        <>
-          {/* Backdrop */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[70]"
-            onClick={closeAuthDialog}
-          />
-
+        <div
+          className="viewport-fixed-overlay bg-black/50 backdrop-blur-sm"
+          onClick={(e) => { if (e.target === e.currentTarget) closeAuthDialog(); }}
+          id="auth-dialog-overlay"
+        >
           {/* Centered dialog */}
           <motion.div
+            ref={panelRef}
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className="fixed inset-0 z-[70] flex items-center justify-center p-4 pointer-events-none"
+            transition={{ duration: 0.18, ease: 'easeOut' }}
+            onClick={(e) => e.stopPropagation()}
+            className="w-[92%] max-w-sm max-h-[85vh] overflow-y-auto neu-raised rounded-3xl p-6 relative pointer-events-auto select-none"
+            role="dialog"
+            aria-modal="true"
+            aria-label="ટીમ કોડ લૉગિન"
+            id="auth-dialog-container"
+            tabIndex={-1}
           >
-            {/* ── Neumorphic panel ── */}
-            <div className="w-[92%] max-w-sm neu-raised rounded-3xl p-6 relative pointer-events-auto">
-              <button
-                onClick={closeAuthDialog}
-                className="absolute top-4 right-4 text-sub hover:text-txt transition-colors"
-              >
-                <X size={20} />
-              </button>
+            <button
+              onClick={closeAuthDialog}
+              className="absolute top-4 right-4 text-sub hover:text-txt transition-colors cursor-pointer"
+              aria-label="બંધ કરો"
+            >
+              <X size={20} />
+            </button>
 
               <AnimatePresence mode="wait">
                 {unlockSuccess ? (
@@ -165,9 +171,8 @@ export const AuthDialog: React.FC = () => {
                   </motion.div>
                 )}
               </AnimatePresence>
-            </div>
           </motion.div>
-        </>
+        </div>
       )}
     </AnimatePresence>
   );

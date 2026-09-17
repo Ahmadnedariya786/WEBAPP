@@ -9,6 +9,7 @@ import { getLogs, clearLogs, type SystemLog, logActivity, cn } from '../lib/util
 import { useAppStore } from '../store/appStore';
 import { supabaseService } from '../services/supabaseService';
 import { useNavigate } from 'react-router-dom';
+import { useOverlayScrollLock } from '../lib/useOverlayScrollLock';
 
 export const Admin: React.FC = () => {
   const { sessionCode, sessionRole, setSession, reports, halqas } = useAppStore();
@@ -36,6 +37,9 @@ export const Admin: React.FC = () => {
   // Halqa Management State
   const [newAdminHalqa, setNewAdminHalqa] = useState('');
   const [halqaToDelete, setHalqaToDelete] = useState<{ id: string, name: string } | null>(null);
+
+  useOverlayScrollLock({ isOpen: showGenerateModal, onClose: () => setShowGenerateModal(false) });
+  useOverlayScrollLock({ isOpen: !!halqaToDelete, onClose: () => setHalqaToDelete(null) });
 
   const showNotification = (msg: string) => {
     setToastMessage(msg);
@@ -452,8 +456,24 @@ export const Admin: React.FC = () => {
 
           <AnimatePresence>
             {showGenerateModal && (
-              <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={(e) => { if (e.target === e.currentTarget && !generatedCode) setShowGenerateModal(false); }}>
-                <motion.div initial={{opacity:0, scale:0.95}} animate={{opacity:1, scale:1}} exit={{opacity:0, scale:0.95}} className="w-[92%] max-w-sm rounded-2xl bg-card p-5 text-center shadow-2xl border border-brd/10">
+              <div 
+                className="viewport-fixed-overlay bg-black/50 backdrop-blur-sm" 
+                onClick={(e) => { if (e.target === e.currentTarget && !generatedCode) setShowGenerateModal(false); }}
+                id="generate-modal-overlay"
+              >
+                <motion.div 
+                  initial={{opacity:0, scale:0.95}} 
+                  animate={{opacity:1, scale:1}} 
+                  exit={{opacity:0, scale:0.95}} 
+                  transition={{ duration: 0.18, ease: 'easeOut' }}
+                  onClick={(e) => e.stopPropagation()}
+                  className="w-[92%] max-w-sm max-h-[85vh] overflow-y-auto rounded-2xl bg-card p-5 text-center shadow-2xl border border-brd/10 select-none"
+                  role="dialog"
+                  aria-modal="true"
+                  aria-label="નવો પાસવર્ડ બનાવો"
+                  id="generate-modal-container"
+                  tabIndex={-1}
+                >
                   {generatedCode ? (
                     <div className="space-y-6">
                       <div className="w-16 h-16 bg-acc2/10 text-acc2 rounded-full flex items-center justify-center mx-auto">
@@ -614,8 +634,24 @@ export const Admin: React.FC = () => {
 
           <AnimatePresence>
             {halqaToDelete && (
-              <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={(e) => { if (e.target === e.currentTarget) setHalqaToDelete(null); }}>
-                <motion.div initial={{opacity:0, scale:0.95}} animate={{opacity:1, scale:1}} exit={{opacity:0, scale:0.95}} className="w-[92%] max-w-sm rounded-2xl bg-card p-6 shadow-2xl border border-brd/10 space-y-5">
+              <div 
+                className="viewport-fixed-overlay bg-black/50 backdrop-blur-sm" 
+                onClick={(e) => { if (e.target === e.currentTarget) setHalqaToDelete(null); }}
+                id="admin-halqa-delete-overlay"
+              >
+                <motion.div 
+                  initial={{opacity:0, scale:0.95}} 
+                  animate={{opacity:1, scale:1}} 
+                  exit={{opacity:0, scale:0.95}} 
+                  transition={{ duration: 0.18, ease: 'easeOut' }}
+                  onClick={(e) => e.stopPropagation()}
+                  className="w-[92%] max-w-sm max-h-[85vh] overflow-y-auto rounded-2xl bg-card p-6 shadow-2xl border border-brd/10 space-y-5 select-none"
+                  role="dialog"
+                  aria-modal="true"
+                  aria-label="હલકો કાઢી નાખવાની ખાતરી"
+                  id="admin-halqa-delete-container"
+                  tabIndex={-1}
+                >
                   <div className="w-12 h-12 bg-danger/10 text-danger rounded-full flex items-center justify-center mx-auto mb-2">
                     <Trash2 size={24} />
                   </div>

@@ -82,32 +82,68 @@ export const ScanPills: React.FC<ScanPillsProps> = ({
       // Stage 1: EXIF normalize + compress max 1200px JPEG q0.75
       const processed = await processImageFile(file);
 
-      // Stage 2: Call /api/scan-extract
+      // Stage 2: Call /api/scan-extract with AbortController 30s timeout & single retry
       setScanStage('scanning');
 
-      const response = await fetch('/api/scan-extract', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          image: processed.base64,
-          mimeType: processed.mimeType
-        })
-      });
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => {
+        controller.abort();
+      }, 30000);
 
-      if (!response.ok) {
-        let errJson: any = null;
-        try {
-          errJson = await response.json();
-        } catch {
-          errJson = { status: response.status, statusText: response.statusText };
+      let extracted: ExtractedReport | null = null;
+      let lastError: any = null;
+
+      try {
+        for (let attempt = 0; attempt < 2; attempt++) {
+          if (controller.signal.aborted) {
+            break;
+          }
+
+          try {
+            const response = await fetch('/api/scan-extract', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                image: processed.base64,
+                mimeType: processed.mimeType
+              }),
+              signal: controller.signal
+            });
+
+            if (!response.ok) {
+              let errJson: any = null;
+              try {
+                errJson = await response.json();
+              } catch {
+                errJson = { status: response.status, statusText: response.statusText };
+              }
+              throw new Error(errJson?.detail || errJson?.code || `API response not ok: ${response.status}`);
+            }
+
+            extracted = await response.json();
+            break; // Succeeded!
+          } catch (err: any) {
+            lastError = err;
+            if (controller.signal.aborted) {
+              // Timeout reached (30s)
+              break;
+            }
+            // Retry once on network error or server failure after brief pause
+            if (attempt === 0) {
+              await new Promise((r) => setTimeout(r, 300));
+            }
+          }
         }
-        console.error('Scan & extract server error:', errJson);
-        throw new Error(errJson?.detail || errJson?.code || `API response not ok: ${response.status}`);
+      } finally {
+        clearTimeout(timeoutId);
       }
 
-      const extracted: ExtractedReport = await response.json();
+      if (!extracted) {
+        throw lastError || new Error('Scan extraction failed');
+      }
+
       const parsedReviewData = transformExtractionToReviewData(extracted, currentHalqas);
 
       setReviewData(parsedReviewData);
@@ -262,11 +298,14 @@ export const ScanPills: React.FC<ScanPillsProps> = ({
       <div className="flex items-stretch gap-2.5">
         <button
           type="button"
-          onClick={() => cameraInputRef.current?.click()}
+          onClick={() => {
+            if (isScanning) return;
+            cameraInputRef.current?.click();
+          }}
           disabled={isScanning}
           id="btn-camera-scan"
           aria-label="કેમેરાથી સ્કાન"
-          className="flex-1 min-h-[56px] flex items-center justify-center gap-2 py-2.5 px-3 rounded-2xl bg-card hover:bg-card/90 active:scale-[0.98] border border-brd/30 shadow-sm text-txt font-gujarati text-sm font-semibold transition-all disabled:opacity-60 disabled:pointer-events-none text-center"
+          className="flex-1 min-h-[56px] flex items-center justify-center gap-2 py-2.5 px-3 rounded-2xl bg-card hover:bg-card/90 active:scale-[0.98] border border-brd/30 shadow-sm text-txt font-gujarati text-sm font-semibold transition-all disabled:opacity-60 disabled:pointer-events-none text-center cursor-pointer"
         >
           {isScanning ? (
             <Loader2 size={16} className="animate-spin text-acc shrink-0" />
@@ -278,11 +317,14 @@ export const ScanPills: React.FC<ScanPillsProps> = ({
 
         <button
           type="button"
-          onClick={() => galleryInputRef.current?.click()}
+          onClick={() => {
+            if (isScanning) return;
+            galleryInputRef.current?.click();
+          }}
           disabled={isScanning}
           id="btn-gallery-scan"
           aria-label="ગેલરીથી ઇમ્પોર્ટ"
-          className="flex-1 min-h-[56px] flex items-center justify-center gap-2 py-2.5 px-3 rounded-2xl bg-card hover:bg-card/90 active:scale-[0.98] border border-brd/30 shadow-sm text-txt font-gujarati text-sm font-semibold transition-all disabled:opacity-60 disabled:pointer-events-none text-center"
+          className="flex-1 min-h-[56px] flex items-center justify-center gap-2 py-2.5 px-3 rounded-2xl bg-card hover:bg-card/90 active:scale-[0.98] border border-brd/30 shadow-sm text-txt font-gujarati text-sm font-semibold transition-all disabled:opacity-60 disabled:pointer-events-none text-center cursor-pointer"
         >
           {isScanning ? (
             <Loader2 size={16} className="animate-spin text-acc shrink-0" />

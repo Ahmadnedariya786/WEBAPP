@@ -81,16 +81,33 @@ export async function processImageFile(file: File): Promise<ProcessedImage> {
   const mimeType = 'image/jpeg';
 
   // D2: Async canvas.toBlob() (0.75 quality) + FileReader.readAsDataURL — NEVER canvas.toDataURL()
-  const blob = await new Promise<Blob>((resolve, reject) => {
+  let quality = 0.75;
+  let blob = await new Promise<Blob>((resolve, reject) => {
     canvas.toBlob(
       b => {
         if (b) resolve(b);
         else reject(new Error('Canvas toBlob failed'));
       },
       mimeType,
-      0.75
+      quality
     );
   });
+
+  // D3 Assert outgoing payload < 400KB: base64 string overhead is ~4/3 of blob size
+  // 400KB payload limit = ~300KB blob limit. If exceeding, adaptively reduce quality.
+  while (blob.size > 295 * 1024 && quality > 0.4) {
+    quality -= 0.08;
+    blob = await new Promise<Blob>((resolve, reject) => {
+      canvas.toBlob(
+        b => {
+          if (b) resolve(b);
+          else reject(new Error('Canvas toBlob failed'));
+        },
+        mimeType,
+        quality
+      );
+    });
+  }
 
   const dataUrl = await new Promise<string>((resolve, reject) => {
     const reader = new FileReader();
@@ -101,7 +118,13 @@ export async function processImageFile(file: File): Promise<ProcessedImage> {
 
   const base64 = dataUrl.replace(/^data:image\/[a-z]+;base64,/, '');
   const durationMs = Math.round(performance.now() - startTime);
-  const sizeKb = Math.round((base64.length * 3) / 4 / 1024);
+  const payloadBytes = base64.length;
+  const payloadKb = Math.round(payloadBytes / 1024);
+
+  // D3: Log size in dev
+  if (import.meta.env.DEV) {
+    console.log(`[ScanPayload] Outgoing payload size: ${payloadKb} KB (< 400KB: ${payloadBytes < 400 * 1024}) in ${durationMs}ms`);
+  }
 
   return {
     base64,
@@ -110,7 +133,7 @@ export async function processImageFile(file: File): Promise<ProcessedImage> {
     width: targetWidth,
     height: targetHeight,
     durationMs,
-    sizeKb
+    sizeKb: payloadKb
   };
 }
 

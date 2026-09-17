@@ -12,6 +12,7 @@ import { cn, formatDate, localTodayIso } from '../lib/utils';
 import { isDuplicateReportError, mapSupabaseError } from '../services/supabaseService';
 import { ScanPills } from '../components/ScanFill';
 import { NeumorphicCalendarDialog } from '../components/ui/NeumorphicCalendarDialog';
+import { useOverlayScrollLock } from '../lib/useOverlayScrollLock';
 
 // Constants
 const ACTIVITY_KEYS = [
@@ -74,6 +75,10 @@ export const NewReport: React.FC = () => {
   const [isAddingHalqa, setIsAddingHalqa] = useState(false);
   const [showCalendar, setShowCalendar] = useState(false);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
+
+  useOverlayScrollLock({ isOpen: showHalqaDialog, onClose: () => setShowHalqaDialog(false) });
+  useOverlayScrollLock({ isOpen: !!halqaToDelete, onClose: () => setHalqaToDelete(null) });
+  useOverlayScrollLock({ isOpen: showClearConfirm, onClose: () => setShowClearConfirm(false) });
 
   // Save feedback state
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -579,9 +584,25 @@ export const NewReport: React.FC = () => {
       {/* Halqa Dialog */}
       <AnimatePresence>
         {showHalqaDialog && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-card/90 backdrop-blur-2xl">
-            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="w-full max-w-sm">
-              <div className="bg-card rounded-[24px] shadow-2xl p-6 space-y-4">
+          <div 
+            className="viewport-fixed-overlay bg-black/50 backdrop-blur-sm"
+            onClick={(e) => { if (e.target === e.currentTarget && !isAddingHalqa) setShowHalqaDialog(false); }}
+            id="halqa-dialog-overlay"
+          >
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0 }} 
+              animate={{ scale: 1, opacity: 1 }} 
+              exit={{ scale: 0.95, opacity: 0 }}
+              transition={{ duration: 0.18, ease: 'easeOut' }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-sm max-h-[85vh] overflow-y-auto select-none"
+              role="dialog"
+              aria-modal="true"
+              aria-label="નવા હલકાનું નામ લખો"
+              id="halqa-dialog-container"
+              tabIndex={-1}
+            >
+              <div className="bg-card rounded-[24px] shadow-2xl p-6 space-y-4 border border-brd/20">
                 <h3 className="text-xl font-bold font-gujarati">નવા હલકાનું નામ લખો</h3>
                 <input 
                   autoFocus
@@ -595,7 +616,7 @@ export const NewReport: React.FC = () => {
                 <div className="flex flex-wrap gap-3 pt-2 justify-center">
                   <button 
                     type="button"
-                    className="flex-1 min-w-[120px] px-4 py-2.5 rounded-xl border border-brd/30 text-txt hover:bg-card/80 font-gujarati text-sm font-medium transition-all"
+                    className="flex-1 min-w-[120px] px-4 py-2.5 rounded-xl border border-brd/30 text-txt hover:bg-card/80 font-gujarati text-sm font-medium transition-all cursor-pointer"
                     onClick={() => setShowHalqaDialog(false)} 
                     disabled={isAddingHalqa}
                     aria-label="રદ કરો"
@@ -604,7 +625,7 @@ export const NewReport: React.FC = () => {
                   </button>
                   <button 
                     type="button"
-                    className="flex-1 flex items-center justify-center gap-2 min-w-[120px] px-4 py-2.5 rounded-xl bg-acc text-white font-gujarati text-sm font-semibold hover:bg-acc/90 transition-all shadow-md"
+                    className="flex-1 flex items-center justify-center gap-2 min-w-[120px] px-4 py-2.5 rounded-xl bg-acc text-white font-gujarati text-sm font-semibold hover:bg-acc/90 transition-all shadow-md cursor-pointer"
                     onClick={handleAddHalqa} 
                     disabled={isAddingHalqa}
                     aria-label="હલકો ઉમેરો"
@@ -620,15 +641,31 @@ export const NewReport: React.FC = () => {
         )}
 
         {halqaToDelete && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-card/90 backdrop-blur-2xl">
-            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="w-full max-w-sm">
-              <div className="bg-card rounded-[24px] shadow-2xl p-6 space-y-4 text-center">
+          <div 
+            className="viewport-fixed-overlay bg-black/50 backdrop-blur-sm"
+            onClick={(e) => { if (e.target === e.currentTarget) setHalqaToDelete(null); }}
+            id="halqa-delete-dialog-overlay"
+          >
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0 }} 
+              animate={{ scale: 1, opacity: 1 }} 
+              exit={{ scale: 0.95, opacity: 0 }}
+              transition={{ duration: 0.18, ease: 'easeOut' }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-sm max-h-[85vh] overflow-y-auto select-none"
+              role="dialog"
+              aria-modal="true"
+              aria-label="હલકો કાઢી નાખવાની ખાતરી"
+              id="halqa-delete-dialog-container"
+              tabIndex={-1}
+            >
+              <div className="bg-card rounded-[24px] shadow-2xl p-6 space-y-4 text-center border border-brd/20">
                 <h3 className="text-xl font-bold font-gujarati text-danger">ખાતરી કરો</h3>
                 <p className="font-gujarati text-sub">શું તમે ખરેખર "{halqaToDelete}" કાઢી નાખવા માંગો છો?</p>
                 <div className="flex flex-wrap gap-3 pt-2 justify-center">
                   <button 
                     type="button"
-                    className="flex-1 min-w-[120px] px-4 py-2.5 rounded-xl border border-brd/30 text-txt hover:bg-card/80 font-gujarati text-sm font-medium transition-all"
+                    className="flex-1 min-w-[120px] px-4 py-2.5 rounded-xl border border-brd/30 text-txt hover:bg-card/80 font-gujarati text-sm font-medium transition-all cursor-pointer"
                     onClick={() => setHalqaToDelete(null)}
                     aria-label="રદ કરો"
                   >
@@ -636,7 +673,7 @@ export const NewReport: React.FC = () => {
                   </button>
                   <button 
                     type="button"
-                    className="flex-1 min-w-[120px] px-4 py-2.5 rounded-xl bg-danger text-white font-gujarati text-sm font-semibold hover:bg-danger/90 transition-all shadow-md"
+                    className="flex-1 min-w-[120px] px-4 py-2.5 rounded-xl bg-danger text-white font-gujarati text-sm font-semibold hover:bg-danger/90 transition-all shadow-md cursor-pointer"
                     onClick={confirmDeleteHalqa}
                     aria-label="હા, કાઢી નાખો"
                   >
@@ -649,15 +686,31 @@ export const NewReport: React.FC = () => {
         )}
 
         {showClearConfirm && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-card/90 backdrop-blur-2xl">
-            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="w-full max-w-sm">
-              <div className="bg-card rounded-[24px] shadow-2xl p-6 space-y-4 text-center">
+          <div 
+            className="viewport-fixed-overlay bg-black/50 backdrop-blur-sm"
+            onClick={(e) => { if (e.target === e.currentTarget) setShowClearConfirm(false); }}
+            id="clear-confirm-dialog-overlay"
+          >
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0 }} 
+              animate={{ scale: 1, opacity: 1 }} 
+              exit={{ scale: 0.95, opacity: 0 }}
+              transition={{ duration: 0.18, ease: 'easeOut' }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-sm max-h-[85vh] overflow-y-auto select-none"
+              role="dialog"
+              aria-modal="true"
+              aria-label="ડ્રાફ્ટ ડિલીટ ખાતરી"
+              id="clear-confirm-dialog-container"
+              tabIndex={-1}
+            >
+              <div className="bg-card rounded-[24px] shadow-2xl p-6 space-y-4 text-center border border-brd/20">
                 <h3 className="text-xl font-bold font-gujarati text-danger">ડ્રાફ્ટ ડિલીટ</h3>
                 <p className="font-gujarati text-sub">શું તમે બધી માહિતી ભૂંસવા માંગો છો?</p>
                 <div className="flex flex-wrap gap-3 pt-2 justify-center">
                   <button 
                     type="button"
-                    className="flex-1 min-w-[120px] px-4 py-2.5 rounded-xl border border-brd/30 text-txt hover:bg-card/80 font-gujarati text-sm font-medium transition-all"
+                    className="flex-1 min-w-[120px] px-4 py-2.5 rounded-xl border border-brd/30 text-txt hover:bg-card/80 font-gujarati text-sm font-medium transition-all cursor-pointer"
                     onClick={() => setShowClearConfirm(false)}
                     aria-label="રદ કરો"
                   >
@@ -665,7 +718,7 @@ export const NewReport: React.FC = () => {
                   </button>
                   <button 
                     type="button"
-                    className="flex-1 min-w-[120px] px-4 py-2.5 rounded-xl bg-danger text-white font-gujarati text-sm font-semibold hover:bg-danger/90 transition-all shadow-md"
+                    className="flex-1 min-w-[120px] px-4 py-2.5 rounded-xl bg-danger text-white font-gujarati text-sm font-semibold hover:bg-danger/90 transition-all shadow-md cursor-pointer"
                     onClick={confirmClear}
                     aria-label="હા, ભૂંસી નાખો"
                   >

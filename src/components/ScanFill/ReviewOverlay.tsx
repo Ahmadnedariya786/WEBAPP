@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Check, AlertCircle, ShieldCheck } from 'lucide-react';
 import { LiquidButton } from '../ui/LiquidButton';
 import type { ReviewData } from './types';
+import { useOverlayScrollLock } from '../../lib/useOverlayScrollLock';
 
 interface ReviewOverlayProps {
   isOpen: boolean;
@@ -18,6 +19,18 @@ export const ReviewOverlay: React.FC<ReviewOverlayProps> = ({
   onConfirmFill
 }) => {
   const [data, setData] = useState<ReviewData>(initialData);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const innerScrollRef = useRef<HTMLDivElement>(null);
+
+  useOverlayScrollLock({ isOpen, onClose, panelRef });
+
+  useEffect(() => {
+    if (isOpen) {
+      setData(initialData);
+      if (panelRef.current) panelRef.current.scrollTop = 0;
+      if (innerScrollRef.current) innerScrollRef.current.scrollTop = 0;
+    }
+  }, [isOpen, initialData]);
 
   if (!isOpen) return null;
 
@@ -65,16 +78,24 @@ export const ReviewOverlay: React.FC<ReviewOverlayProps> = ({
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-[120] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-md">
+      <div 
+        className="viewport-fixed-overlay bg-black/60 backdrop-blur-md"
+        onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+        id="scan-review-overlay"
+      >
         <motion.div
-          initial={{ y: '100%', opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          exit={{ y: '100%', opacity: 0 }}
-          transition={{ type: 'spring', damping: 25, stiffness: 280 }}
-          className="w-full max-w-3xl max-h-[85vh] bg-card rounded-t-[28px] sm:rounded-[28px] shadow-2xl flex flex-col border border-brd/30 overflow-hidden"
+          ref={panelRef}
+          initial={{ scale: 0.95, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          exit={{ scale: 0.95, opacity: 0 }}
+          transition={{ duration: 0.18, ease: 'easeOut' }}
+          onClick={(e) => e.stopPropagation()}
+          className="w-full max-w-3xl max-h-[85vh] bg-card rounded-[28px] shadow-2xl flex flex-col border border-brd/30 overflow-hidden select-none"
           role="dialog"
           aria-modal="true"
           aria-label="સ્કેન રિવ્યુ"
+          id="scan-review-container"
+          tabIndex={-1}
         >
           {/* Header */}
           <div className="px-5 py-4 border-b border-brd/20 flex items-center justify-between bg-card/80 backdrop-blur shrink-0">
@@ -91,8 +112,7 @@ export const ReviewOverlay: React.FC<ReviewOverlayProps> = ({
             </div>
             <button
               onClick={onClose}
-              className="w-9 h-9 rounded-full bg-sub/10 hover:bg-sub/20 text-sub flex items-center justify-center transition-colors"
-              title="બંધ કરો"
+              className="w-9 h-9 rounded-full bg-sub/10 hover:bg-sub/20 text-sub flex items-center justify-center transition-colors cursor-pointer"
               aria-label="બંધ કરો"
             >
               <X size={18} />
@@ -100,7 +120,7 @@ export const ReviewOverlay: React.FC<ReviewOverlayProps> = ({
           </div>
 
           {/* Internal Scrollable Content */}
-          <div className="flex-1 overflow-y-auto p-5 space-y-6 hide-scrollbar">
+          <div ref={innerScrollRef} className="flex-1 overflow-y-auto p-5 space-y-6 hide-scrollbar">
             {/* Halqa Name */}
             <div className="p-4 rounded-2xl bg-bg/60 border border-brd/20 space-y-2">
               <div className="flex items-center justify-between">

@@ -10,12 +10,15 @@ import { PageHeading } from '../components/ui/PageHeading';
 import { LiquidButton } from '../components/ui/LiquidButton';
 import { Calendar, Users, MapPin, Download, Share2, Edit3, Trash2, Search, CheckCircle, Plus, Lock } from 'lucide-react';
 import { formatDate } from '../lib/utils';
+import { useOverlayScrollLock } from '../lib/useOverlayScrollLock';
 
 export const PastReports: React.FC = () => {
   const navigate = useNavigate();
   const { reports, deleteReport, setDraftReport, sessionRole } = useAppStore();
   const [search, setSearch] = useState('');
   const [reportToDelete, setReportToDelete] = useState<string | null>(null);
+
+  useOverlayScrollLock({ isOpen: reportToDelete !== null, onClose: () => setReportToDelete(null) });
   
   // Toasts
   const [showToast, setShowToast] = useState(false);
@@ -203,9 +206,25 @@ export const PastReports: React.FC = () => {
 
       <AnimatePresence>
         {reportToDelete !== null && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-card/90 backdrop-blur-2xl">
-            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="w-full max-w-sm">
-              <div className="bg-card rounded-[24px] shadow-2xl p-6 space-y-4 text-center">
+          <div 
+            className="viewport-fixed-overlay bg-black/50 backdrop-blur-sm"
+            onClick={(e) => { if (e.target === e.currentTarget) setReportToDelete(null); }}
+            id="report-delete-dialog-overlay"
+          >
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0 }} 
+              animate={{ scale: 1, opacity: 1 }} 
+              exit={{ scale: 0.95, opacity: 0 }}
+              transition={{ duration: 0.18, ease: 'easeOut' }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-sm max-h-[85vh] overflow-y-auto select-none"
+              role="dialog"
+              aria-modal="true"
+              aria-label="રિપોર્ટ ડિલીટ ખાતરી"
+              id="report-delete-dialog-container"
+              tabIndex={-1}
+            >
+              <div className="bg-card rounded-[24px] shadow-2xl p-6 space-y-4 text-center border border-brd/20">
                 <h3 className="text-xl font-bold font-gujarati text-danger">ખાતરી કરો</h3>
                 <p className="font-gujarati text-sub">શું તમે ખરેખર આ રિપોર્ટ કાઢી નાખવા માંગો છો?</p>
                 <div className="flex flex-wrap gap-3 pt-2 justify-center">

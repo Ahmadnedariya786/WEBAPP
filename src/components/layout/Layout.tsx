@@ -1,16 +1,24 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { Settings as SettingsIcon, RefreshCw } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import ThemeSwitcher from '../ui/ThemeSwitcher';
 import { useAppStore } from '../../store/appStore';
 import { BottomNav } from './BottomNav';
+import { forceUnlockIfNoOverlays } from '../../lib/useOverlayScrollLock';
 
 export const Layout: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { refreshAll } = useAppStore();
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // N1: Route-change safety that force-unlocks body if no overlay remains mounted
+  useEffect(() => {
+    forceUnlockIfNoOverlays();
+    const t = setTimeout(forceUnlockIfNoOverlays, 50);
+    return () => clearTimeout(t);
+  }, [location.pathname]);
 
   const handleRefresh = async (e: React.MouseEvent) => {
     e.stopPropagation();

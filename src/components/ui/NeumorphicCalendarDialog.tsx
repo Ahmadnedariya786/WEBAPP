@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react';
 import { useAppStore } from '../../store/appStore';
 import { localTodayIso, cn } from '../../lib/utils';
+import { useOverlayScrollLock } from '../../lib/useOverlayScrollLock';
 
 interface NeumorphicCalendarDialogProps {
   isOpen: boolean;
@@ -36,6 +37,9 @@ export const NeumorphicCalendarDialog: React.FC<NeumorphicCalendarDialogProps> =
 }) => {
   // DATA KAVACH: Read-only access to reports state for report dots & month count
   const reports = useAppStore((state) => state.reports);
+
+  const panelRef = useRef<HTMLDivElement>(null);
+  useOverlayScrollLock({ isOpen, onClose, panelRef });
 
   // Initialize view year & month from selectedDate or today
   const [navYear, setNavYear] = useState<number>(() => {
@@ -165,18 +169,22 @@ export const NeumorphicCalendarDialog: React.FC<NeumorphicCalendarDialogProps> =
     <AnimatePresence>
       {isOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-black/50 backdrop-blur-xs"
+          className="viewport-fixed-overlay bg-black/50 backdrop-blur-xs"
           onClick={onClose}
           id="calendar-dialog-overlay"
         >
           <motion.div
+            ref={panelRef}
             initial={{ scale: 0.95, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.95, opacity: 0 }}
             transition={{ duration: 0.18, ease: 'easeOut' }}
             onClick={(e) => e.stopPropagation()}
-            className="neu-cal-dialog flex flex-col select-none"
+            className="neu-cal-dialog flex flex-col select-none max-h-[90vh] overflow-y-auto"
             id="calendar-dialog-container"
+            role="dialog"
+            aria-modal="true"
+            tabIndex={-1}
           >
             {/* Header Row: Prev button, Centered Title + Dropdown Pills + Subtitle, Next button */}
             <div className="flex items-center justify-between gap-1.5 mb-3 px-1">
