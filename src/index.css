@@ -154,17 +154,7 @@ html[data-theme="outdoor"] header button {
   color: #1E2F73 !important;
 }
 
-html[data-theme="outdoor"] .fixed.bottom-6 > div {
-  background-color: #FBF7EC !important;
-  box-shadow: 0 10px 30px -4px rgba(36, 59, 143, 0.10), 0 4px 12px -2px rgba(176, 150, 90, 0.15), inset 0 0 0 1px rgba(30, 47, 115, 0.12) !important;
-}
-html[data-theme="outdoor"] .fixed.bottom-6 button {
-  color: #5A6BA8;
-}
-html[data-theme="outdoor"] .fixed.bottom-6 button.text-acc,
-html[data-theme="outdoor"] .fixed.bottom-6 button:hover {
-  color: #1E2F73;
-}
+
 
 /* Halqa Chips: Unselected = Card BG + Navy Text + 1px Border; Selected = #243B8F + White Text */
 html[data-theme="outdoor"] .snap-start > button:not(.bg-acc) {
@@ -186,8 +176,7 @@ html[data-theme="outdoor"] #btn-gallery-scan:hover,
 html[data-theme="outdoor"] #btn-toast-undo:hover,
 html[data-theme="outdoor"] #btn-floating-undo:hover,
 html[data-theme="outdoor"] .snap-start > button:hover:not(.bg-acc),
-html[data-theme="outdoor"] header button:hover,
-html[data-theme="outdoor"] .fixed.bottom-6 button:hover {
+html[data-theme="outdoor"] header button:hover {
   background-color: rgba(36, 59, 143, 0.10) !important;
   color: #1E2F73 !important;
 }
@@ -932,4 +921,174 @@ html[data-theme="premium"] .page-heading-title {
     animation: none !important;
   }
 }
+
+/* ── S35 Bottom Navigation Redesign: Concave Cradle Cutout & Seated FAB ── */
+.bottom-nav-fab {
+  transition: transform 150ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.bottom-nav-fab:active {
+  transform: translate(-50%, -50%) scale(0.96) !important;
+}
+.bottom-nav-btn {
+  transition: transform 150ms cubic-bezier(0.4, 0, 0.2, 1), color 150ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.bottom-nav-btn:active {
+  transform: scale(0.96);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bottom-nav-fab,
+  .bottom-nav-btn {
+    transition: none !important;
+    transform: translate(-50%, -50%) !important;
+  }
+  .bottom-nav-btn:active {
+    transform: none !important;
+  }
+  .bottom-nav-fab:active {
+    transform: translate(-50%, -50%) !important;
+  }
+}
+
+/* Outdoor Theme */
+html[data-theme="outdoor"] .bottom-nav-svg {
+  filter: drop-shadow(0 10px 28px rgba(36, 59, 143, 0.12)) drop-shadow(0 2px 8px rgba(176, 150, 90, 0.22));
+}
+html[data-theme="outdoor"] .bottom-nav-fill {
+  fill: #FBF7EC;
+  stroke: rgba(30, 47, 115, 0.12);
+  stroke-width: 1;
+}
+html[data-theme="outdoor"] .bottom-nav-fab {
+  background-color: #243B8F;
+  color: #FFFFFF;
+  box-shadow: 0 8px 20px rgba(36, 59, 143, 0.35);
+}
+html[data-theme="outdoor"] .bottom-nav-fab:active {
+  box-shadow: 0 4px 12px rgba(36, 59, 143, 0.45);
+}
+html[data-theme="outdoor"] .bottom-nav-fab-icon {
+  color: #FFFFFF;
+}
+html[data-theme="outdoor"] .bottom-nav-btn-active {
+  color: #1E2F73;
+}
+html[data-theme="outdoor"] .bottom-nav-btn-active .bottom-nav-btn-icon {
+  color: #243B8F;
+}
+html[data-theme="outdoor"] .bottom-nav-btn-active .bottom-nav-btn-label {
+  color: #1E2F73;
+  font-weight: 600;
+}
+html[data-theme="outdoor"] .bottom-nav-btn-active .bottom-nav-dot {
+  background-color: #243B8F;
+}
+html[data-theme="outdoor"] .bottom-nav-btn-inactive {
+  color: #4A5C98;
+}
+html[data-theme="outdoor"] .bottom-nav-btn-inactive .bottom-nav-btn-icon {
+  color: #4A5C98;
+}
+html[data-theme="outdoor"] .bottom-nav-btn-inactive .bottom-nav-btn-label {
+  color: #4A5C98;
+  font-weight: 500;
+}
+html[data-theme="outdoor"] .bottom-nav-btn:hover {
+  color: #1E2F73;
+}
+
+/* Graphite (Dark) Theme */
+html[data-theme="dark"] .bottom-nav-svg {
+  filter: drop-shadow(0 12px 32px rgba(0, 0, 0, 0.65)) drop-shadow(0 2px 8px rgba(0, 0, 0, 0.45));
+}
+html[data-theme="dark"] .bottom-nav-fill {
+  fill: #20242B;
+  stroke: rgba(255, 255, 255, 0.08);
+  stroke-width: 1;
+}
+html[data-theme="dark"] .bottom-nav-fab {
+  background-color: #84CC16;
+  color: #1A2E05;
+  box-shadow: 0 8px 22px rgba(132, 204, 22, 0.40);
+}
+html[data-theme="dark"] .bottom-nav-fab:active {
+  box-shadow: 0 4px 12px rgba(132, 204, 22, 0.50);
+}
+html[data-theme="dark"] .bottom-nav-fab-icon {
+  color: #1A2E05;
+}
+html[data-theme="dark"] .bottom-nav-btn-active {
+  color: #F3F4F6;
+}
+html[data-theme="dark"] .bottom-nav-btn-active .bottom-nav-btn-icon {
+  color: #84CC16;
+}
+html[data-theme="dark"] .bottom-nav-btn-active .bottom-nav-btn-label {
+  color: #F3F4F6;
+  font-weight: 600;
+}
+html[data-theme="dark"] .bottom-nav-btn-active .bottom-nav-dot {
+  background-color: #84CC16;
+}
+html[data-theme="dark"] .bottom-nav-btn-inactive {
+  color: #A1A7B5;
+}
+html[data-theme="dark"] .bottom-nav-btn-inactive .bottom-nav-btn-icon {
+  color: #A1A7B5;
+}
+html[data-theme="dark"] .bottom-nav-btn-inactive .bottom-nav-btn-label {
+  color: #A1A7B5;
+  font-weight: 500;
+}
+html[data-theme="dark"] .bottom-nav-btn:hover {
+  color: #F3F4F6;
+}
+
+/* Premium Theme */
+html[data-theme="premium"] .bottom-nav-svg {
+  filter: drop-shadow(0 14px 36px rgba(0, 0, 0, 0.70)) drop-shadow(0 2px 10px rgba(236, 72, 153, 0.18));
+}
+html[data-theme="premium"] .bottom-nav-fill {
+  fill: #241640;
+  stroke: rgba(255, 255, 255, 0.08);
+  stroke-width: 1;
+}
+html[data-theme="premium"] .bottom-nav-fab {
+  background-color: #EC4899;
+  color: #FFFFFF;
+  box-shadow: 0 8px 22px rgba(236, 72, 153, 0.45);
+}
+html[data-theme="premium"] .bottom-nav-fab:active {
+  box-shadow: 0 4px 12px rgba(236, 72, 153, 0.55);
+}
+html[data-theme="premium"] .bottom-nav-fab-icon {
+  color: #FFFFFF;
+}
+html[data-theme="premium"] .bottom-nav-btn-active {
+  color: #FFFFFF;
+}
+html[data-theme="premium"] .bottom-nav-btn-active .bottom-nav-btn-icon {
+  color: #EC4899;
+}
+html[data-theme="premium"] .bottom-nav-btn-active .bottom-nav-btn-label {
+  color: #FFFFFF;
+  font-weight: 600;
+}
+html[data-theme="premium"] .bottom-nav-btn-active .bottom-nav-dot {
+  background-color: #EC4899;
+}
+html[data-theme="premium"] .bottom-nav-btn-inactive {
+  color: #B8B2CE;
+}
+html[data-theme="premium"] .bottom-nav-btn-inactive .bottom-nav-btn-icon {
+  color: #B8B2CE;
+}
+html[data-theme="premium"] .bottom-nav-btn-inactive .bottom-nav-btn-label {
+  color: #B8B2CE;
+  font-weight: 500;
+}
+html[data-theme="premium"] .bottom-nav-btn:hover {
+  color: #FFFFFF;
+}
+
 
