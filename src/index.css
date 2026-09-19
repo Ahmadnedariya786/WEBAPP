@@ -1104,6 +1104,12 @@ html[data-theme="premium"] .bottom-nav-ripple {
 
 /* ── S37 Dashboard Redesign: Colored Header Zone, Overlapping Target Card, Activities ── */
 
+/* S44: Dashboard Header-Zone Overlap Clipping Fix */
+.dashboard-header-zone {
+  --overlap: 24px;
+  padding-bottom: calc(20px + var(--overlap) + 8px);
+}
+
 /* Theme Skins for Header Zone */
 html[data-theme="outdoor"] .dashboard-header-zone {
   background-color: #243B8F;
