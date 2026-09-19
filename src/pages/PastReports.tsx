@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import * as XLSX from 'xlsx';
+import { buildReportWorkbook, buildAllReportsWorkbook, writeReportWorkbookToBuffer } from '../lib/excelGenerator';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../store/appStore';
@@ -72,48 +72,18 @@ export const PastReports: React.FC = () => {
   };
 
   const handleDownloadExcel = async (report: SavedReport) => {
-    const ACTIVITY_KEYS = [
-      'activity.namaz', 'activity.mashwara_pabandi', 'activity.taleem', 'activity.gasht',
-      'activity.panchkosa', 'activity.shabguzari', 'activity.mulaqat_percent', 'activity.school_namaz',
-      'activity.jamaat_3', 'activity.jamaat_10', 'activity.jamaat_40', 'activity.jamaat_4m'
-    ];
-    const rows: any[][] = [
-      ["બનાસકાંઠા સ્ટુડન્ટ મહેનત રિપોર્ટ"],
-      ["હલકો:", report.halqa, "તારીખ:", formatDate(report.date)],
-      [],
-      ["સ્ટુડન્ટ આંકડા"],
-      ["કુલ સ્ટુડન્ટની સંખ્યા", getTotalStudents(report.stats)],
-      [t('stat.std_10' as any), report.stats?.std_10 || 0],
-      [t('stat.std_11' as any), report.stats?.std_11 || 0],
-      [t('stat.std_12' as any), report.stats?.std_12 || 0],
-      [t('stat.college' as any), report.stats?.college || 0],
-      [t('stat.engineering' as any), report.stats?.engineering || 0],
-      [t('stat.medical' as any), report.stats?.medical || 0],
-      [t('stat.muslim_teachers' as any), report.stats?.muslim_teachers || 0],
-      [],
-      ["પ્રવૃત્તિ", t('header.gujishta' as any), t('header.azaim' as any), t('header.maujuda' as any)]
-    ];
-
-    ACTIVITY_KEYS.forEach(k => {
-      rows.push([
-        t(k as any),
-        report.activities[k]?.gujishta || '-',
-        report.activities[k]?.azaim || '-',
-        report.activities[k]?.maujuda || '-'
-      ]);
+    const wb = buildReportWorkbook({
+      halqa: report.halqa,
+      date: report.date,
+      stats: report.stats,
+      activities: report.activities,
+      mashwara: report.mashwara,
+      notes: report.notes,
+      totalStudents: getTotalStudents(report.stats)
     });
-
-    rows.push([]);
-    rows.push(["મશવારો:", report.activities['mashwara']?.maujuda || '-']);
-    rows.push(["ખાસ નોંધ:", report.notes || '-']);
-
-    const ws = XLSX.utils.aoa_to_sheet(rows);
-    ws['!cols'] = [{wch:32}, {wch:12}, {wch:12}, {wch:12}];
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "રિપોર્ટ");
     
     const filename = `mehnat_${report.halqa}_${report.date}.xlsx`;
-    const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' }) as ArrayBuffer;
+    const excelBuffer = writeReportWorkbookToBuffer(wb);
     const XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
     const route = await nativeSave(new Uint8Array(excelBuffer), filename, XLSX_MIME);
     // D3: single toast — Kotlin owns it on APK; JS shows it only on desktop
@@ -123,52 +93,18 @@ export const PastReports: React.FC = () => {
   const handleDownloadAllExcel = async () => {
     if (reports.length === 0) return showNotification('કોઈ રિપોર્ટ નથી ❌');
     
-    const wb = XLSX.utils.book_new();
-    const ACTIVITY_KEYS = [
-      'activity.namaz', 'activity.mashwara_pabandi', 'activity.taleem', 'activity.gasht',
-      'activity.panchkosa', 'activity.shabguzari', 'activity.mulaqat_percent', 'activity.school_namaz',
-      'activity.jamaat_3', 'activity.jamaat_10', 'activity.jamaat_40', 'activity.jamaat_4m'
-    ];
-
-    reports.forEach((report) => {
-      const rows: any[][] = [
-        ["બનાસકાંઠા સ્ટુડન્ટ મહેનત રિપોર્ટ"],
-        ["હલકો:", report.halqa, "તારીખ:", formatDate(report.date)],
-        [],
-        ["સ્ટુડન્ટ આંકડા"],
-        ["કુલ સ્ટુડન્ટની સંખ્યા", getTotalStudents(report.stats)],
-        [t('stat.std_10' as any), report.stats?.std_10 || 0],
-        [t('stat.std_11' as any), report.stats?.std_11 || 0],
-        [t('stat.std_12' as any), report.stats?.std_12 || 0],
-        [t('stat.college' as any), report.stats?.college || 0],
-        [t('stat.engineering' as any), report.stats?.engineering || 0],
-        [t('stat.medical' as any), report.stats?.medical || 0],
-        [t('stat.muslim_teachers' as any), report.stats?.muslim_teachers || 0],
-        [],
-        ["પ્રવૃત્તિ", t('header.gujishta' as any), t('header.azaim' as any), t('header.maujuda' as any)]
-      ];
-
-      ACTIVITY_KEYS.forEach(k => {
-        rows.push([
-          t(k as any),
-          report.activities[k]?.gujishta || '-',
-          report.activities[k]?.azaim || '-',
-          report.activities[k]?.maujuda || '-'
-        ]);
-      });
-
-      rows.push([]);
-      rows.push(["મશવારો:", report.activities['mashwara']?.maujuda || '-']);
-      rows.push(["ખાસ નોંધ:", report.notes || '-']);
-
-      const ws = XLSX.utils.aoa_to_sheet(rows);
-      ws['!cols'] = [{wch:32}, {wch:12}, {wch:12}, {wch:12}];
-      let sheetName = `${report.halqa}_${report.date}`.substring(0, 31);
-      XLSX.utils.book_append_sheet(wb, ws, sheetName);
-    });
+    const wb = buildAllReportsWorkbook(reports.map(r => ({
+      halqa: r.halqa,
+      date: r.date,
+      stats: r.stats,
+      activities: r.activities,
+      mashwara: r.mashwara,
+      notes: r.notes,
+      totalStudents: getTotalStudents(r.stats)
+    })));
 
     const filename = `all_reports.xlsx`;
-    const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' }) as ArrayBuffer;
+    const excelBuffer = writeReportWorkbookToBuffer(wb);
     const XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
     const route = await nativeSave(new Uint8Array(excelBuffer), filename, XLSX_MIME);
     // D3: single toast — Kotlin owns it on APK; JS shows it only on desktop
