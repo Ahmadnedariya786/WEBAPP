@@ -890,6 +890,10 @@ html[data-theme="premium"] .neu-cal-disc-selected .neu-cal-dot {
   overflow: visible;
   animation: page-heading-fade-in 0.45s ease-out 0.08s both;
 }
+.help-email-text {
+  word-break: break-all;
+  overflow-wrap: anywhere;
+}
 
 html[data-theme="outdoor"] .page-heading-bar {
   background: linear-gradient(145deg, #2B4499, #1E2F73);
