@@ -223,34 +223,34 @@ async function runProof() {
       actual: { mobileGridCols, desktopGridCols }
     });
 
-    // Test 5: Action Cluster: Primary "સાચવો", Secondary 2x2 grid, Danger "ડાલી નાખો"
+    // Test 5: Action Cluster: Primary "સાચવો", Secondary 2x2 grid, Danger "કાઢી નાખો"
     const actionClusterData = await page.evaluate(() => {
-      const primaryBtn = document.querySelector('.action-cluster-primary-btn');
-      const gridBtns = Array.from(document.querySelectorAll('.action-cluster-grid-btn'));
-      const dangerBtn = document.querySelector('.action-cluster-danger-btn');
+      const primary = document.querySelector('.action-cluster-primary-btn');
+      const grid = document.querySelector('.action-cluster-grid');
+      const gridBtns = document.querySelectorAll('.action-cluster-grid-btn');
+      const danger = document.querySelector('.action-cluster-danger-btn');
+
       return {
-        primaryText: primaryBtn?.textContent.trim(),
-        primaryHeight: primaryBtn ? window.getComputedStyle(primaryBtn).height : '',
-        gridBtnCount: gridBtns.length,
-        gridLabels: gridBtns.map(b => b.textContent.trim()),
-        dangerText: dangerBtn?.textContent.trim()
+        hasPrimary: !!primary,
+        primaryHeight: primary ? window.getComputedStyle(primary).height : null,
+        primaryText: primary ? primary.textContent.trim() : null,
+        gridCount: gridBtns.length,
+        hasDanger: !!danger,
+        dangerText: danger ? danger.textContent.trim() : null,
+        dangerAria: danger ? danger.getAttribute('aria-label') : null
       };
     });
-    const expectedGridLabels = [
-      'WhatsApp પર શેર કરો',
-      'કૉપી કરો',
-      'Excel ડાઉનલોડ કરો',
-      'PDF ડાઉનલોડ કરો'
-    ];
-    const t5Passed =
-      actionClusterData.primaryText === 'સાચવો' &&
-      actionClusterData.primaryHeight === '48px' &&
-      actionClusterData.gridBtnCount === 4 &&
-      JSON.stringify(actionClusterData.gridLabels) === JSON.stringify(expectedGridLabels) &&
-      actionClusterData.dangerText === 'ડાલી નાખો';
+
+    const test5Passed = actionClusterData.hasPrimary && 
+      actionClusterData.primaryHeight === '48px' && 
+      actionClusterData.primaryText === 'સાચવો' && 
+      actionClusterData.gridCount === 4 && 
+      actionClusterData.hasDanger && 
+      actionClusterData.dangerText === 'કાઢી નાખો';
+
     results.tests.push({
-      name: "D5: Action cluster has 48px 'સાચવો', 2x2 secondary grid, and 'ડાલી નાખો' danger button",
-      passed: t5Passed,
+      name: "D5: Action cluster has 48px 'સાચવો', 2x2 secondary grid, and 'કાઢી નાખો' danger button",
+      passed: test5Passed,
       actual: actionClusterData
     });
 

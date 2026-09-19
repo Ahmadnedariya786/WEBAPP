@@ -507,7 +507,7 @@ export const NewReport: React.FC = () => {
           </button>
         </div>
 
-        {/* DANGER LAST: "ડાલી નાખો" muted outline, red token text */}
+        {/* DANGER LAST: "કાઢી નાખો" muted outline, red token text */}
         <button
           type="button"
           onClick={() => { 
@@ -517,11 +517,11 @@ export const NewReport: React.FC = () => {
             } 
             setShowClearConfirm(true); 
           }}
-          aria-label="ડાલી નાખો"
+          aria-label="કાઢી નાખો"
           className="action-cluster-danger-btn"
         >
           {!sessionRole ? <Lock size={16} className="shrink-0" /> : <Trash2 size={16} className="shrink-0" />}
-          <span className="font-gujarati">ડાલી નાખો</span>
+          <span className="font-gujarati">કાઢી નાખો</span>
         </button>
       </div>
     </div>
