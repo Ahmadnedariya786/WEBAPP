@@ -18,7 +18,12 @@ interface PageHeadingProps {
 export const PageHeading: React.FC<PageHeadingProps> = ({ title, icon }) => (
   <div
     className="page-heading-container flex flex-col bg-transparent"
-    style={{ marginTop: 4, marginBottom: 20, background: 'transparent' }}
+    style={{
+      paddingTop: 8,
+      marginBottom: 20,
+      background: 'transparent',
+      overflow: 'visible',
+    }}
   >
     <h2
       className="page-heading-title font-gujarati flex items-center gap-2 min-w-0"
@@ -26,12 +31,15 @@ export const PageHeading: React.FC<PageHeadingProps> = ({ title, icon }) => (
         fontSize: 28,
         fontWeight: 800,
         letterSpacing: '-0.02em',
-        lineHeight: 1.2,
+        lineHeight: 1.35,
         margin: 0,
+        paddingTop: 2,
+        paddingBottom: 2,
+        overflow: 'visible',
       }}
     >
       {icon && <span className="shrink-0">{icon}</span>}
-      <span className="truncate">{title}</span>
+      <span style={{ overflow: 'visible' }}>{title}</span>
     </h2>
     <div
       className="page-heading-bar"

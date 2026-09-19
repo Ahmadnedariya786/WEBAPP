@@ -878,7 +878,16 @@ html[data-theme="premium"] .neu-cal-disc-selected .neu-cal-dot {
   opacity: 0.35;
   z-index: -1;
 }
+.page-heading-container {
+  padding-top: 8px;
+  overflow: visible;
+  background: transparent;
+}
 .page-heading-title {
+  line-height: 1.35;
+  padding-top: 2px;
+  padding-bottom: 2px;
+  overflow: visible;
   animation: page-heading-fade-in 0.45s ease-out 0.08s both;
 }
 
