@@ -6,28 +6,37 @@ export const useThemeStore = create<S>((set) => ({
   setTheme: (t) => {
     const root = document.documentElement;
     root.classList.add('theme-switching');
+    root.classList.remove('theme-fading');
     root.setAttribute('data-theme', t);
     localStorage.setItem('theme', t);
     
     const m = document.querySelector('meta[name="theme-color"]');
+    let bg = '#20242B';
     if (t === 'outdoor') {
-      if (m) m.setAttribute('content', '#F5F0E1');
-      document.documentElement.style.backgroundColor = '#F5F0E1';
+      bg = '#F5F0E1';
     } else if (t === 'premium') {
-      if (m) m.setAttribute('content', '#171238');
-      document.documentElement.style.backgroundColor = '#171238';
+      bg = '#171238';
     } else {
-      if (m) m.setAttribute('content', '#1F2329');
-      document.documentElement.style.backgroundColor = '#1F2329';
+      bg = '#20242B';
     }
+    if (m) m.setAttribute('content', bg);
+    root.style.backgroundColor = bg;
+    if (document.body) document.body.style.backgroundColor = bg;
 
     set({ theme: t });
     
-    requestAnimationFrame(() => {
-      setTimeout(() => {
+    const prefersReducedMotion = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReducedMotion) {
+      root.classList.remove('theme-switching');
+    } else {
+      requestAnimationFrame(() => {
         root.classList.remove('theme-switching');
-      }, 120);
-    });
+        root.classList.add('theme-fading');
+        setTimeout(() => {
+          root.classList.remove('theme-fading');
+        }, 180);
+      });
+    }
   },
 }));
 document.documentElement.setAttribute('data-theme', useThemeStore.getState().theme);

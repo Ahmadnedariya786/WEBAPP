@@ -29,7 +29,12 @@ export const Help: React.FC = () => {
 
       <div className="space-y-4">
         {/* FAQ Accordion Container */}
-        <div className="space-y-2">
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.22, delay: 0 * 0.06, ease: 'easeOut' }}
+          className="space-y-2"
+        >
           <GlassCard 
             hoverEffect 
             className={cn("p-5 flex items-center gap-4 cursor-pointer ")}
@@ -94,35 +99,46 @@ export const Help: React.FC = () => {
               </motion.div>
             )}
           </AnimatePresence>
-        </div>
+        </motion.div>
 
         {/* Email Support */}
-        <a href="mailto:banaskantha.mehnat.support@gmail.com" className="block outline-none group">
-          <GlassCard hoverEffect className="p-4 flex items-center justify-between bg-card">
-            <div className="flex items-center gap-4 min-w-0 w-full">
-              <div className="w-12 h-12 rounded-full bg-acc/10 flex items-center justify-center text-acc shrink-0">
-                <Mail size={24} />
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.22, delay: 1 * 0.06, ease: 'easeOut' }}
+        >
+          <a href="mailto:banaskantha.mehnat.support@gmail.com" className="block outline-none group">
+            <GlassCard hoverEffect className="p-4 flex items-center justify-between bg-card">
+              <div className="flex items-center gap-4 min-w-0 w-full">
+                <div className="w-12 h-12 rounded-full bg-acc/10 flex items-center justify-center text-acc shrink-0">
+                  <Mail size={24} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h3 className="font-bold font-gujarati text-txt">ઈમેલ સપોર્ટ</h3>
+                  <p
+                    className="help-email-text text-sm md:text-base text-sub font-medium font-num mt-1 group-hover:underline group-focus:underline decoration-acc underline-offset-2 transition-colors"
+                    style={{
+                      wordBreak: 'break-all',
+                      overflowWrap: 'anywhere',
+                    }}
+                  >
+                    banaskantha.mehnat.support@gmail.com
+                  </p>
+                </div>
               </div>
-              <div className="min-w-0 flex-1">
-                <h3 className="font-bold font-gujarati text-txt">ઈમેલ સપોર્ટ</h3>
-                <p
-                  className="help-email-text text-sm md:text-base text-sub font-medium font-num mt-1 group-hover:underline group-focus:underline decoration-acc underline-offset-2 transition-colors"
-                  style={{
-                    wordBreak: 'break-all',
-                    overflowWrap: 'anywhere',
-                  }}
-                >
-                  banaskantha.mehnat.support@gmail.com
-                </p>
-              </div>
-            </div>
-          </GlassCard>
-        </a>
+            </GlassCard>
+          </a>
+        </motion.div>
 
-        <div className="text-center pt-8">
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.22, delay: 2 * 0.06, ease: 'easeOut' }}
+          className="text-center pt-8"
+        >
           <p className="text-sm text-sub font-num tracking-wider">{t('help.app_version' as any)}</p>
           <p className="text-xs text-sub/50 mt-1 font-gujarati">{t('help.footer' as any)}</p>
-        </div>
+        </motion.div>
       </div>
     </div>
   );

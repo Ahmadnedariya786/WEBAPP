@@ -32,8 +32,6 @@ export const ReviewOverlay: React.FC<ReviewOverlayProps> = ({
     }
   }, [isOpen, initialData]);
 
-  if (!isOpen) return null;
-
   const handleHalqaChange = (val: string) => {
     setData(prev => ({
       ...prev,
@@ -78,25 +76,30 @@ export const ReviewOverlay: React.FC<ReviewOverlayProps> = ({
 
   return (
     <AnimatePresence>
-      <div 
-        className="viewport-fixed-overlay bg-black/60 backdrop-blur-md"
-        onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
-        id="scan-review-overlay"
-      >
-        <motion.div
-          ref={panelRef}
-          initial={{ opacity: 0, scale: 0.98 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.98 }}
-          transition={{ duration: 0.15, ease: 'easeOut' }}
-          onClick={(e) => e.stopPropagation()}
-          className="w-full max-w-3xl max-h-[85vh] bg-card rounded-[28px] shadow-2xl flex flex-col border border-brd/30 overflow-hidden select-none"
-          role="dialog"
-          aria-modal="true"
-          aria-label="સ્કેન રિવ્યુ"
-          id="scan-review-container"
-          tabIndex={-1}
+      {isOpen && (
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.14 }}
+          className="viewport-fixed-overlay bg-black/60 backdrop-blur-md"
+          onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+          id="scan-review-overlay"
         >
+          <motion.div
+            ref={panelRef}
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.98 }}
+            transition={{ duration: 0.14, ease: 'easeOut' }}
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-3xl max-h-[85vh] bg-card rounded-[28px] shadow-2xl flex flex-col border border-brd/30 overflow-hidden select-none"
+            role="dialog"
+            aria-modal="true"
+            aria-label="સ્કેન રિવ્યુ"
+            id="scan-review-container"
+            tabIndex={-1}
+          >
           {/* Header */}
           <div className="px-5 py-4 border-b border-brd/20 flex items-center justify-between bg-card/80 backdrop-blur shrink-0">
             <div>
@@ -328,7 +331,8 @@ export const ReviewOverlay: React.FC<ReviewOverlayProps> = ({
             </LiquidButton>
           </div>
         </motion.div>
-      </div>
-    </AnimatePresence>
-  );
+      </motion.div>
+    )}
+  </AnimatePresence>
+);
 };

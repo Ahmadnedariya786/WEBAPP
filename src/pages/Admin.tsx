@@ -239,7 +239,8 @@ export const Admin: React.FC = () => {
               <motion.div
                 initial={{ opacity: 0, y: 50, scale: 0.9 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: 20, scale: 0.9 }}
+                exit={{ opacity: 0, y: 40 }}
+                transition={{ duration: 0.16, ease: 'easeIn' }}
                 className="w-full max-w-md rounded-2xl bg-card/95 backdrop-blur px-4 py-3 flex items-center gap-2 shadow-lg border border-brd/10"
               >
                 <span className="flex-1 text-sm text-txt font-gujarati font-medium">{toastMessage}</span>
@@ -346,7 +347,8 @@ export const Admin: React.FC = () => {
             <motion.div
               initial={{ opacity: 0, y: 50, scale: 0.9 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 20, scale: 0.9 }}
+              exit={{ opacity: 0, y: 40 }}
+              transition={{ duration: 0.16, ease: 'easeIn' }}
               className="w-full max-w-md rounded-2xl bg-card/95 backdrop-blur px-4 py-3 flex items-center gap-2 shadow-lg border border-brd/10"
             >
               <CheckCircle size={18} className="text-acc2 shrink-0" />
@@ -374,25 +376,49 @@ export const Admin: React.FC = () => {
           </header>
 
           <div className="grid grid-cols-2 gap-4">
-            <GlassCard onClick={() => setActiveScreen('users')} hoverEffect className="cursor-pointer rounded-2xl p-6 flex flex-col items-center justify-center text-center gap-3 min-h-[160px] max-h-[220px]">
-              <Users size={32} className="text-acc" />
-              <span className="font-gujarati font-medium text-sm inline-flex items-center gap-1.5"><Key className="w-4 h-4" /> પાસવર્ડ મેનેજ કરો</span>
-            </GlassCard>
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.22, delay: 0 * 0.06, ease: 'easeOut' }}
+            >
+              <GlassCard onClick={() => setActiveScreen('users')} hoverEffect className="cursor-pointer rounded-2xl p-6 flex flex-col items-center justify-center text-center gap-3 min-h-[160px] max-h-[220px]">
+                <Users size={32} className="text-acc" />
+                <span className="font-gujarati font-medium text-sm inline-flex items-center gap-1.5"><Key className="w-4 h-4" /> પાસવર્ડ મેનેજ કરો</span>
+              </GlassCard>
+            </motion.div>
 
-            <GlassCard onClick={() => setActiveScreen('halqas')} hoverEffect className="cursor-pointer rounded-2xl p-6 flex flex-col items-center justify-center text-center gap-3 min-h-[160px] max-h-[220px]">
-              <MapPin size={32} className="text-sub" />
-              <span className="font-gujarati font-medium text-sm inline-flex items-center gap-1.5">હલકા સંચાલન</span>
-            </GlassCard>
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.22, delay: 1 * 0.06, ease: 'easeOut' }}
+            >
+              <GlassCard onClick={() => setActiveScreen('halqas')} hoverEffect className="cursor-pointer rounded-2xl p-6 flex flex-col items-center justify-center text-center gap-3 min-h-[160px] max-h-[220px]">
+                <MapPin size={32} className="text-sub" />
+                <span className="font-gujarati font-medium text-sm inline-flex items-center gap-1.5">હલકા સંચાલન</span>
+              </GlassCard>
+            </motion.div>
 
-            <GlassCard onClick={openLogs} hoverEffect className="cursor-pointer rounded-2xl p-6 flex flex-col items-center justify-center text-center gap-3 min-h-[160px] max-h-[220px]">
-              <Activity size={32} className="text-sub" />
-              <span className="font-gujarati font-medium text-sm">{t('admin.system_logs' as any)}</span>
-            </GlassCard>
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.22, delay: 2 * 0.06, ease: 'easeOut' }}
+            >
+              <GlassCard onClick={openLogs} hoverEffect className="cursor-pointer rounded-2xl p-6 flex flex-col items-center justify-center text-center gap-3 min-h-[160px] max-h-[220px]">
+                <Activity size={32} className="text-sub" />
+                <span className="font-gujarati font-medium text-sm">{t('admin.system_logs' as any)}</span>
+              </GlassCard>
+            </motion.div>
 
-            <GlassCard onClick={handleBackup} hoverEffect className="cursor-pointer rounded-2xl p-6 flex flex-col items-center justify-center text-center gap-3 min-h-[160px] max-h-[220px]">
-              <Database size={32} className="text-sub" />
-              <span className="font-gujarati font-medium text-sm">{t('settings.data_backup' as any)}</span>
-            </GlassCard>
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.22, delay: 3 * 0.06, ease: 'easeOut' }}
+            >
+              <GlassCard onClick={handleBackup} hoverEffect className="cursor-pointer rounded-2xl p-6 flex flex-col items-center justify-center text-center gap-3 min-h-[160px] max-h-[220px]">
+                <Database size={32} className="text-sub" />
+                <span className="font-gujarati font-medium text-sm">{t('settings.data_backup' as any)}</span>
+              </GlassCard>
+            </motion.div>
           </div>
         </div>
       )}
@@ -426,28 +452,35 @@ export const Admin: React.FC = () => {
           </header>
           
           <div className="space-y-4">
-            {codes.map(c => (
-              <GlassCard key={c.id} className={`p-4 flex items-center justify-between ${c.revoked_at ? 'opacity-50 grayscale' : ''}`}>
-                <div>
-                  <div className="font-gujarati font-bold text-txt flex items-center gap-2">
-                    {c.label}
-                    {c.revoked_at && <span className="bg-acc/10 text-acc border border-acc/20 px-2 py-0.5 rounded-full text-[10px] whitespace-nowrap">રદ થયેલ</span>}
+            {codes.map((c, i) => (
+              <motion.div
+                key={c.id}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.22, delay: i * 0.06, ease: 'easeOut' }}
+              >
+                <GlassCard className={`p-4 flex items-center justify-between ${c.revoked_at ? 'opacity-50 grayscale' : ''}`}>
+                  <div>
+                    <div className="font-gujarati font-bold text-txt flex items-center gap-2">
+                      {c.label}
+                      {c.revoked_at && <span className="bg-acc/10 text-acc border border-acc/20 px-2 py-0.5 rounded-full text-[10px] whitespace-nowrap">રદ થયેલ</span>}
+                    </div>
+                    <div className="font-num text-sm text-sub mt-1">
+                      {c.masked || 'MT-****-****'} 
+                      <span className="font-gujarati ml-2 text-xs">({new Date(c.created_at).toLocaleDateString('en-IN')})</span>
+                    </div>
                   </div>
-                  <div className="font-num text-sm text-sub mt-1">
-                    {c.masked || 'MT-****-****'} 
-                    <span className="font-gujarati ml-2 text-xs">({new Date(c.created_at).toLocaleDateString('en-IN')})</span>
-                  </div>
-                </div>
-                {!c.revoked_at ? (
-                  <button onClick={() => handleRevokeCode(c.id)} className="w-10 h-10 rounded-full bg-acc/10 text-acc flex items-center justify-center hover:bg-acc hover:text-white transition-colors">
-                    <Trash2 size={18} />
-                  </button>
-                ) : (
-                  <div className="text-xs text-acc font-gujarati text-right">
-                    {new Date(c.revoked_at).toLocaleDateString('en-IN')}
-                  </div>
-                )}
-              </GlassCard>
+                  {!c.revoked_at ? (
+                    <button onClick={() => handleRevokeCode(c.id)} className="w-10 h-10 rounded-full bg-acc/10 text-acc flex items-center justify-center hover:bg-acc hover:text-white transition-colors">
+                      <Trash2 size={18} />
+                    </button>
+                  ) : (
+                    <div className="text-xs text-acc font-gujarati text-right">
+                      {new Date(c.revoked_at).toLocaleDateString('en-IN')}
+                    </div>
+                  )}
+                </GlassCard>
+              </motion.div>
             ))}
             {codes.length === 0 && (
               <div className="text-center text-sub py-8 font-gujarati">કોઈ ટીમ કોડ નથી</div>
@@ -456,16 +489,20 @@ export const Admin: React.FC = () => {
 
           <AnimatePresence>
             {showGenerateModal && (
-              <div 
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.14 }}
                 className="viewport-fixed-overlay bg-black/50 backdrop-blur-sm" 
                 onClick={(e) => { if (e.target === e.currentTarget && !generatedCode) setShowGenerateModal(false); }}
                 id="generate-modal-overlay"
               >
                 <motion.div 
-                  initial={{opacity:0, scale:0.95}} 
+                  initial={{opacity:0, scale:0.98}} 
                   animate={{opacity:1, scale:1}} 
-                  exit={{opacity:0, scale:0.95}} 
-                  transition={{ duration: 0.18, ease: 'easeOut' }}
+                  exit={{opacity:0, scale:0.98}} 
+                  transition={{ duration: 0.14, ease: 'easeOut' }}
                   onClick={(e) => e.stopPropagation()}
                   className="w-[92%] max-w-sm max-h-[85vh] overflow-y-auto rounded-2xl bg-card p-5 text-center shadow-2xl border border-brd/10 select-none"
                   role="dialog"
@@ -522,7 +559,7 @@ export const Admin: React.FC = () => {
                     </form>
                   )}
                 </motion.div>
-              </div>
+              </motion.div>
             )}
           </AnimatePresence>
         </div>
@@ -609,41 +646,52 @@ export const Admin: React.FC = () => {
           </GlassCard>
 
           <div className="space-y-3">
-            {halqas.map((h: any) => (
-              <GlassCard key={h.id} className="p-4 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <span className="font-gujarati font-bold text-txt text-lg">{h.name}</span>
-                  <span className={cn(
-                    "px-2 py-0.5 rounded-full text-xs font-gujarati border",
-                    !h.is_custom 
-                      ? "bg-acc/10 text-acc border-acc/20" 
-                      : "bg-sub/10 text-sub border-sub/20"
-                  )}>
-                    {!h.is_custom ? 'ડિફોલ્ટ' : 'ટીમ'}
-                  </span>
-                </div>
-                <button
-                  onClick={() => setHalqaToDelete({ id: h.id, name: h.name })}
-                  className="w-11 h-11 rounded-full bg-danger/10 text-danger flex items-center justify-center hover:bg-danger hover:text-white transition-colors shrink-0"
-                >
-                  <Trash2 size={20} />
-                </button>
-              </GlassCard>
+            {halqas.map((h: any, i: number) => (
+              <motion.div
+                key={h.id}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.22, delay: i * 0.06, ease: 'easeOut' }}
+              >
+                <GlassCard className="p-4 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <span className="font-gujarati font-bold text-txt text-lg">{h.name}</span>
+                    <span className={cn(
+                      "px-2 py-0.5 rounded-full text-xs font-gujarati border",
+                      !h.is_custom 
+                        ? "bg-acc/10 text-acc border-acc/20" 
+                        : "bg-sub/10 text-sub border-sub/20"
+                    )}>
+                      {!h.is_custom ? 'ડિફોલ્ટ' : 'ટીમ'}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => setHalqaToDelete({ id: h.id, name: h.name })}
+                    className="w-11 h-11 rounded-full bg-danger/10 text-danger flex items-center justify-center hover:bg-danger hover:text-white transition-colors shrink-0"
+                  >
+                    <Trash2 size={20} />
+                  </button>
+                </GlassCard>
+              </motion.div>
             ))}
           </div>
 
           <AnimatePresence>
             {halqaToDelete && (
-              <div 
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.14 }}
                 className="viewport-fixed-overlay bg-black/50 backdrop-blur-sm" 
                 onClick={(e) => { if (e.target === e.currentTarget) setHalqaToDelete(null); }}
                 id="admin-halqa-delete-overlay"
               >
                 <motion.div 
-                  initial={{opacity:0, scale:0.95}} 
+                  initial={{opacity:0, scale:0.98}} 
                   animate={{opacity:1, scale:1}} 
-                  exit={{opacity:0, scale:0.95}} 
-                  transition={{ duration: 0.18, ease: 'easeOut' }}
+                  exit={{opacity:0, scale:0.98}} 
+                  transition={{ duration: 0.14, ease: 'easeOut' }}
                   onClick={(e) => e.stopPropagation()}
                   className="w-[92%] max-w-sm max-h-[85vh] overflow-y-auto rounded-2xl bg-card p-6 shadow-2xl border border-brd/10 space-y-5 select-none"
                   role="dialog"
@@ -689,7 +737,7 @@ export const Admin: React.FC = () => {
                     </LiquidButton>
                   </div>
                 </motion.div>
-              </div>
+              </motion.div>
             )}
           </AnimatePresence>
         </div>

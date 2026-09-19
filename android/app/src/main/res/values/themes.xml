@@ -6,6 +6,7 @@
         <item name="colorOnPrimary">#FFFFFF</item>
     </style>
     <style name="Theme.MehnatTracker.NoActionBar" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="android:windowBackground">#20242B</item>
         <item name="android:windowNoTitle">true</item>
         <item name="android:windowActionBar">false</item>
         <item name="android:windowFullscreen">true</item>

@@ -1,6 +1,7 @@
 html[data-theme="outdoor"] {
   /* Page surface: Light cream #F5F0E1 */
   --bg: 245 240 225;
+  --bg-rgb: 245, 240, 225;
   /* Card surface: Pure warm cream #FFFDF6 */
   --card: 255 253 246;
   /* Primary text: Navy #1E2F73 */
@@ -40,6 +41,7 @@ html[data-theme="outdoor"] {
 }
 html[data-theme="dark"] {
   --bg: 31 35 41;
+  --bg-rgb: 31, 35, 41;
   --card: 38 43 51;
   --text: 243 244 246;
   --sub: 156 163 175;
@@ -66,6 +68,7 @@ html[data-theme="dark"] {
 }
 html[data-theme="premium"] {
   --bg: 23 18 56;
+  --bg-rgb: 23, 18, 56;
   --card: 36 22 64;
   --text: 255 255 255;
   --sub: 255 255 255;

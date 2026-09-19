@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronDown, Check } from 'lucide-react';
 import { useAppStore } from '../../store/appStore';
 import { localTodayIso, cn } from '../../lib/utils';
 import { useOverlayScrollLock } from '../../lib/useOverlayScrollLock';
@@ -65,6 +65,37 @@ export const NeumorphicCalendarDialog = React.memo<NeumorphicCalendarDialogProps
     }
     return yrs;
   }, [navYear]);
+
+  // Custom themed dropdown state (D3)
+  const [monthDropdownOpen, setMonthDropdownOpen] = useState(false);
+  const [yearDropdownOpen, setYearDropdownOpen] = useState(false);
+
+  // Close dropdowns when dialog closes
+  useEffect(() => {
+    if (!isOpen) {
+      setMonthDropdownOpen(false);
+      setYearDropdownOpen(false);
+    }
+  }, [isOpen]);
+
+  // Keyboard accessibility: Escape closes open dropdowns without closing whole calendar dialog
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (monthDropdownOpen) {
+          e.stopPropagation();
+          setMonthDropdownOpen(false);
+        } else if (yearDropdownOpen) {
+          e.stopPropagation();
+          setYearDropdownOpen(false);
+        }
+      }
+    };
+    if (monthDropdownOpen || yearDropdownOpen) {
+      window.addEventListener('keydown', handleKeyDown, true);
+      return () => window.removeEventListener('keydown', handleKeyDown, true);
+    }
+  }, [monthDropdownOpen, yearDropdownOpen]);
 
   // Sync nav view whenever dialog opens or selectedDate changes externally
   useEffect(() => {
@@ -168,8 +199,13 @@ export const NeumorphicCalendarDialog = React.memo<NeumorphicCalendarDialogProps
   return (
     <AnimatePresence>
       {isOpen && (
-        <div
-          className="viewport-fixed-overlay bg-black/50 backdrop-blur-xs"
+        <motion.div
+          key="calendar-dialog-overlay"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.14 }}
+          className="viewport-fixed-overlay bg-black/50 md:backdrop-blur-sm"
           onClick={onClose}
           id="calendar-dialog-overlay"
         >
@@ -178,9 +214,13 @@ export const NeumorphicCalendarDialog = React.memo<NeumorphicCalendarDialogProps
             initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.98 }}
-            transition={{ duration: 0.15, ease: 'easeOut' }}
-            onClick={(e) => e.stopPropagation()}
-            className="neu-cal-dialog flex flex-col select-none max-h-[90vh] overflow-y-auto"
+            transition={{ duration: 0.14, ease: 'easeOut' }}
+            onClick={(e) => {
+              e.stopPropagation();
+              setMonthDropdownOpen(false);
+              setYearDropdownOpen(false);
+            }}
+            className="neu-cal-dialog flex flex-col select-none max-h-[90vh] overflow-y-auto relative"
             id="calendar-dialog-container"
             role="dialog"
             aria-modal="true"
@@ -204,40 +244,140 @@ export const NeumorphicCalendarDialog = React.memo<NeumorphicCalendarDialogProps
                     {GUJARATI_MONTHS[navMonth]} {navYear}
                   </h3>
                   <div className="flex items-center gap-1 shrink-0">
-                    {/* Month Dropdown Pill */}
-                    <div className="neu-cal-dropdown-pill relative inline-flex items-center">
-                      <select
+                    {/* Month Dropdown Sheet Trigger & Popover */}
+                    <div className="relative inline-flex items-center">
+                      <button
+                        type="button"
                         id="neu-cal-month-select"
                         aria-label="મહિનો પસંદ કરો"
-                        value={navMonth}
-                        onChange={(e) => setNavMonth(Number(e.target.value))}
-                        className="neu-cal-select font-gujarati text-xs cursor-pointer appearance-none bg-transparent pr-4 pl-2 py-1 outline-none font-semibold"
+                        aria-haspopup="listbox"
+                        aria-expanded={monthDropdownOpen}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setMonthDropdownOpen((prev) => !prev);
+                          setYearDropdownOpen(false);
+                        }}
+                        className="neu-cal-dropdown-pill font-gujarati text-xs cursor-pointer bg-transparent pr-2 pl-2.5 py-1 outline-none font-semibold flex items-center gap-1"
                       >
-                        {GUJARATI_MONTHS.map((m, idx) => (
-                          <option key={idx} value={idx}>
-                            {m}
-                          </option>
-                        ))}
-                      </select>
-                      <ChevronDown size={11} className="neu-cal-select-chevron pointer-events-none absolute right-1.5 opacity-60" />
+                        <span>{GUJARATI_MONTHS[navMonth]}</span>
+                        <ChevronDown size={11} className={`neu-cal-select-chevron transition-transform duration-150 opacity-60 ${monthDropdownOpen ? 'rotate-180' : ''}`} />
+                      </button>
+
+                      <AnimatePresence>
+                        {monthDropdownOpen && (
+                          <motion.ul
+                            key="neu-cal-month-menu"
+                            role="listbox"
+                            aria-label="મહિનો પસંદ કરો"
+                            initial={{ opacity: 0, y: -4, scale: 0.96 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: -4, scale: 0.96 }}
+                            transition={{ duration: 0.16, ease: 'easeOut' }}
+                            className="neu-cal-dropdown-menu absolute top-full left-0 mt-1.5 z-50 min-w-[130px] max-h-[60vh] overflow-y-auto rounded-2xl p-1.5 shadow-xl border outline-none font-gujarati text-xs"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {GUJARATI_MONTHS.map((m, idx) => {
+                              const isSelected = navMonth === idx;
+                              return (
+                                <li
+                                  key={idx}
+                                  role="option"
+                                  aria-selected={isSelected}
+                                  tabIndex={0}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setNavMonth(idx);
+                                    setMonthDropdownOpen(false);
+                                  }}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                      e.preventDefault();
+                                      setNavMonth(idx);
+                                      setMonthDropdownOpen(false);
+                                    }
+                                  }}
+                                  className={`neu-cal-dropdown-item flex items-center justify-between px-3 py-1.5 rounded-xl cursor-pointer transition-colors ${
+                                    isSelected ? 'is-selected font-bold' : ''
+                                  }`}
+                                >
+                                  <span>{m}</span>
+                                  {isSelected && (
+                                    <Check size={13} className="neu-cal-dropdown-check shrink-0 stroke-[2.5]" />
+                                  )}
+                                </li>
+                              );
+                            })}
+                          </motion.ul>
+                        )}
+                      </AnimatePresence>
                     </div>
 
-                    {/* Year Dropdown Pill */}
-                    <div className="neu-cal-dropdown-pill relative inline-flex items-center">
-                      <select
+                    {/* Year Dropdown Sheet Trigger & Popover */}
+                    <div className="relative inline-flex items-center">
+                      <button
+                        type="button"
                         id="neu-cal-year-select"
                         aria-label="વર્ષ પસંદ કરો"
-                        value={navYear}
-                        onChange={(e) => setNavYear(Number(e.target.value))}
-                        className="neu-cal-select font-num text-xs cursor-pointer appearance-none bg-transparent pr-4 pl-2 py-1 outline-none font-semibold"
+                        aria-haspopup="listbox"
+                        aria-expanded={yearDropdownOpen}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setYearDropdownOpen((prev) => !prev);
+                          setMonthDropdownOpen(false);
+                        }}
+                        className="neu-cal-dropdown-pill font-num text-xs cursor-pointer bg-transparent pr-2 pl-2.5 py-1 outline-none font-semibold flex items-center gap-1"
                       >
-                        {yearOptions.map((y) => (
-                          <option key={y} value={y}>
-                            {y}
-                          </option>
-                        ))}
-                      </select>
-                      <ChevronDown size={11} className="neu-cal-select-chevron pointer-events-none absolute right-1.5 opacity-60" />
+                        <span>{navYear}</span>
+                        <ChevronDown size={11} className={`neu-cal-select-chevron transition-transform duration-150 opacity-60 ${yearDropdownOpen ? 'rotate-180' : ''}`} />
+                      </button>
+
+                      <AnimatePresence>
+                        {yearDropdownOpen && (
+                          <motion.ul
+                            key="neu-cal-year-menu"
+                            role="listbox"
+                            aria-label="વર્ષ પસંદ કરો"
+                            initial={{ opacity: 0, y: -4, scale: 0.96 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: -4, scale: 0.96 }}
+                            transition={{ duration: 0.16, ease: 'easeOut' }}
+                            className="neu-cal-dropdown-menu absolute top-full right-0 mt-1.5 z-50 min-w-[90px] max-h-[60vh] overflow-y-auto rounded-2xl p-1.5 shadow-xl border outline-none font-num text-xs"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {yearOptions.map((y) => {
+                              const isSelected = navYear === y;
+                              return (
+                                <li
+                                  key={y}
+                                  role="option"
+                                  aria-selected={isSelected}
+                                  tabIndex={0}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setNavYear(y);
+                                    setYearDropdownOpen(false);
+                                  }}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                      e.preventDefault();
+                                      setNavYear(y);
+                                      setYearDropdownOpen(false);
+                                    }
+                                  }}
+                                  className={`neu-cal-dropdown-item flex items-center justify-between px-3 py-1.5 rounded-xl cursor-pointer transition-colors ${
+                                    isSelected ? 'is-selected font-bold' : ''
+                                  }`}
+                                >
+                                  <span>{y}</span>
+                                  {isSelected && (
+                                    <Check size={13} className="neu-cal-dropdown-check shrink-0 stroke-[2.5]" />
+                                  )}
+                                </li>
+                              );
+                            })}
+                          </motion.ul>
+                        )}
+                      </AnimatePresence>
                     </div>
                   </div>
                 </div>
@@ -330,7 +470,7 @@ export const NeumorphicCalendarDialog = React.memo<NeumorphicCalendarDialogProps
               </button>
             </div>
           </motion.div>
-        </div>
+        </motion.div>
       )}
     </AnimatePresence>
   );

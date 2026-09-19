@@ -63,7 +63,8 @@ export const AuthDialog: React.FC = () => {
           <motion.div
             initial={{ opacity: 0, y: 50, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 20, scale: 0.9 }}
+            exit={{ opacity: 0, y: 40 }}
+            transition={{ duration: 0.16, ease: 'easeIn' }}
             className="w-full max-w-md rounded-2xl bg-card/95 backdrop-blur px-4 py-3 flex items-center gap-2 shadow-lg border border-brd/10"
           >
             <span className="flex-1 text-sm text-txt font-gujarati font-medium">{toastMessage}</span>
@@ -72,7 +73,11 @@ export const AuthDialog: React.FC = () => {
       )}
 
       {authDialogOpen && (
-        <div
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.14 }}
           className="viewport-fixed-overlay bg-black/50 backdrop-blur-sm"
           onClick={(e) => { if (e.target === e.currentTarget) closeAuthDialog(); }}
           id="auth-dialog-overlay"
@@ -80,10 +85,10 @@ export const AuthDialog: React.FC = () => {
           {/* Centered dialog */}
           <motion.div
             ref={panelRef}
-            initial={{ opacity: 0, scale: 0.95 }}
+            initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            transition={{ duration: 0.18, ease: 'easeOut' }}
+            exit={{ opacity: 0, scale: 0.98 }}
+            transition={{ duration: 0.14, ease: 'easeOut' }}
             onClick={(e) => e.stopPropagation()}
             className="w-[92%] max-w-sm max-h-[85vh] overflow-y-auto neu-raised rounded-3xl p-6 relative pointer-events-auto select-none"
             role="dialog"
@@ -172,7 +177,7 @@ export const AuthDialog: React.FC = () => {
                 )}
               </AnimatePresence>
           </motion.div>
-        </div>
+        </motion.div>
       )}
     </AnimatePresence>
   );

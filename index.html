@@ -13,15 +13,22 @@
       if (!t) { t = 'dark'; localStorage.setItem('theme', t); }
       document.documentElement.setAttribute('data-theme', t);
       const m = document.querySelector('meta[name="theme-color"]');
+      let bg = '#20242B';
       if (t === 'outdoor') {
-        if (m) m.setAttribute('content', '#F5F0E1');
-        document.documentElement.style.backgroundColor = '#F5F0E1';
+        bg = '#F5F0E1';
       } else if (t === 'premium') {
-        if (m) m.setAttribute('content', '#171238');
-        document.documentElement.style.backgroundColor = '#171238';
+        bg = '#171238';
       } else {
-        if (m) m.setAttribute('content', '#1F2329');
-        document.documentElement.style.backgroundColor = '#1F2329';
+        bg = '#20242B';
+      }
+      if (m) m.setAttribute('content', bg);
+      document.documentElement.style.backgroundColor = bg;
+      if (document.body) {
+        document.body.style.backgroundColor = bg;
+      } else {
+        document.addEventListener('DOMContentLoaded', () => {
+          if (document.body) document.body.style.backgroundColor = bg;
+        });
       }
       
       window.AndroidPrepareDownload = function(filename, mime) {
@@ -30,7 +37,7 @@
       };
     </script>
   </head>
-  <body>
+  <body style="margin: 0; background-color: #20242B;">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

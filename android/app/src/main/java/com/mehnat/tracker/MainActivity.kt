@@ -5,6 +5,7 @@ import android.app.DownloadManager
 import android.content.ClipData
 import android.content.Context
 import android.content.Intent
+import android.graphics.Color
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.net.Uri
@@ -72,6 +73,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupWebView() {
+        webView.setBackgroundColor(Color.parseColor("#20242B"))
         webView.settings.javaScriptEnabled = true
         webView.settings.domStorageEnabled = true
         webView.settings.databaseEnabled = true

@@ -536,7 +536,8 @@ export const NewReport: React.FC = () => {
             <motion.div
               initial={{ opacity: 0, y: 50, scale: 0.9 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 20, scale: 0.9 }}
+              exit={{ opacity: 0, y: 40 }}
+              transition={{ duration: 0.16, ease: 'easeIn' }}
               className="w-full max-w-md rounded-2xl bg-card/95 backdrop-blur px-4 py-3 flex items-center justify-between gap-2 shadow-lg border border-brd/10 pointer-events-auto"
             >
               <div className="flex items-center gap-2 min-w-0">
@@ -584,16 +585,20 @@ export const NewReport: React.FC = () => {
       {/* Halqa Dialog */}
       <AnimatePresence>
         {showHalqaDialog && (
-          <div 
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.14 }}
             className="viewport-fixed-overlay bg-black/50 backdrop-blur-sm"
             onClick={(e) => { if (e.target === e.currentTarget && !isAddingHalqa) setShowHalqaDialog(false); }}
             id="halqa-dialog-overlay"
           >
             <motion.div 
-              initial={{ scale: 0.95, opacity: 0 }} 
+              initial={{ scale: 0.98, opacity: 0 }} 
               animate={{ scale: 1, opacity: 1 }} 
-              exit={{ scale: 0.95, opacity: 0 }}
-              transition={{ duration: 0.18, ease: 'easeOut' }}
+              exit={{ scale: 0.98, opacity: 0 }}
+              transition={{ duration: 0.14, ease: 'easeOut' }}
               onClick={(e) => e.stopPropagation()}
               className="w-full max-w-sm max-h-[85vh] overflow-y-auto select-none"
               role="dialog"
@@ -637,20 +642,24 @@ export const NewReport: React.FC = () => {
                 </div>
               </div>
             </motion.div>
-          </div>
+          </motion.div>
         )}
 
         {halqaToDelete && (
-          <div 
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.14 }}
             className="viewport-fixed-overlay bg-black/50 backdrop-blur-sm"
             onClick={(e) => { if (e.target === e.currentTarget) setHalqaToDelete(null); }}
             id="halqa-delete-dialog-overlay"
           >
             <motion.div 
-              initial={{ scale: 0.95, opacity: 0 }} 
+              initial={{ scale: 0.98, opacity: 0 }} 
               animate={{ scale: 1, opacity: 1 }} 
-              exit={{ scale: 0.95, opacity: 0 }}
-              transition={{ duration: 0.18, ease: 'easeOut' }}
+              exit={{ scale: 0.98, opacity: 0 }}
+              transition={{ duration: 0.14, ease: 'easeOut' }}
               onClick={(e) => e.stopPropagation()}
               className="w-full max-w-sm max-h-[85vh] overflow-y-auto select-none"
               role="dialog"
@@ -682,20 +691,24 @@ export const NewReport: React.FC = () => {
                 </div>
               </div>
             </motion.div>
-          </div>
+          </motion.div>
         )}
 
         {showClearConfirm && (
-          <div 
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.14 }}
             className="viewport-fixed-overlay bg-black/50 backdrop-blur-sm"
             onClick={(e) => { if (e.target === e.currentTarget) setShowClearConfirm(false); }}
             id="clear-confirm-dialog-overlay"
           >
             <motion.div 
-              initial={{ scale: 0.95, opacity: 0 }} 
+              initial={{ scale: 0.98, opacity: 0 }} 
               animate={{ scale: 1, opacity: 1 }} 
-              exit={{ scale: 0.95, opacity: 0 }}
-              transition={{ duration: 0.18, ease: 'easeOut' }}
+              exit={{ scale: 0.98, opacity: 0 }}
+              transition={{ duration: 0.14, ease: 'easeOut' }}
               onClick={(e) => e.stopPropagation()}
               className="w-full max-w-sm max-h-[85vh] overflow-y-auto select-none"
               role="dialog"
@@ -727,7 +740,7 @@ export const NewReport: React.FC = () => {
                 </div>
               </div>
             </motion.div>
-          </div>
+          </motion.div>
         )}
       </AnimatePresence>
 

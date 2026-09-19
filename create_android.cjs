@@ -118,6 +118,7 @@ dependencies {
         <item name="colorOnPrimary">#FFFFFF</item>
     </style>
     <style name="Theme.MehnatTracker.NoActionBar" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="android:windowBackground">#20242B</item>
         <item name="android:windowNoTitle">true</item>
         <item name="android:windowActionBar">false</item>
         <item name="android:windowFullscreen">true</item>
@@ -130,14 +131,14 @@ dependencies {
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#0f172a">
+    android:background="#20242B">
 
     <!-- Splash Screen -->
     <LinearLayout
         android:id="@+id/splashScreen"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="#0f172a"
+        android:background="#20242B"
         android:gravity="center"
         android:orientation="vertical"
         android:elevation="10dp"
@@ -166,7 +167,7 @@ dependencies {
         android:id="@+id/errorScreen"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="#0f172a"
+        android:background="#20242B"
         android:gravity="center"
         android:orientation="vertical"
         android:visibility="gone"
@@ -196,6 +197,7 @@ dependencies {
         android:id="@+id/webView"
         android:layout_width="0dp"
         android:layout_height="0dp"
+        android:background="#20242B"
         android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
@@ -209,6 +211,7 @@ dependencies {
 import android.app.DownloadManager
 import android.content.Context
 import android.content.Intent
+import android.graphics.Color
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.net.Uri
@@ -260,6 +263,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupWebView() {
+        webView.setBackgroundColor(Color.parseColor("#20242B"))
         webView.settings.javaScriptEnabled = true
         webView.settings.domStorageEnabled = true
         webView.settings.databaseEnabled = true

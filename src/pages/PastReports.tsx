@@ -194,7 +194,8 @@ export const PastReports: React.FC = () => {
             <motion.div
               initial={{ opacity: 0, y: 50, scale: 0.9 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 20, scale: 0.9 }}
+              exit={{ opacity: 0, y: 40 }}
+              transition={{ duration: 0.16, ease: 'easeIn' }}
               className="w-full max-w-md rounded-2xl bg-card/95 backdrop-blur px-4 py-3 flex items-center gap-2 shadow-lg border border-brd/10"
             >
               <CheckCircle size={18} className="text-acc2 shrink-0" />
@@ -206,16 +207,20 @@ export const PastReports: React.FC = () => {
 
       <AnimatePresence>
         {reportToDelete !== null && (
-          <div 
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.14 }}
             className="viewport-fixed-overlay bg-black/50 backdrop-blur-sm"
             onClick={(e) => { if (e.target === e.currentTarget) setReportToDelete(null); }}
             id="report-delete-dialog-overlay"
           >
             <motion.div 
-              initial={{ scale: 0.95, opacity: 0 }} 
+              initial={{ scale: 0.98, opacity: 0 }} 
               animate={{ scale: 1, opacity: 1 }} 
-              exit={{ scale: 0.95, opacity: 0 }}
-              transition={{ duration: 0.18, ease: 'easeOut' }}
+              exit={{ scale: 0.98, opacity: 0 }}
+              transition={{ duration: 0.14, ease: 'easeOut' }}
               onClick={(e) => e.stopPropagation()}
               className="w-full max-w-sm max-h-[85vh] overflow-y-auto select-none"
               role="dialog"
@@ -237,7 +242,7 @@ export const PastReports: React.FC = () => {
                 </div>
               </div>
             </motion.div>
-          </div>
+          </motion.div>
         )}
       </AnimatePresence>
 
@@ -287,9 +292,9 @@ export const PastReports: React.FC = () => {
           return (
             <motion.div
               key={report.id}
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.1 }}
+              transition={{ duration: 0.22, delay: i * 0.06, ease: 'easeOut' }}
             >
               <GlassCard className="p-4 space-y-3">
                 {/* Header */}
