@@ -10,6 +10,7 @@ import { useAppStore } from '../store/appStore';
 import { supabaseService } from '../services/supabaseService';
 import { useNavigate } from 'react-router-dom';
 import { useOverlayScrollLock } from '../lib/useOverlayScrollLock';
+import { nativeSave } from '../lib/nativeSave';
 
 export const Admin: React.FC = () => {
   const { sessionCode, sessionRole, setSession, reports, halqas } = useAppStore();
@@ -181,22 +182,17 @@ export const Admin: React.FC = () => {
     showNotification('કોપી થઈ ગયું ✅');
   };
 
-  const handleBackup = () => {
+  const handleBackup = async () => {
     const data = {
       generatedAt: new Date().toISOString(),
       reports,
       halqas,
       settings: {}
     };
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const json = JSON.stringify(data, null, 2);
+    const bytes = new TextEncoder().encode(json);
     const filename = `backup_${new Date().toISOString().split('T')[0]}.json`;
-    (window as any).AndroidPrepareDownload?.(filename, 'application/json');
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(url);
+    await nativeSave(bytes, filename, 'application/json');
     logActivity('ડેટા બેકઅપ ડાઉનલોડ');
     showNotification('બેકઅપ ડાઉનલોડ થયું ✅');
   };

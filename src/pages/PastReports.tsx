@@ -11,6 +11,7 @@ import { LiquidButton } from '../components/ui/LiquidButton';
 import { Calendar, Users, MapPin, Download, Share2, Edit3, Trash2, Search, CheckCircle, Plus, Lock } from 'lucide-react';
 import { formatDate } from '../lib/utils';
 import { useOverlayScrollLock } from '../lib/useOverlayScrollLock';
+import { nativeSave } from '../lib/nativeSave';
 
 export const PastReports: React.FC = () => {
   const navigate = useNavigate();
@@ -70,7 +71,7 @@ export const PastReports: React.FC = () => {
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
   };
 
-  const handleDownloadExcel = (report: SavedReport) => {
+  const handleDownloadExcel = async (report: SavedReport) => {
     const ACTIVITY_KEYS = [
       'activity.namaz', 'activity.mashwara_pabandi', 'activity.taleem', 'activity.gasht',
       'activity.panchkosa', 'activity.shabguzari', 'activity.mulaqat_percent', 'activity.school_namaz',
@@ -112,20 +113,14 @@ export const PastReports: React.FC = () => {
     XLSX.utils.book_append_sheet(wb, ws, "રિપોર્ટ");
     
     const filename = `mehnat_${report.halqa}_${report.date}.xlsx`;
-    const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-    const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-    (window as any).AndroidPrepareDownload?.(filename, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(url);
+    const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' }) as ArrayBuffer;
+    const XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+    await nativeSave(new Uint8Array(excelBuffer), filename, XLSX_MIME);
     
     showNotification('Excel ડાઉનલોડ થઈ ✅');
   };
 
-  const handleDownloadAllExcel = () => {
+  const handleDownloadAllExcel = async () => {
     if (reports.length === 0) return showNotification('કોઈ રિપોર્ટ નથી ❌');
     
     const wb = XLSX.utils.book_new();
@@ -173,15 +168,9 @@ export const PastReports: React.FC = () => {
     });
 
     const filename = `all_reports.xlsx`;
-    const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-    const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-    (window as any).AndroidPrepareDownload?.(filename, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(url);
+    const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' }) as ArrayBuffer;
+    const XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+    await nativeSave(new Uint8Array(excelBuffer), filename, XLSX_MIME);
     
     showNotification('બધા રિપોર્ટ Excel ડાઉનલોડ થયા ✅');
   };
