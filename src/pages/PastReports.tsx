@@ -11,7 +11,7 @@ import { LiquidButton } from '../components/ui/LiquidButton';
 import { Calendar, Users, MapPin, Download, Share2, Edit3, Trash2, Search, CheckCircle, Plus, Lock } from 'lucide-react';
 import { formatDate } from '../lib/utils';
 import { useOverlayScrollLock } from '../lib/useOverlayScrollLock';
-import { nativeSave } from '../lib/nativeSave';
+import { nativeSave, NATIVE_SAVE_SUCCESS } from '../lib/nativeSave';
 
 export const PastReports: React.FC = () => {
   const navigate = useNavigate();
@@ -115,9 +115,9 @@ export const PastReports: React.FC = () => {
     const filename = `mehnat_${report.halqa}_${report.date}.xlsx`;
     const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' }) as ArrayBuffer;
     const XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
-    await nativeSave(new Uint8Array(excelBuffer), filename, XLSX_MIME);
-    
-    showNotification('Excel ડાઉનલોડ થઈ ✅');
+    const route = await nativeSave(new Uint8Array(excelBuffer), filename, XLSX_MIME);
+    // D3: single toast — Kotlin owns it on APK; JS shows it only on desktop
+    if (route === 'desktop') showNotification(NATIVE_SAVE_SUCCESS);
   };
 
   const handleDownloadAllExcel = async () => {
@@ -170,9 +170,9 @@ export const PastReports: React.FC = () => {
     const filename = `all_reports.xlsx`;
     const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' }) as ArrayBuffer;
     const XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
-    await nativeSave(new Uint8Array(excelBuffer), filename, XLSX_MIME);
-    
-    showNotification('બધા રિપોર્ટ Excel ડાઉનલોડ થયા ✅');
+    const route = await nativeSave(new Uint8Array(excelBuffer), filename, XLSX_MIME);
+    // D3: single toast — Kotlin owns it on APK; JS shows it only on desktop
+    if (route === 'desktop') showNotification(NATIVE_SAVE_SUCCESS);
   };
 
   return (

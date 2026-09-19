@@ -10,7 +10,7 @@ import { useAppStore } from '../store/appStore';
 import { supabaseService } from '../services/supabaseService';
 import { useNavigate } from 'react-router-dom';
 import { useOverlayScrollLock } from '../lib/useOverlayScrollLock';
-import { nativeSave } from '../lib/nativeSave';
+import { nativeSave, NATIVE_SAVE_SUCCESS } from '../lib/nativeSave';
 
 export const Admin: React.FC = () => {
   const { sessionCode, sessionRole, setSession, reports, halqas } = useAppStore();
@@ -192,9 +192,10 @@ export const Admin: React.FC = () => {
     const json = JSON.stringify(data, null, 2);
     const bytes = new TextEncoder().encode(json);
     const filename = `backup_${new Date().toISOString().split('T')[0]}.json`;
-    await nativeSave(bytes, filename, 'application/json');
+    const route = await nativeSave(bytes, filename, 'application/json');
     logActivity('ડેટા બેકઅપ ડાઉનલોડ');
-    showNotification('બેકઅપ ડાઉનલોડ થયું ✅');
+    // D3: single toast — Kotlin owns it on APK; JS shows it only on desktop
+    if (route === 'desktop') showNotification(NATIVE_SAVE_SUCCESS);
   };
 
   const openLogs = () => {

@@ -3,12 +3,24 @@
  * S49 — APK Download Bridge Utility
  *
  * On Android WebView, blob: URL anchor-clicks are silently ignored.
- * This utility detects the MehnatBridge (AndroidDownloader) and routes
+ * This utility detects the AndroidDownloader bridge and routes
  * downloads through it; on desktop it falls back to the standard approach.
+ *
+ * TOAST OWNERSHIP (D3):
+ *   - On APK (bridge used): Kotlin shows exactly one native Toast.
+ *     The JS caller must NOT show an additional success notification.
+ *   - On desktop: nativeSave triggers a CustomEvent 'nativeSaveComplete'
+ *     that callers listen to (or they check the returned 'bridge' flag).
+ *   nativeSave returns: 'bridge' | 'desktop'
+ *   Callers show JS toast ONLY when return === 'desktop'.
+ *
+ * VERBATIM SUCCESS TOAST (both Kotlin and desktop JS):
+ *   "ફાઇલ Downloads ફોલ્ડરમાં સાચવી દીધી છે ✅"
  *
  * Usage:
  *   import { nativeSave } from '../lib/nativeSave';
- *   nativeSave(blobOrUint8Array, 'filename.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+ *   const route = await nativeSave(buf, 'report.xlsx', XLSX_MIME);
+ *   if (route === 'desktop') showNotification('ફાઇલ Downloads ફોલ્ડરમાં સાચવી દીધી છે ✅');
  */
 
 declare global {
@@ -22,6 +34,9 @@ declare global {
   }
 }
 
+/** Verbatim success message — used by callers on the desktop path. */
+export const NATIVE_SAVE_SUCCESS = 'ફાઇલ Downloads ફોલ્ડરમાં સાચવી દીધી છે ✅';
+
 /**
  * Convert a Uint8Array or ArrayBuffer to a base64 string (no data-URL prefix).
  */
@@ -29,8 +44,10 @@ function arrayToBase64(buffer: Uint8Array | ArrayBuffer): string {
   const bytes = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer);
   let binary = '';
   const len = bytes.byteLength;
-  for (let i = 0; i < len; i++) {
-    binary += String.fromCharCode(bytes[i]);
+  // Process in chunks to avoid call-stack overflow for large files
+  const CHUNK = 8192;
+  for (let i = 0; i < len; i += CHUNK) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + CHUNK));
   }
   return btoa(binary);
 }
@@ -52,14 +69,16 @@ function blobToArrayBuffer(blob: Blob): Promise<ArrayBuffer> {
  *
  * @param data     Blob, Uint8Array, or ArrayBuffer containing the file bytes
  * @param filename Desired file name (e.g. "report_2025.xlsx")
- * @param mimeType MIME type string (e.g. "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
- * @returns        Promise<void> — resolves when the save has been initiated/completed
+ * @param mimeType MIME type string
+ * @returns        'bridge' if the Android native bridge was used (Kotlin shows Toast),
+ *                 'desktop' if the standard browser download was triggered
+ *                 (caller should show JS success notification).
  */
 export async function nativeSave(
   data: Blob | Uint8Array | ArrayBuffer,
   filename: string,
   mimeType: string
-): Promise<void> {
+): Promise<'bridge' | 'desktop'> {
   // Normalise to Uint8Array
   let bytes: Uint8Array;
   if (data instanceof Blob) {
@@ -74,20 +93,20 @@ export async function nativeSave(
   const base64 = arrayToBase64(bytes);
 
   // --- Android APK path (preferred bridge) ---
+  // Kotlin's AndroidDownloader.saveBase64() shows its own Toast; caller must NOT add a second one.
   if (window.AndroidDownloader?.saveBase64) {
-    // Pass as data-URL so the Kotlin side can strip the prefix safely
     window.AndroidDownloader.saveBase64(
       `data:${mimeType};base64,${base64}`,
       filename,
       mimeType
     );
-    return;
+    return 'bridge';
   }
 
   // --- MehnatBridge path (future-proof secondary bridge) ---
   if (window.MehnatBridge?.saveFile) {
     window.MehnatBridge.saveFile(base64, filename, mimeType);
-    return;
+    return 'bridge';
   }
 
   // --- Desktop / standard browser path ---
@@ -107,4 +126,5 @@ export async function nativeSave(
     URL.revokeObjectURL(url);
     document.body.removeChild(a);
   }, 1000);
+  return 'desktop';
 }

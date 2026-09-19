@@ -257,7 +257,7 @@ class MainActivity : AppCompatActivity() {
                             values.put(MediaStore.MediaColumns.IS_PENDING, 0)
                             context.contentResolver.update(uri, values, null, null)
                             mainHandler.post {
-                                Toast.makeText(context, "ફાઇલ સેવ થઈ ✅", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, "ફાઇલ Downloads ફોલ્ડરમાં સાચવી દીધી છે ✅", Toast.LENGTH_SHORT).show()
                             }
                         } else {
                             throw Exception("MediaStore insert returned null")
@@ -277,7 +277,7 @@ class MainActivity : AppCompatActivity() {
                             arrayOf(mimeType)
                         ) { _, _ -> /* scan complete */ }
                         mainHandler.post {
-                            Toast.makeText(context, "ફાઇલ સેવ થઈ ✅", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "ફાઇલ Downloads ફોલ્ડરમાં સાચવી દીધી છે ✅", Toast.LENGTH_SHORT).show()
                         }
                     }
                 } catch (e: Exception) {

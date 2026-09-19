@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import * as XLSX from 'xlsx';
+import { jsPDF } from 'jspdf';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAppStore } from '../store/appStore';
 import { t } from '../i18n';
@@ -13,6 +14,7 @@ import { isDuplicateReportError, mapSupabaseError } from '../services/supabaseSe
 import { ScanPills } from '../components/ScanFill';
 import { NeumorphicCalendarDialog } from '../components/ui/NeumorphicCalendarDialog';
 import { useOverlayScrollLock } from '../lib/useOverlayScrollLock';
+import { nativeSave, NATIVE_SAVE_SUCCESS } from '../lib/nativeSave';
 
 // Constants
 const ACTIVITY_KEYS = [
@@ -272,7 +274,7 @@ export const NewReport: React.FC = () => {
     showNotification('ડ્રાફ્ટ ડિલીટ થયો ✅');
   };
 
-  const handleDownloadExcel = () => {
+  const handleDownloadExcel = async () => {
     const rows: any[][] = [
       ["બનાસકાંઠા સ્ટુડન્ટ મહેનત રિપોર્ટ"],
       ["હલકો:", halqa || '-', "તારીખ:", formatDate(date)],
@@ -307,14 +309,68 @@ export const NewReport: React.FC = () => {
     ws['!cols'] = [{wch:32}, {wch:12}, {wch:12}, {wch:12}];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "રિપોર્ટ");
-    XLSX.writeFile(wb, `mehnat_${halqa || 'report'}_${date}.xlsx`);
-    
-    showNotification('Excel ફાઇલ ડાઉનલોડ થઈ ✅');
+
+    const filename = `mehnat_${halqa || 'report'}_${date}.xlsx`;
+    const XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+    const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' }) as ArrayBuffer;
+    const route = await nativeSave(new Uint8Array(excelBuffer), filename, XLSX_MIME);
+    // D3: single toast — Kotlin owns it on APK; JS shows it only on desktop
+    if (route === 'desktop') showNotification(NATIVE_SAVE_SUCCESS);
   };
 
-  const handleDownloadPdf = () => {
-    window.print();
-    showNotification('PDF પ્રિન્ટ ડાયલોગ ખુલ્યો ✅');
+  const handleDownloadPdf = async () => {
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    // jsPDF default font supports Latin; Gujarati transliterated labels for clear PDF rendering
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(14);
+    doc.text('Banaskantha Student Mehnat Report', 105, 18, { align: 'center' });
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Halqa: ${halqa || '-'}    Date: ${formatDate(date)}`, 14, 28);
+    doc.text(`Total Students: ${totalStudents}`, 14, 36);
+    let y = 44;
+    doc.setFont('helvetica', 'bold');
+    doc.text('Student Statistics', 14, y);
+    doc.setFont('helvetica', 'normal');
+    y += 7;
+    const statRows = [
+      ['Std 10', stats.std_10 || 0], ['Std 11', stats.std_11 || 0],
+      ['Std 12', stats.std_12 || 0], ['College', stats.college || 0],
+      ['Engineering', stats.engineering || 0], ['Medical', stats.medical || 0],
+      ['Muslim Teachers', stats.muslim_teachers || 0]
+    ];
+    statRows.forEach(([label, val]) => {
+      doc.text(`${label}: ${val}`, 14, y);
+      y += 6;
+    });
+    y += 4;
+    doc.setFont('helvetica', 'bold');
+    doc.text('Activities', 14, y);
+    doc.setFont('helvetica', 'normal');
+    y += 7;
+    ACTIVITY_KEYS.forEach(k => {
+      const act = activities[k];
+      if (act?.maujuda || act?.gujishta || act?.azaim) {
+        const label = t(k as any);
+        doc.text(`${label}: G=${act?.gujishta||'-'} A=${act?.azaim||'-'} M=${act?.maujuda||'-'}`, 14, y);
+        y += 6;
+        if (y > 270) { doc.addPage(); y = 20; }
+      }
+    });
+    if (notes) {
+      y += 4;
+      doc.setFont('helvetica', 'bold');
+      doc.text('Notes:', 14, y);
+      doc.setFont('helvetica', 'normal');
+      y += 6;
+      const noteLines = doc.splitTextToSize(notes, 180);
+      doc.text(noteLines, 14, y);
+    }
+    const pdfBlob = doc.output('blob');
+    const filename = `mehnat_${halqa || 'report'}_${date}.pdf`;
+    const route = await nativeSave(pdfBlob, filename, 'application/pdf');
+    // D3: single toast — Kotlin owns it on APK; JS shows it only on desktop
+    if (route === 'desktop') showNotification(NATIVE_SAVE_SUCCESS);
   };
 
   const showNotification = (msg: string) => {
