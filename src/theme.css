@@ -82,11 +82,11 @@ html[data-theme="premium"] {
   --inp-alpha: 0.1;
   --grad-a: 236 72 153;
   --grad-b: 168 85 247;
-  --on-primary: #1A2E05;
-  --on-primary-sub: #3F6212;
-  --on-primary-chip-bg: rgba(26, 46, 5, 0.12);
-  --on-primary-chip-border: rgba(26, 46, 5, 0.25);
-  --on-primary-shadow: none;
+  --on-primary: #ffffff;
+  --on-primary-sub: rgba(255, 255, 255, 0.85);
+  --on-primary-chip-bg: rgba(255, 255, 255, 0.15);
+  --on-primary-chip-border: rgba(255, 255, 255, 0.25);
+  --on-primary-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
 
   --input-bg: #241029;
   --input-border: 1px solid rgba(236, 72, 153, 0.35);

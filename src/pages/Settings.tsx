@@ -36,23 +36,23 @@ export const Settings: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.22, delay: 0 * 0.06, ease: 'easeOut' }}
         >
-          <GlassCard className="p-4 flex flex-col gap-3">
+          <GlassCard className="p-5 flex flex-col">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-acc/10 flex items-center justify-center text-acc">
                 <Moon size={20} />
               </div>
-              <div>
-                <div className="font-gujarati font-medium">{t('settings.theme' as any)}</div>
-                <div className="text-xs text-sub font-gujarati mt-0.5">{t('settings.theme_desc' as any)}</div>
-              </div>
+              <div className="font-gujarati text-[16px] font-semibold text-txt">{t('settings.theme' as any)}</div>
             </div>
-            <div className="grid grid-cols-3 gap-2 w-full">
+            <div className="text-xs text-sub font-gujarati mt-1.5">{t('settings.theme_desc' as any)}</div>
+            <div className="grid grid-cols-3 gap-3 w-full mt-4">
               {(['outdoor', 'dark', 'premium'] as Theme[]).map((tVal) => (
                 <button
                   key={tVal}
                   onClick={() => setTheme(tVal)}
-                  className={`px-3 py-2 font-gujarati text-sm font-medium rounded-full shadow-[inset_0_0_0_1px_rgb(var(--brd)/0.15)] ${
-                    theme === tVal ? 'bg-acc text-white shadow-md' : 'bg-card text-sub hover:bg-txt/5'
+                  className={`min-h-[48px] flex items-center justify-center font-gujarati text-[14px] font-medium rounded-[16px] transition-all ${
+                    theme === tVal 
+                      ? 'bg-acc text-[var(--on-primary)] shadow-[0_0_12px_rgba(var(--acc-rgb),0.3)] border border-transparent' 
+                      : 'bg-transparent text-sub border border-brd/50 hover:bg-txt/5'
                   }`}
                 >
                   {tVal === 'outdoor' ? 'આઉટડોર' : tVal === 'dark' ? 'ગ્રેફાઇટ' : 'પ્રીમિયમ'}

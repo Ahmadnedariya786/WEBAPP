@@ -7,7 +7,7 @@ import { t } from '../i18n';
 import { PageHeading } from '../components/ui/PageHeading';
 import { 
   Calendar, Save, Trash2, Download, Share2, CheckCircle, 
-  Plus, X, Copy, Lock, RotateCcw, Check, ListChecks 
+  X, Copy, Lock, RotateCcw, Check, ListChecks 
 } from 'lucide-react';
 import { cn, formatDate, localTodayIso } from '../lib/utils';
 import { isDuplicateReportError, mapSupabaseError } from '../services/supabaseService';
@@ -841,7 +841,7 @@ export const NewReport: React.FC = () => {
                   aria-label="+ હલકો ઉમેરો"
                   className="snap-start whitespace-nowrap px-4 py-2 rounded-full border border-dashed border-sub/40 text-sub hover:bg-sub/10 flex items-center gap-1.5 font-gujarati text-sm font-medium shrink-0 transition-colors"
                 >
-                  {!sessionRole ? <Lock size={15} /> : <Plus size={15} />}
+                  {!sessionRole && <Lock size={15} />}
                   <span>+ હલકો ઉમેરો</span>
                 </button>
               </div>

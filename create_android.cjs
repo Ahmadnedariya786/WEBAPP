@@ -123,6 +123,7 @@ dependencies {
         <item name="android:windowActionBar">false</item>
         <item name="android:windowFullscreen">true</item>
         <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
+        <item name="android:windowSplashScreenBackground">#20242B</item>
     </style>
 </resources>`,
 
