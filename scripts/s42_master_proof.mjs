@@ -1,3 +1,4 @@
+// Source of truth: S43 D2 — overlays are top-anchored with sticky footers; S42-era vertical centering was intentionally replaced.
 import puppeteer from 'puppeteer';
 import fs from 'fs';
 import path from 'path';
@@ -117,7 +118,7 @@ async function runProof() {
           bodyOverflow,
           bodyOverscroll,
           inViewport: pRect.top >= 0 && pRect.bottom <= 740 && pRect.left >= 0 && pRect.right <= 360,
-          centered: Math.abs((pRect.top + pRect.bottom) / 2 - 370) < 60
+          topAnchored: Math.abs(pRect.top - 12) <= 2
         };
       });
 
@@ -125,7 +126,7 @@ async function runProof() {
       await page.screenshot({ path: path.join(SCREENSHOT_DIR, shotName) });
       results.screenshots.push({ name: shotName, theme, context: 'Calendar at page top' });
 
-      addTest(`D1/D2: Calendar dialog centered & scroll-locked at page top [${theme}]`, 
+      addTest(`D1/D2: Calendar dialog top-anchored & scroll-locked at page top [${theme}]`, 
         calMetrics && calMetrics.inViewport && calMetrics.overlayPos === 'fixed' && calMetrics.bodyOverflow === 'hidden' && calMetrics.overlayTop === 0,
         calMetrics
       );
@@ -166,15 +167,29 @@ async function runProof() {
     const scrolledCalMetrics = await page.evaluate(() => {
       const panel = document.querySelector('#calendar-dialog-container');
       const overlay = document.querySelector('#calendar-dialog-overlay');
+      const clearBtn = document.querySelector('#neu-cal-clear-btn');
+      const todayBtn = document.querySelector('#neu-cal-today-btn');
       if (!panel || !overlay) return null;
       const pRect = panel.getBoundingClientRect();
       const oRect = overlay.getBoundingClientRect();
+      const clearRect = clearBtn?.getBoundingClientRect();
+      const todayRect = todayBtn?.getBoundingClientRect();
+
+      // Top-anchored contract: panel top === calc(12px + env(safe-area-inset-top)) ±2px (env=0px in standard viewport => 12 ±2px)
+      const topAnchored = Math.abs(pRect.top - 12) <= 2;
+      const bottomInViewport = pRect.bottom <= 740;
+      const clearBtnValid = !!clearBtn && (clearRect?.height ?? 0) >= 47;
+      const todayBtnValid = !!todayBtn && (todayRect?.height ?? 0) >= 47;
+
       return {
         panelTop: pRect.top,
         panelBottom: pRect.bottom,
         overlayTop: oRect.top,
-        inViewport: pRect.top >= 0 && pRect.bottom <= 740,
-        centered: Math.abs((pRect.top + pRect.bottom) / 2 - 370) < 60,
+        topAnchored,
+        bottomInViewport,
+        clearBtnHeight: clearRect?.height,
+        todayBtnHeight: todayRect?.height,
+        stickyPillsVisible: clearBtnValid && todayBtnValid,
         bodyOverflow: document.body.style.overflow,
         windowScrollY: window.scrollY
       };
@@ -182,10 +197,15 @@ async function runProof() {
 
     const shotScrolled = 's42_cal_scrolled_open.png';
     await page.screenshot({ path: path.join(SCREENSHOT_DIR, shotScrolled) });
-    results.screenshots.push({ name: shotScrolled, context: 'Calendar opened while page scrolled' });
+    results.screenshots.push({ name: shotScrolled, context: 'Calendar opened while page scrolled (top-anchored)' });
 
-    addTest('D1: Calendar dialog renders centered in current viewport when opened from scrolled position',
-      scrolledCalMetrics && scrolledCalMetrics.inViewport && scrolledCalMetrics.centered && scrolledCalMetrics.overlayTop === 0,
+    addTest('D1: Calendar dialog renders top-anchored (12px ±2px) with sticky footer pills (min-h 48px) and body overflow hidden when opened from scrolled position',
+      scrolledCalMetrics &&
+      scrolledCalMetrics.topAnchored &&
+      scrolledCalMetrics.bottomInViewport &&
+      scrolledCalMetrics.stickyPillsVisible &&
+      scrolledCalMetrics.bodyOverflow === 'hidden' &&
+      scrolledCalMetrics.overlayTop === 0,
       scrolledCalMetrics
     );
 
@@ -244,15 +264,15 @@ async function runProof() {
           borderRadius: cComp.borderRadius,
           bodyOverflow: document.body.style.overflow,
           inViewport: rect.top >= 0 && rect.bottom <= 740,
-          centered: Math.abs((rect.top + rect.bottom) / 2 - 370) < 60
+          topAnchored: Math.abs(rect.top - 12) <= 2
         };
       });
 
-      const shotReview = 's42_review_overlay_centered.png';
+      const shotReview = 's42_review_overlay_top_anchored.png';
       await page.screenshot({ path: path.join(SCREENSHOT_DIR, shotReview) });
-      results.screenshots.push({ name: shotReview, context: 'ReviewOverlay centered in viewport' });
+      results.screenshots.push({ name: shotReview, context: 'ReviewOverlay top-anchored in viewport' });
 
-      addTest('D1: ReviewOverlay is viewport-fixed, centered, rounded [28px], and scroll-locked',
+      addTest('D1: ReviewOverlay is viewport-fixed, top-anchored, rounded [28px], and scroll-locked',
         reviewMetrics && reviewMetrics.inViewport && reviewMetrics.overlayPos === 'fixed' && reviewMetrics.bodyOverflow === 'hidden' && reviewMetrics.borderRadius === '28px',
         reviewMetrics
       );
@@ -479,28 +499,49 @@ async function runProof() {
     // Desktop calendar overlay check
     await page.evaluate(() => document.querySelector('#btn-date-picker-trigger').click());
     await page.waitForSelector('#calendar-dialog-container', { visible: true });
-    await new Promise(r => setTimeout(r, 200));
+    await new Promise(r => setTimeout(r, 450));
 
     const desktopCalMetrics = await page.evaluate(() => {
       const panel = document.querySelector('#calendar-dialog-container');
+      const clearBtn = document.querySelector('#neu-cal-clear-btn');
+      const todayBtn = document.querySelector('#neu-cal-today-btn');
       if (!panel) return null;
       const rect = panel.getBoundingClientRect();
+      const clearRect = clearBtn?.getBoundingClientRect();
+      const todayRect = todayBtn?.getBoundingClientRect();
+
+      const topAnchored = Math.abs(rect.top - 12) <= 2;
+      const bottomInViewport = rect.bottom <= 800;
+      const centeredX = Math.abs((rect.left + rect.right) / 2 - 640) < 50;
+      const clearBtnValid = !!clearBtn && (clearRect?.height ?? 0) >= 47;
+      const todayBtnValid = !!todayBtn && (todayRect?.height ?? 0) >= 47;
+
       return {
         top: rect.top,
         bottom: rect.bottom,
         left: rect.left,
         right: rect.right,
-        centeredX: Math.abs((rect.left + rect.right) / 2 - 640) < 50,
-        centeredY: Math.abs((rect.top + rect.bottom) / 2 - 400) < 50
+        topAnchored,
+        bottomInViewport,
+        centeredX,
+        clearBtnHeight: clearRect?.height,
+        todayBtnHeight: todayRect?.height,
+        stickyPillsVisible: clearBtnValid && todayBtnValid,
+        bodyOverflow: document.body.style.overflow
       };
     });
 
     const shotDesktop = 's42_cal_desktop.png';
     await page.screenshot({ path: path.join(SCREENSHOT_DIR, shotDesktop) });
-    results.screenshots.push({ name: shotDesktop, context: 'Desktop 1280px calendar centered' });
+    results.screenshots.push({ name: shotDesktop, context: 'Desktop 1280px calendar top-anchored with horizontal centering' });
 
-    addTest('D1: Desktop 1280px calendar is centered both horizontally and vertically',
-      desktopCalMetrics && desktopCalMetrics.centeredX && desktopCalMetrics.centeredY,
+    addTest('D1: Desktop 1280px calendar is top-anchored (12px ±2px) and horizontally centered with sticky footer pills (min-h 48px)',
+      desktopCalMetrics &&
+      desktopCalMetrics.topAnchored &&
+      desktopCalMetrics.bottomInViewport &&
+      desktopCalMetrics.centeredX &&
+      desktopCalMetrics.stickyPillsVisible &&
+      desktopCalMetrics.bodyOverflow === 'hidden',
       desktopCalMetrics
     );
 
