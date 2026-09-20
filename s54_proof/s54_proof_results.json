@@ -1,6 +1,6 @@
 {
-  "total": 29,
-  "passed": 29,
+  "total": 35,
+  "passed": 35,
   "failed": 0,
   "tests": [
     {
@@ -9,12 +9,29 @@
       "details": {}
     },
     {
-      "name": "D1: Report bar present on seeded report date (2026-09-05) [outdoor]",
+      "name": "D1/D3: Every non-today day cell contains ZERO indicator elements (41 cells clean) [outdoor]",
       "pass": true,
       "details": {}
     },
     {
-      "name": "D1: Today dot min-size >= 6px (actual: 6x6) [outdoor]",
+      "name": "D1/D3: Seeded report date (2026-09-05) contains ZERO indicator elements [outdoor]",
+      "pass": true,
+      "details": {}
+    },
+    {
+      "name": "N1: Day-disc bounding boxes are 44x44px (±1px) with 0 off-sized discs [outdoor]",
+      "pass": true,
+      "details": {
+        "non44Count": 0
+      }
+    },
+    {
+      "name": "N1: Calendar grid row pitch is identical (50px ±1px, actual: 50.0px) [outdoor]",
+      "pass": true,
+      "details": {}
+    },
+    {
+      "name": "D1: Today dot min-size >= 6px (actual: 6x6px) [outdoor]",
       "pass": true,
       "details": {}
     },
@@ -29,22 +46,34 @@
       "details": {}
     },
     {
-      "name": "D1: Report bar geometry is 4px x 2px (actual: 4x2) [outdoor]",
-      "pass": true,
-      "details": {}
-    },
-    {
       "name": "D1: Today dot present on today date (2026-09-20) [dark]",
       "pass": true,
       "details": {}
     },
     {
-      "name": "D1: Report bar present on seeded report date (2026-09-05) [dark]",
+      "name": "D1/D3: Every non-today day cell contains ZERO indicator elements (41 cells clean) [dark]",
       "pass": true,
       "details": {}
     },
     {
-      "name": "D1: Today dot min-size >= 6px (actual: 6x6) [dark]",
+      "name": "D1/D3: Seeded report date (2026-09-05) contains ZERO indicator elements [dark]",
+      "pass": true,
+      "details": {}
+    },
+    {
+      "name": "N1: Day-disc bounding boxes are 44x44px (±1px) with 0 off-sized discs [dark]",
+      "pass": true,
+      "details": {
+        "non44Count": 0
+      }
+    },
+    {
+      "name": "N1: Calendar grid row pitch is identical (50px ±1px, actual: 50.0px) [dark]",
+      "pass": true,
+      "details": {}
+    },
+    {
+      "name": "D1: Today dot min-size >= 6px (actual: 6x6px) [dark]",
       "pass": true,
       "details": {}
     },
@@ -59,22 +88,34 @@
       "details": {}
     },
     {
-      "name": "D1: Report bar geometry is 4px x 2px (actual: 4x2) [dark]",
-      "pass": true,
-      "details": {}
-    },
-    {
       "name": "D1: Today dot present on today date (2026-09-20) [premium]",
       "pass": true,
       "details": {}
     },
     {
-      "name": "D1: Report bar present on seeded report date (2026-09-05) [premium]",
+      "name": "D1/D3: Every non-today day cell contains ZERO indicator elements (41 cells clean) [premium]",
       "pass": true,
       "details": {}
     },
     {
-      "name": "D1: Today dot min-size >= 6px (actual: 6x6) [premium]",
+      "name": "D1/D3: Seeded report date (2026-09-05) contains ZERO indicator elements [premium]",
+      "pass": true,
+      "details": {}
+    },
+    {
+      "name": "N1: Day-disc bounding boxes are 44x44px (±1px) with 0 off-sized discs [premium]",
+      "pass": true,
+      "details": {
+        "non44Count": 0
+      }
+    },
+    {
+      "name": "N1: Calendar grid row pitch is identical (50px ±1px, actual: 50.0px) [premium]",
+      "pass": true,
+      "details": {}
+    },
+    {
+      "name": "D1: Today dot min-size >= 6px (actual: 6x6px) [premium]",
       "pass": true,
       "details": {}
     },
@@ -89,12 +130,7 @@
       "details": {}
     },
     {
-      "name": "D1: Report bar geometry is 4px x 2px (actual: 4x2) [premium]",
-      "pass": true,
-      "details": {}
-    },
-    {
-      "name": "D1: Desktop 1280px renders both today-dot and report-bar simultaneously",
+      "name": "D1/D3: Desktop 1280px renders today-dot on today and ZERO indicators on non-today dates",
       "pass": true,
       "details": {}
     },
@@ -104,12 +140,12 @@
       "details": {}
     },
     {
-      "name": "D3: Previous today date (2026-09-20) no longer has today dot",
+      "name": "D3: Previous today date (2026-09-20) now has ZERO indicators",
       "pass": true,
       "details": {}
     },
     {
-      "name": "D3: Report bar on (2026-09-05) is unchanged and still visible",
+      "name": "D3: Seeded report date (2026-09-05) continues to have ZERO indicators",
       "pass": true,
       "details": {}
     },
@@ -141,7 +177,10 @@
     {
       "name": "D4 Regression: Escape closes month popover while calendar dialog stays open",
       "pass": true,
-      "details": {}
+      "details": {
+        "hasListbox": false,
+        "hasContainer": true
+      }
     },
     {
       "name": "D4 Regression: Scroll-lock restored when calendar closes",

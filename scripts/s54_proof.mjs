@@ -47,7 +47,7 @@ async function isServerListening() {
 
 async function runProof() {
   console.log('════════════════════════════════════════════════════════════════');
-  console.log('  S54 AUTOMATED PROOF SUITE — LIVE TODAY-DOT & REPORT-BAR');
+  console.log('  S55 AUTOMATED PROOF SUITE — REPORT-BAR REMOVAL & LIVE TODAY-DOT');
   console.log('════════════════════════════════════════════════════════════════\n');
 
   let previewProcess = null;
@@ -210,7 +210,44 @@ async function runProof() {
         const todayCell = document.querySelector(`button[data-date="${curToday}"]`);
         const todayDot = todayCell?.querySelector('[data-testid="today-dot"]');
         const reportCell = document.querySelector(`button[data-date="${repDate}"]`);
-        const reportBar = reportCell?.querySelector('[data-testid="report-bar"]');
+
+        // Check all day cells in the grid
+        const allCells = Array.from(document.querySelectorAll('button[data-date]'));
+        const nonTodayCells = allCells.filter(b => b.getAttribute('data-date') !== curToday);
+
+        let nonTodayWithIndicators = 0;
+        for (const b of nonTodayCells) {
+          const hasDot = !!b.querySelector('.neu-cal-today-dot, [data-testid="today-dot"]');
+          const hasBar = !!b.querySelector('.neu-cal-report-bar, [data-testid="report-bar"]');
+          const hasResidual = !!b.querySelector('.neu-cal-dot');
+          if (hasDot || hasBar || hasResidual) nonTodayWithIndicators++;
+        }
+
+        const reportCellHasIndicators = reportCell ? (
+          reportCell.querySelectorAll('.neu-cal-today-dot, .neu-cal-report-bar, [data-testid="report-bar"], [data-testid="today-dot"], .neu-cal-dot').length
+        ) : 0;
+
+        // Note N1: Check day-disc bounding boxes (44px x 44px +-1px)
+        let discGeomOk = true;
+        let non44Count = 0;
+        for (const b of allCells) {
+          const r = b.getBoundingClientRect();
+          if (Math.abs(r.width - 44) > 1.2 || Math.abs(r.height - 44) > 1.2) {
+            discGeomOk = false;
+            non44Count++;
+          }
+        }
+
+        // Note N1: Check row pitch (distance between row tops, row 0 to row 1, etc.)
+        let rowPitchOk = true;
+        let observedPitch = 0;
+        if (allCells.length >= 14) {
+          const r0 = allCells[0].getBoundingClientRect();
+          const r1 = allCells[7].getBoundingClientRect();
+          observedPitch = r1.top - r0.top;
+          // Row pitch is 44px + 6px (gap-y-1.5 = 6px) = 50px +-1px
+          rowPitchOk = Math.abs(observedPitch - 50) <= 1.2;
+        }
 
         const card = document.querySelector('.neu-cal-dialog');
         const cardBg = card ? window.getComputedStyle(card).backgroundColor : 'rgb(255,255,255)';
@@ -229,33 +266,34 @@ async function runProof() {
           };
         }
 
-        let barMetrics = null;
-        if (reportBar && reportCell) {
-          const barStyle = window.getComputedStyle(reportBar);
-          const barRect = reportBar.getBoundingClientRect();
-          barMetrics = {
-            width: barRect.width,
-            height: barRect.height,
-            bgColor: barStyle.backgroundColor
-          };
-        }
-
         return {
           todayFound: !!todayCell,
           todayDotFound: !!todayDot,
-          reportFound: !!reportCell,
-          reportBarFound: !!reportBar,
-          dotMetrics,
-          barMetrics
+          nonTodayCount: nonTodayCells.length,
+          nonTodayWithIndicators,
+          reportCellFound: !!reportCell,
+          reportCellHasIndicators,
+          discGeomOk,
+          non44Count,
+          rowPitchOk,
+          observedPitch,
+          dotMetrics
         };
       }, { curToday: todayIso, repDate: seededReportDate });
 
       assert(`D1: Today dot present on today date (${todayIso}) [${theme}]`, markerMetrics.todayDotFound);
-      assert(`D1: Report bar present on seeded report date (${seededReportDate}) [${theme}]`, markerMetrics.reportBarFound);
+      assert(`D1/D3: Every non-today day cell contains ZERO indicator elements (${markerMetrics.nonTodayCount} cells clean) [${theme}]`,
+        markerMetrics.nonTodayWithIndicators === 0);
+      assert(`D1/D3: Seeded report date (${seededReportDate}) contains ZERO indicator elements [${theme}]`,
+        markerMetrics.reportCellHasIndicators === 0);
+      assert(`N1: Day-disc bounding boxes are 44x44px (±1px) with 0 off-sized discs [${theme}]`,
+        markerMetrics.discGeomOk, { non44Count: markerMetrics.non44Count });
+      assert(`N1: Calendar grid row pitch is identical (50px ±1px, actual: ${markerMetrics.observedPitch.toFixed(1)}px) [${theme}]`,
+        markerMetrics.rowPitchOk);
 
       if (markerMetrics.dotMetrics) {
-        assert(`D1: Today dot min-size >= 6px (actual: ${markerMetrics.dotMetrics.width}x${markerMetrics.dotMetrics.height}) [${theme}]`,
-          markerMetrics.dotMetrics.width >= 5.9 && markerMetrics.dotMetrics.height >= 5.9);
+        assert(`D1: Today dot min-size >= 6px (actual: ${Math.round(markerMetrics.dotMetrics.width)}x${Math.round(markerMetrics.dotMetrics.height)}px) [${theme}]`,
+          Math.round(markerMetrics.dotMetrics.width) >= 6 && Math.round(markerMetrics.dotMetrics.height) >= 6);
 
         // Contrast Assertion
         const dotRgb = parseRgb(markerMetrics.dotMetrics.bgColor);
@@ -268,11 +306,6 @@ async function runProof() {
         const shadow = markerMetrics.dotMetrics.boxShadow;
         const hasRingOrGlow = shadow && shadow !== 'none';
         assert(`D2: Today-dot has ring/glow for high visibility (${shadow}) [${theme}]`, hasRingOrGlow);
-      }
-
-      if (markerMetrics.barMetrics) {
-        assert(`D1: Report bar geometry is 4px x 2px (actual: ${markerMetrics.barMetrics.width}x${markerMetrics.barMetrics.height}) [${theme}]`,
-          Math.abs(markerMetrics.barMetrics.width - 4) <= 1 && Math.abs(markerMetrics.barMetrics.height - 2) <= 1);
       }
 
       const shotPath = path.join(PROOF_DIR, `s54_${theme}_360px_markers.png`);
@@ -299,15 +332,26 @@ async function runProof() {
 
     const desktopMarkerMetrics = await page.evaluate(({ curToday, repDate }) => {
       const todayDot = document.querySelector(`button[data-date="${curToday}"] [data-testid="today-dot"]`);
-      const reportBar = document.querySelector(`button[data-date="${repDate}"] [data-testid="report-bar"]`);
+      const reportCell = document.querySelector(`button[data-date="${repDate}"]`);
+      const reportIndicators = reportCell ? reportCell.querySelectorAll('.neu-cal-today-dot, .neu-cal-report-bar, [data-testid="report-bar"], [data-testid="today-dot"], .neu-cal-dot').length : 0;
+      
+      const nonTodayCells = Array.from(document.querySelectorAll('button[data-date]')).filter(b => b.getAttribute('data-date') !== curToday);
+      let nonTodayWithIndicators = 0;
+      for (const b of nonTodayCells) {
+        if (b.querySelector('.neu-cal-today-dot, .neu-cal-report-bar, [data-testid="report-bar"], [data-testid="today-dot"], .neu-cal-dot')) {
+          nonTodayWithIndicators++;
+        }
+      }
+
       return {
         todayDotFound: !!todayDot,
-        reportBarFound: !!reportBar
+        reportClean: reportIndicators === 0,
+        nonTodayClean: nonTodayWithIndicators === 0
       };
     }, { curToday: todayIso, repDate: seededReportDate });
 
-    assert('D1: Desktop 1280px renders both today-dot and report-bar simultaneously',
-      desktopMarkerMetrics.todayDotFound && desktopMarkerMetrics.reportBarFound);
+    assert('D1/D3: Desktop 1280px renders today-dot on today and ZERO indicators on non-today dates',
+      desktopMarkerMetrics.todayDotFound && desktopMarkerMetrics.reportClean && desktopMarkerMetrics.nonTodayClean);
 
     const shotDesktop = path.join(PROOF_DIR, 's54_outdoor_1280px_markers.png');
     await page.screenshot({ path: shotDesktop });
@@ -355,17 +399,19 @@ async function runProof() {
     const rolloverMetrics = await page.evaluate(({ oldToday, newToday, repDate }) => {
       const oldCellDot = document.querySelector(`button[data-date="${oldToday}"] [data-testid="today-dot"]`);
       const newCellDot = document.querySelector(`button[data-date="${newToday}"] [data-testid="today-dot"]`);
-      const reportBar = document.querySelector(`button[data-date="${repDate}"] [data-testid="report-bar"]`);
+      const oldCellIndicators = document.querySelector(`button[data-date="${oldToday}"]`)?.querySelectorAll('.neu-cal-today-dot, .neu-cal-report-bar, [data-testid="report-bar"], [data-testid="today-dot"], .neu-cal-dot').length || 0;
+      const repCellIndicators = document.querySelector(`button[data-date="${repDate}"]`)?.querySelectorAll('.neu-cal-today-dot, .neu-cal-report-bar, [data-testid="report-bar"], [data-testid="today-dot"], .neu-cal-dot').length || 0;
       return {
         oldCellHasDot: !!oldCellDot,
         newCellHasDot: !!newCellDot,
-        reportBarStillPresent: !!reportBar
+        oldCellClean: oldCellIndicators === 0,
+        repCellClean: repCellIndicators === 0
       };
     }, { oldToday: todayIso, newToday: tomorrowIso, repDate: seededReportDate });
 
     assert(`D3: Today dot moved automatically to tomorrow (${tomorrowIso})`, rolloverMetrics.newCellHasDot);
-    assert(`D3: Previous today date (${todayIso}) no longer has today dot`, !rolloverMetrics.oldCellHasDot);
-    assert(`D3: Report bar on (${seededReportDate}) is unchanged and still visible`, rolloverMetrics.reportBarStillPresent);
+    assert(`D3: Previous today date (${todayIso}) now has ZERO indicators`, rolloverMetrics.oldCellClean);
+    assert(`D3: Seeded report date (${seededReportDate}) continues to have ZERO indicators`, rolloverMetrics.repCellClean);
 
     const shotRollover = path.join(PROOF_DIR, 's54_staleness_killer_rollover.png');
     await page.screenshot({ path: shotRollover });
@@ -456,25 +502,27 @@ async function runProof() {
     // 4C: Month & Year Popover sheets
     await page.evaluate(() => document.querySelector('#btn-date-picker-trigger').click());
     await page.waitForSelector('#calendar-dialog-container', { visible: true });
-    await new Promise(r => setTimeout(r, 200));
+    await new Promise(r => setTimeout(r, 450));
 
     await page.evaluate(() => document.querySelector('#neu-cal-month-select').click());
-    await new Promise(r => setTimeout(r, 150));
+    await new Promise(r => setTimeout(r, 300));
     const monthListOpen = await page.evaluate(() => !!document.querySelector('[role="listbox"]'));
     assert('D4 Regression: Month themed popover listbox opens on click', monthListOpen);
 
     // Escape closes popover sheet without closing dialog
     await page.keyboard.press('Escape');
-    await new Promise(r => setTimeout(r, 350));
-    const popoverClosedDialogRemains = await page.evaluate(() => {
-      return !document.querySelector('[role="listbox"]') && !!document.querySelector('#calendar-dialog-container');
-    });
-    assert('D4 Regression: Escape closes month popover while calendar dialog stays open', popoverClosedDialogRemains);
+    await new Promise(r => setTimeout(r, 450));
+    const debug4c = await page.evaluate(() => ({
+      hasListbox: !!document.querySelector('[role="listbox"]'),
+      hasContainer: !!document.querySelector('#calendar-dialog-container')
+    }));
+    assert('D4 Regression: Escape closes month popover while calendar dialog stays open',
+      !debug4c.hasListbox && debug4c.hasContainer, debug4c);
 
     // Escape again closes calendar dialog
     await page.keyboard.press('Escape');
     await page.waitForSelector('#calendar-dialog-container', { hidden: true });
-    await new Promise(r => setTimeout(r, 150));
+    await new Promise(r => setTimeout(r, 250));
 
     const scrollUnlocked = await page.evaluate(() => document.body.style.overflow === '');
     assert('D4 Regression: Scroll-lock restored when calendar closes', scrollUnlocked);

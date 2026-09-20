@@ -188,11 +188,6 @@ export const NeumorphicCalendarDialog = React.memo<NeumorphicCalendarDialogProps
     return reports.filter((r) => r.date && r.date.startsWith(monthPrefix)).length;
   }, [reports, navYear, navMonth]);
 
-  // Set of dates that have saved reports
-  const reportDatesSet = useMemo(() => {
-    return new Set(reports.map((r) => r.date).filter(Boolean));
-  }, [reports]);
-
   // Fixed 42-cell grid (6 rows x 7 days) to ensure zero layout shift
   const calendarCells = useMemo(() => {
     const cells: Array<{
@@ -468,7 +463,6 @@ export const NeumorphicCalendarDialog = React.memo<NeumorphicCalendarDialogProps
               {calendarCells.map((cell, idx) => {
                 const isSelected = selectedDate === cell.dateStr;
                 const isToday = currentLiveToday === cell.dateStr;
-                const hasReport = reportDatesSet.has(cell.dateStr);
 
                 return (
                   <button
@@ -489,24 +483,13 @@ export const NeumorphicCalendarDialog = React.memo<NeumorphicCalendarDialogProps
                   >
                     <span className="leading-none">{cell.dayNumber}</span>
 
-                    {/* S54 D1/D2: Live Today Dot (6px) & Report Bar (4px x 2px) */}
-                    {(isToday || hasReport) && (
-                      <div className="absolute bottom-[3px] left-0 right-0 flex items-center justify-center gap-1 pointer-events-none">
-                        {isToday && (
-                          <span
-                            className="neu-cal-today-dot"
-                            data-testid="today-dot"
-                            aria-hidden="true"
-                          />
-                        )}
-                        {hasReport && (
-                          <span
-                            className="neu-cal-report-bar"
-                            data-testid="report-bar"
-                            aria-hidden="true"
-                          />
-                        )}
-                      </div>
+                    {/* S55 D1/D2: Live Today Dot (6px) only on today's date */}
+                    {isToday && (
+                      <span
+                        className="neu-cal-today-dot absolute bottom-[4px] left-1/2 -translate-x-1/2 pointer-events-none"
+                        data-testid="today-dot"
+                        aria-hidden="true"
+                      />
                     )}
                   </button>
                 );
