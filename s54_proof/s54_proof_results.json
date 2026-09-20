@@ -1,0 +1,160 @@
+{
+  "total": 29,
+  "passed": 29,
+  "failed": 0,
+  "tests": [
+    {
+      "name": "D1: Today dot present on today date (2026-09-20) [outdoor]",
+      "pass": true,
+      "details": {}
+    },
+    {
+      "name": "D1: Report bar present on seeded report date (2026-09-05) [outdoor]",
+      "pass": true,
+      "details": {}
+    },
+    {
+      "name": "D1: Today dot min-size >= 6px (actual: 6x6) [outdoor]",
+      "pass": true,
+      "details": {}
+    },
+    {
+      "name": "D2: Today-dot contrast >= 3:1 against surface (actual: 10.01:1) [outdoor]",
+      "pass": true,
+      "details": {}
+    },
+    {
+      "name": "D2: Today-dot has ring/glow for high visibility (rgba(36, 59, 143, 0.4) 0px 0px 0px 1px) [outdoor]",
+      "pass": true,
+      "details": {}
+    },
+    {
+      "name": "D1: Report bar geometry is 4px x 2px (actual: 4x2) [outdoor]",
+      "pass": true,
+      "details": {}
+    },
+    {
+      "name": "D1: Today dot present on today date (2026-09-20) [dark]",
+      "pass": true,
+      "details": {}
+    },
+    {
+      "name": "D1: Report bar present on seeded report date (2026-09-05) [dark]",
+      "pass": true,
+      "details": {}
+    },
+    {
+      "name": "D1: Today dot min-size >= 6px (actual: 6x6) [dark]",
+      "pass": true,
+      "details": {}
+    },
+    {
+      "name": "D2: Today-dot contrast >= 3:1 against surface (actual: 7.40:1) [dark]",
+      "pass": true,
+      "details": {}
+    },
+    {
+      "name": "D2: Today-dot has ring/glow for high visibility (rgba(0, 0, 0, 0.5) 0px 0px 2px 0px) [dark]",
+      "pass": true,
+      "details": {}
+    },
+    {
+      "name": "D1: Report bar geometry is 4px x 2px (actual: 4x2) [dark]",
+      "pass": true,
+      "details": {}
+    },
+    {
+      "name": "D1: Today dot present on today date (2026-09-20) [premium]",
+      "pass": true,
+      "details": {}
+    },
+    {
+      "name": "D1: Report bar present on seeded report date (2026-09-05) [premium]",
+      "pass": true,
+      "details": {}
+    },
+    {
+      "name": "D1: Today dot min-size >= 6px (actual: 6x6) [premium]",
+      "pass": true,
+      "details": {}
+    },
+    {
+      "name": "D2: Today-dot contrast >= 3:1 against surface (actual: 3.53:1) [premium]",
+      "pass": true,
+      "details": {}
+    },
+    {
+      "name": "D2: Today-dot has ring/glow for high visibility (rgba(42, 8, 28, 0.5) 0px 0px 0px 1px) [premium]",
+      "pass": true,
+      "details": {}
+    },
+    {
+      "name": "D1: Report bar geometry is 4px x 2px (actual: 4x2) [premium]",
+      "pass": true,
+      "details": {}
+    },
+    {
+      "name": "D1: Desktop 1280px renders both today-dot and report-bar simultaneously",
+      "pass": true,
+      "details": {}
+    },
+    {
+      "name": "D3: Today dot moved automatically to tomorrow (2026-09-21)",
+      "pass": true,
+      "details": {}
+    },
+    {
+      "name": "D3: Previous today date (2026-09-20) no longer has today dot",
+      "pass": true,
+      "details": {}
+    },
+    {
+      "name": "D3: Report bar on (2026-09-05) is unchanged and still visible",
+      "pass": true,
+      "details": {}
+    },
+    {
+      "name": "D1: Selected today disc has neu-cal-disc-selected class",
+      "pass": true,
+      "details": {}
+    },
+    {
+      "name": "D1: Today dot renders inside selected disc with on-accent color (#FFFFFF)",
+      "pass": true,
+      "details": {}
+    },
+    {
+      "name": "D4 Regression: \"આજે\" button selects date and closes dialog",
+      "pass": true,
+      "details": {}
+    },
+    {
+      "name": "D4 Regression: \"સાફ કરો\" button clears date and closes dialog",
+      "pass": true,
+      "details": {}
+    },
+    {
+      "name": "D4 Regression: Month themed popover listbox opens on click",
+      "pass": true,
+      "details": {}
+    },
+    {
+      "name": "D4 Regression: Escape closes month popover while calendar dialog stays open",
+      "pass": true,
+      "details": {}
+    },
+    {
+      "name": "D4 Regression: Scroll-lock restored when calendar closes",
+      "pass": true,
+      "details": {}
+    }
+  ],
+  "screenshots": [
+    "C:\\Users\\DELL\\OneDrive\\Desktop\\NEW WEB APP\\s54_proof\\s54_outdoor_360px_markers.png",
+    "C:\\Users\\DELL\\OneDrive\\Desktop\\NEW WEB APP\\s54_proof\\s54_dark_360px_markers.png",
+    "C:\\Users\\DELL\\OneDrive\\Desktop\\NEW WEB APP\\s54_proof\\s54_premium_360px_markers.png",
+    "C:\\Users\\DELL\\OneDrive\\Desktop\\NEW WEB APP\\s54_proof\\s54_outdoor_1280px_markers.png",
+    "C:\\Users\\DELL\\OneDrive\\Desktop\\NEW WEB APP\\s54_proof\\s54_staleness_killer_rollover.png",
+    "C:\\Users\\DELL\\OneDrive\\Desktop\\NEW WEB APP\\s54_proof\\s54_selected_today_dot.png"
+  ]
+}

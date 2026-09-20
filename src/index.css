@@ -544,6 +544,28 @@ html[data-theme="premium"] .admin-dialog-btn:active:not(:disabled) {
   appearance: none;
 }
 
+/* S54: Live Today Dot (6px round, >=3:1 contrast) */
+.neu-cal-today-dot {
+  width: 6px;
+  height: 6px;
+  min-width: 6px;
+  min-height: 6px;
+  border-radius: 9999px;
+  flex-shrink: 0;
+  display: inline-block;
+}
+
+/* S54: Report Bar (4px wide x 2px tall accent-soft) */
+.neu-cal-report-bar {
+  width: 4px;
+  height: 2px;
+  min-width: 4px;
+  min-height: 2px;
+  border-radius: 1px;
+  flex-shrink: 0;
+  display: inline-block;
+}
+
 /* OUTDOOR (Light): True Light Neumorphism */
 html[data-theme="outdoor"] .neu-cal-dialog {
   background-color: var(--dialog-surface, #FBF7EC);
@@ -643,6 +665,22 @@ html[data-theme="outdoor"] .neu-cal-dot {
 }
 html[data-theme="outdoor"] .neu-cal-disc-selected .neu-cal-dot {
   background-color: #FFFFFF;
+}
+
+/* S54 D1/D2: Outdoor Today Dot & Report Bar */
+html[data-theme="outdoor"] .neu-cal-today-dot {
+  background-color: #243B8F;
+  box-shadow: 0 0 0 1px #FFFFFF;
+}
+html[data-theme="outdoor"] .neu-cal-disc-selected .neu-cal-today-dot {
+  background-color: #FFFFFF;
+  box-shadow: 0 0 0 1px rgba(36, 59, 143, 0.4);
+}
+html[data-theme="outdoor"] .neu-cal-report-bar {
+  background-color: rgba(36, 59, 143, 0.45);
+}
+html[data-theme="outdoor"] .neu-cal-disc-selected .neu-cal-report-bar {
+  background-color: rgba(255, 255, 255, 0.7);
 }
 
 /* GRAPHITE (Dark): Soft Elevation */
@@ -750,6 +788,22 @@ html[data-theme="dark"] .neu-cal-disc-selected .neu-cal-dot {
   background-color: #1A2E05;
 }
 
+/* S54 D1/D2: Dark/Graphite Today Dot & Report Bar */
+html[data-theme="dark"] .neu-cal-today-dot {
+  background-color: #84CC16;
+  box-shadow: 0 0 4px #84CC16, 0 0 8px rgba(132, 204, 22, 0.6);
+}
+html[data-theme="dark"] .neu-cal-disc-selected .neu-cal-today-dot {
+  background-color: #1A2E05;
+  box-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
+}
+html[data-theme="dark"] .neu-cal-report-bar {
+  background-color: rgba(132, 204, 22, 0.5);
+}
+html[data-theme="dark"] .neu-cal-disc-selected .neu-cal-report-bar {
+  background-color: rgba(26, 46, 5, 0.6);
+}
+
 /* PREMIUM (Purple/Pink): Soft Elevation */
 html[data-theme="premium"] .neu-cal-dialog {
   background-color: #251732;
@@ -853,6 +907,22 @@ html[data-theme="premium"] .neu-cal-dot {
 }
 html[data-theme="premium"] .neu-cal-disc-selected .neu-cal-dot {
   background-color: #FFFFFF;
+}
+
+/* S54 D1/D2: Premium Today Dot & Report Bar */
+html[data-theme="premium"] .neu-cal-today-dot {
+  background-color: #EC4899;
+  box-shadow: 0 0 0 1px rgba(255, 227, 241, 0.8);
+}
+html[data-theme="premium"] .neu-cal-disc-selected .neu-cal-today-dot {
+  background-color: #FFFFFF;
+  box-shadow: 0 0 0 1px rgba(42, 8, 28, 0.5);
+}
+html[data-theme="premium"] .neu-cal-report-bar {
+  background-color: rgba(236, 72, 153, 0.5);
+}
+html[data-theme="premium"] .neu-cal-disc-selected .neu-cal-report-bar {
+  background-color: rgba(255, 255, 255, 0.7);
 }
 
 /* Reduced motion for neumorphic calendar */

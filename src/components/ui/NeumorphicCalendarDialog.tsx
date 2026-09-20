@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight, ChevronDown, Check } from 'lucide-react';
 import { useAppStore } from '../../store/appStore';
-import { localTodayIso, cn } from '../../lib/utils';
+import { cn } from '../../lib/utils';
 import { useOverlayScrollLock } from '../../lib/useOverlayScrollLock';
 
 interface NeumorphicCalendarDialogProps {
@@ -29,6 +29,12 @@ const GUJARATI_MONTHS = [
 
 const GUJARATI_WEEKDAYS = ['રવિ', 'સોમ', 'મંગળ', 'બુધ', 'ગુરુ', 'શુક્ર', 'શનિ'];
 
+// S54 D1/D3: Live-computed today helper — never cached, reads system clock dynamically
+export function getLiveToday(): string {
+  const n = new Date();
+  return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}-${String(n.getDate()).padStart(2, '0')}`;
+}
+
 export const NeumorphicCalendarDialog = React.memo<NeumorphicCalendarDialogProps>(({
   isOpen,
   onClose,
@@ -41,15 +47,18 @@ export const NeumorphicCalendarDialog = React.memo<NeumorphicCalendarDialogProps
   const panelRef = useRef<HTMLDivElement>(null);
   useOverlayScrollLock({ isOpen, onClose, panelRef });
 
+  // S54 D1/D3: Live today state updated on open, midnight rollover, and visibilitychange
+  const [liveToday, setLiveToday] = useState<string>(() => getLiveToday());
+
   // Initialize view year & month from selectedDate or today
   const [navYear, setNavYear] = useState<number>(() => {
-    const base = selectedDate || localTodayIso();
+    const base = selectedDate || getLiveToday();
     const [y] = base.split('-').map(Number);
     return y || new Date().getFullYear();
   });
 
   const [navMonth, setNavMonth] = useState<number>(() => {
-    const base = selectedDate || localTodayIso();
+    const base = selectedDate || getLiveToday();
     const [, m] = base.split('-').map(Number);
     return (m ? m - 1 : new Date().getMonth());
   });
@@ -84,9 +93,13 @@ export const NeumorphicCalendarDialog = React.memo<NeumorphicCalendarDialogProps
       if (e.key === 'Escape') {
         if (monthDropdownOpen) {
           e.stopPropagation();
+          e.stopImmediatePropagation();
+          e.preventDefault();
           setMonthDropdownOpen(false);
         } else if (yearDropdownOpen) {
           e.stopPropagation();
+          e.stopImmediatePropagation();
+          e.preventDefault();
           setYearDropdownOpen(false);
         }
       }
@@ -97,10 +110,49 @@ export const NeumorphicCalendarDialog = React.memo<NeumorphicCalendarDialogProps
     }
   }, [monthDropdownOpen, yearDropdownOpen]);
 
+  // S54 D1/D3/N1: Live Today lifecycle — refreshes on open, midnight rollover, and tab visibility
+  useEffect(() => {
+    if (!isOpen) return;
+
+    // Refresh immediately on dialog open
+    setLiveToday(getLiveToday());
+
+    // Refresh on visibilitychange (e.g. app resume or tab switch)
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        setLiveToday(getLiveToday());
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    // Midnight rollover timer: compute ms until next midnight + 50ms
+    let timerId: ReturnType<typeof setTimeout> | undefined;
+    const scheduleMidnightTimer = () => {
+      const now = new Date();
+      const nextMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0, 50);
+      const msUntilMidnight = Math.max(1000, nextMidnight.getTime() - now.getTime());
+
+      timerId = setTimeout(() => {
+        setLiveToday(getLiveToday());
+        scheduleMidnightTimer();
+      }, msUntilMidnight);
+    };
+
+    scheduleMidnightTimer();
+
+    // N1 Cleanup: strictly cancel timer and remove event listener on dialog close
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      if (timerId !== undefined) {
+        clearTimeout(timerId);
+      }
+    };
+  }, [isOpen]);
+
   // Sync nav view whenever dialog opens or selectedDate changes externally
   useEffect(() => {
     if (isOpen) {
-      const base = selectedDate || localTodayIso();
+      const base = selectedDate || getLiveToday();
       const [y, m] = base.split('-').map(Number);
       if (y && m) {
         setNavYear(y);
@@ -194,7 +246,8 @@ export const NeumorphicCalendarDialog = React.memo<NeumorphicCalendarDialogProps
     return cells;
   }, [navYear, navMonth]);
 
-  const todayIso = localTodayIso();
+  // S54 D1/D3: Live today evaluation (never stale, updated by liveToday state / getLiveToday())
+  const currentLiveToday = liveToday || getLiveToday();
 
   return (
     <AnimatePresence>
@@ -414,7 +467,7 @@ export const NeumorphicCalendarDialog = React.memo<NeumorphicCalendarDialogProps
             <div className="grid grid-cols-7 gap-x-1 gap-y-1.5 justify-items-center items-center mb-4 px-1">
               {calendarCells.map((cell, idx) => {
                 const isSelected = selectedDate === cell.dateStr;
-                const isToday = todayIso === cell.dateStr;
+                const isToday = currentLiveToday === cell.dateStr;
                 const hasReport = reportDatesSet.has(cell.dateStr);
 
                 return (
@@ -435,8 +488,25 @@ export const NeumorphicCalendarDialog = React.memo<NeumorphicCalendarDialogProps
                     aria-label={cell.dateStr}
                   >
                     <span className="leading-none">{cell.dayNumber}</span>
-                    {hasReport && (
-                      <span className="w-1.5 h-1.5 rounded-full neu-cal-dot absolute bottom-1.5 pointer-events-none" />
+
+                    {/* S54 D1/D2: Live Today Dot (6px) & Report Bar (4px x 2px) */}
+                    {(isToday || hasReport) && (
+                      <div className="absolute bottom-[3px] left-0 right-0 flex items-center justify-center gap-1 pointer-events-none">
+                        {isToday && (
+                          <span
+                            className="neu-cal-today-dot"
+                            data-testid="today-dot"
+                            aria-hidden="true"
+                          />
+                        )}
+                        {hasReport && (
+                          <span
+                            className="neu-cal-report-bar"
+                            data-testid="report-bar"
+                            aria-hidden="true"
+                          />
+                        )}
+                      </div>
                     )}
                   </button>
                 );
@@ -461,7 +531,7 @@ export const NeumorphicCalendarDialog = React.memo<NeumorphicCalendarDialogProps
                 type="button"
                 id="neu-cal-today-btn"
                 onClick={() => {
-                  onSelectDate(todayIso);
+                  onSelectDate(getLiveToday());
                   onClose();
                 }}
                 className="w-full min-h-[48px] h-[48px] rounded-full neu-cal-pill-primary font-gujarati text-sm font-semibold flex items-center justify-center cursor-pointer transition-all active:scale-95"
