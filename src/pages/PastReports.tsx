@@ -1,4 +1,5 @@
 import React, { useState, useRef, useLayoutEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { buildReportWorkbook, buildAllReportsWorkbook, writeReportWorkbookToBuffer } from '../lib/excelGenerator';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
@@ -501,97 +502,101 @@ export const PastReports: React.FC = () => {
         )}
       </div>
 
-      {/* D3 & D4: Fixed Bulk Bar (must NOT be in page flow) */}
-      <AnimatePresence>
-        {isSelectMode && (
-          <motion.div
-            ref={bulkBarRef}
-            id="fixed-bulk-bar"
-            initial={{ opacity: 0, y: 30, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 30, scale: 0.98 }}
-            transition={{ duration: 0.18, ease: 'easeOut' }}
-            className="fixed z-40 bg-card/95 backdrop-blur-md border border-brd/20 rounded-[16px] shadow-2xl px-4 py-3 max-w-xl mx-auto left-[12px] right-[12px]"
-            style={{
-              bottom: 'calc(92px + env(safe-area-inset-bottom, 0px))',
-            }}
-          >
-            {isConfirming ? (
-              /* D4: IN-BAR CONFIRM (no overlay/portal, no scroll) */
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 w-full" id="bulk-bar-confirm-content">
-                <p className="text-sm font-gujarati font-medium text-txt text-center sm:text-left leading-snug">
-                  ખરેખર <span className="font-num font-bold text-danger">{selectedIds.size}</span> કાઢી નાખવા? આ ક્રિયા પરત નહીં થાય.
-                </p>
-                <div className="flex items-center gap-2 shrink-0">
-                  <button
-                    type="button"
-                    id="bulk-cancel-confirm-btn"
-                    onClick={() => setIsConfirming(false)}
-                    disabled={isDeleting}
-                    className="px-3.5 py-2 rounded-xl text-sm font-gujarati font-medium border border-brd/30 hover:bg-sub/10 text-txt transition-colors cursor-pointer"
-                  >
-                    રદ કરો
-                  </button>
-                  <button
-                    type="button"
-                    id="bulk-execute-delete-btn"
-                    onClick={handleBulkDelete}
-                    disabled={isDeleting}
-                    className="px-4 py-2 rounded-xl text-sm font-gujarati font-bold bg-danger text-white hover:opacity-95 shadow-md flex items-center gap-1.5 transition-all active:scale-[0.97] cursor-pointer"
-                  >
-                    {isDeleting ? (
-                      <>
-                        <Loader2 size={16} className="animate-spin" />
-                        <span>કાઢી રહ્યા છીએ...</span>
-                      </>
-                    ) : (
-                      <span>હા, કાઢી નાખો</span>
-                    )}
-                  </button>
-                </div>
-              </div>
-            ) : (
-              /* D3: Standard Bulk Bar Content */
-              <div className="flex items-center justify-between gap-3 w-full" id="bulk-bar-standard-content">
-                <div className="font-gujarati text-txt font-semibold text-sm sm:text-base">
-                  <span className="font-num font-bold text-acc mr-1 text-base">{selectedIds.size}</span>
-                  રિપોર્ટ પસંદ
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <button
-                    type="button"
-                    id="bulk-cancel-mode-btn"
-                    onClick={() => {
-                      setIsSelectMode(false);
-                      setSelectedIds(new Set());
-                      setIsConfirming(false);
-                    }}
-                    className="px-3.5 py-2 rounded-xl text-sm font-gujarati font-medium border border-brd/30 hover:bg-sub/10 text-txt transition-colors cursor-pointer"
-                  >
-                    રદ કરો
-                  </button>
-                  <button
-                    type="button"
-                    id="bulk-delete-btn"
-                    disabled={selectedIds.size === 0}
-                    onClick={() => {
-                      if (selectedIds.size > 0) setIsConfirming(true);
-                    }}
-                    className={cn(
-                      "px-4 py-2 rounded-xl text-sm font-gujarati font-bold bg-danger text-white transition-all shadow-md flex items-center gap-1.5 cursor-pointer",
-                      selectedIds.size === 0
-                        ? "opacity-40 cursor-not-allowed shadow-none"
-                        : "hover:opacity-95 active:scale-[0.97]"
-                    )}
-                  >
-                    કાઢી નાખો (<span className="font-num">{selectedIds.size}</span>)
-                  </button>
-                </div>
-              </div>
+      {/* D1, D2, D3, D4: Fixed Bulk Bar portaled to document.body (immune to any ancestor transforms) */}
+      {typeof document !== 'undefined' &&
+        createPortal(
+          <AnimatePresence>
+            {isSelectMode && (
+              <motion.div
+                ref={bulkBarRef}
+                id="fixed-bulk-bar"
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 16 }}
+                transition={{ duration: 0.15, ease: 'easeOut' }}
+                className="fixed z-40 bg-card/95 backdrop-blur-md border border-brd/20 rounded-[16px] shadow-2xl px-4 py-3 max-w-xl mx-auto left-[12px] right-[12px]"
+                style={{
+                  bottom: 'calc(92px + env(safe-area-inset-bottom, 0px))',
+                }}
+              >
+                {isConfirming ? (
+                  /* D4: IN-BAR CONFIRM (no overlay/portal, no scroll) */
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-3 w-full" id="bulk-bar-confirm-content">
+                    <p className="text-sm font-gujarati font-medium text-txt text-center sm:text-left leading-snug">
+                      ખરેખર <span className="font-num font-bold text-danger">{selectedIds.size}</span> કાઢી નાખવા? આ ક્રિયા પરત નહીં થાય.
+                    </p>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        type="button"
+                        id="bulk-cancel-confirm-btn"
+                        onClick={() => setIsConfirming(false)}
+                        disabled={isDeleting}
+                        className="px-3.5 py-2 rounded-xl text-sm font-gujarati font-medium border border-brd/30 hover:bg-sub/10 text-txt transition-colors cursor-pointer"
+                      >
+                        રદ કરો
+                      </button>
+                      <button
+                        type="button"
+                        id="bulk-execute-delete-btn"
+                        onClick={handleBulkDelete}
+                        disabled={isDeleting}
+                        className="px-4 py-2 rounded-xl text-sm font-gujarati font-bold bg-danger text-white hover:opacity-95 shadow-md flex items-center gap-1.5 transition-all active:scale-[0.97] cursor-pointer"
+                      >
+                        {isDeleting ? (
+                          <>
+                            <Loader2 size={16} className="animate-spin" />
+                            <span>કાઢી રહ્યા છીએ...</span>
+                          </>
+                        ) : (
+                          <span>હા, કાઢી નાખો</span>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  /* D3: Standard Bulk Bar Content */
+                  <div className="flex items-center justify-between gap-3 w-full" id="bulk-bar-standard-content">
+                    <div className="font-gujarati text-txt font-semibold text-sm sm:text-base">
+                      <span className="font-num font-bold text-acc mr-1 text-base">{selectedIds.size}</span>
+                      રિપોર્ટ પસંદ
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        type="button"
+                        id="bulk-cancel-mode-btn"
+                        onClick={() => {
+                          setIsSelectMode(false);
+                          setSelectedIds(new Set());
+                          setIsConfirming(false);
+                        }}
+                        className="px-3.5 py-2 rounded-xl text-sm font-gujarati font-medium border border-brd/30 hover:bg-sub/10 text-txt transition-colors cursor-pointer"
+                      >
+                        રદ કરો
+                      </button>
+                      <button
+                        type="button"
+                        id="bulk-delete-btn"
+                        disabled={selectedIds.size === 0}
+                        onClick={() => {
+                          if (selectedIds.size > 0) setIsConfirming(true);
+                        }}
+                        className={cn(
+                          "px-4 py-2 rounded-xl text-sm font-gujarati font-bold bg-danger text-white transition-all shadow-md flex items-center gap-1.5 cursor-pointer",
+                          selectedIds.size === 0
+                            ? "opacity-40 cursor-not-allowed shadow-none"
+                            : "hover:opacity-95 active:scale-[0.97]"
+                        )}
+                      >
+                        કાઢી નાખો (<span className="font-num">{selectedIds.size}</span>)
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </motion.div>
             )}
-          </motion.div>
+          </AnimatePresence>,
+          document.body
         )}
-      </AnimatePresence>
     </div>
   );
 };
