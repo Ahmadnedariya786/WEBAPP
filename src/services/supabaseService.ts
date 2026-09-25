@@ -1,11 +1,13 @@
 import { supabase } from '../lib/supabaseClient';
 import type { SavedReport } from '../store/appStore';
 
-console.log('ENV', { 
-  url: import.meta.env.VITE_SUPABASE_URL, 
-  hasKey: Boolean(import.meta.env.VITE_SUPABASE_ANON_KEY), 
-  keyLen: (import.meta.env.VITE_SUPABASE_ANON_KEY || '').length 
-});
+if (import.meta.env.DEV) {
+  console.log('ENV', { 
+    url: import.meta.env.VITE_SUPABASE_URL, 
+    hasKey: Boolean(import.meta.env.VITE_SUPABASE_ANON_KEY), 
+    keyLen: (import.meta.env.VITE_SUPABASE_ANON_KEY || '').length 
+  });
+}
 
 function mapDbToReport(row: any): SavedReport {
   return {

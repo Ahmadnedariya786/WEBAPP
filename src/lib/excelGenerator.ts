@@ -277,13 +277,33 @@ export function buildReportWorkbook(report: ReportExportData): XLSX.WorkBook {
  */
 export function buildAllReportsWorkbook(reports: ReportExportData[]): XLSX.WorkBook {
   const wb = XLSX.utils.book_new();
+  const usedSheetNames = new Set<string>();
+
   reports.forEach((report) => {
     const ws = buildReportSheet(report);
     const rawName = `${report.halqa || 'report'}_${report.date || ''}`;
-    // Sheet name max 31 chars in Excel
-    const sheetName = rawName.substring(0, 31).replace(/[\\/?*[\]]/g, '_');
+    // Sheet name max 31 chars in Excel; keep invalid-char replacement
+    const sanitized = rawName.replace(/[\\/?*[\]]/g, '_');
+    let sheetName = sanitized.substring(0, 31);
+
+    if (usedSheetNames.has(sheetName)) {
+      // On collision append _1, _2... AFTER truncation (base truncated to 29 chars so final ≤31)
+      const base = sanitized.substring(0, 29);
+      let counter = 1;
+      let candidate = `${base}_${counter}`;
+      while (usedSheetNames.has(candidate)) {
+        counter++;
+        const suffix = `_${counter}`;
+        const maxBaseLen = Math.max(0, 31 - suffix.length);
+        candidate = `${sanitized.substring(0, maxBaseLen)}${suffix}`;
+      }
+      sheetName = candidate;
+    }
+
+    usedSheetNames.add(sheetName);
     XLSX.utils.book_append_sheet(wb, ws, sheetName);
   });
+
   return wb;
 }
 

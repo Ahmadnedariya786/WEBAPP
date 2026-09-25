@@ -35,6 +35,9 @@ CRITICAL RULES:
 3. PRESERVE FRACTIONS & FORMULAS: Keep fractions/sums exactly as written (e.g., "30/5", "10+5", "12/2").
 4. VISIBILITY RULE: Sections not visible in the photo or cropped out MUST be {"v": null, "ok": false}.
 5. AMBIGUOUS TEXT: If a number or word is illegible or ambiguous, return the best-effort string in "v", and set "ok": false.
+6. NUMBER + UNIT CELLS: If a cell contains both a number and a unit/word (e.g., "5 સ્કૂલ", "૧૦ મકતબ"), keep them together as ONE string in that cell's own column. NEVER split a number and its unit across adjacent columns.
+7. DIGIT SCRIPT PRESERVATION: Preserve digit script exactly as written. NEVER convert Gujarati digits (૦, ૧, ૨, ૩, ૪, ૫, ૬, ૭, ૮, ૯) to Arabic digits (0-9) or vice versa.
+8. AMBIGUOUS DIGITS: If any digit is unclear, smudged, or ambiguous, return the best-effort string in "v" and mark "ok": false (low-confidence).
 
 SCHEMA TO RETURN:
 {
@@ -175,6 +178,128 @@ async function getOrDiscoverModel(apiKey: string): Promise<string> {
   }
 }
 
+// Gujarati digits Unicode range: U+0AE6 to U+0AEF (within Gujarati block U+0A80-U+0AFF)
+const GUJARATI_DIGITS_REGEX = /[\u0AE6-\u0AEF]/;
+// Arabic digits range: 0-9
+const ARABIC_DIGITS_REGEX = /[0-9]/;
+// Any digit (Arabic or Gujarati)
+const ANY_DIGIT_REGEX = /[0-9\u0AE6-\u0AEF]/;
+// Purely alphabetic / letters (Gujarati or Latin letters)
+const LETTER_REGEX = /[\p{L}]/u;
+
+function isPureAlphabeticUnit(text: string | null | undefined): boolean {
+  if (text == null) return false;
+  const trimmed = String(text).trim();
+  if (!trimmed || trimmed === '-' || trimmed === 'NA' || trimmed === 'null') return false;
+  // Must NOT have any digits
+  if (ANY_DIGIT_REGEX.test(trimmed)) return false;
+  // Must contain at least one letter
+  return LETTER_REGEX.test(trimmed);
+}
+
+function isNumericIsh(text: string | null | undefined): boolean {
+  if (text == null) return false;
+  const trimmed = String(text).trim();
+  if (!trimmed) return false;
+  // Must contain at least one digit
+  return ANY_DIGIT_REGEX.test(trimmed);
+}
+
+/**
+ * Normalization step (mirror of OLD app O23-E/O23-F):
+ * For each activity row, if one column holds numeric-ish value and the adjacent column
+ * holds PURELY alphabetic unit text (no digits), merge into the column matching the DIGIT SCRIPT:
+ *   - Gujarati digits (\u0A80-\u0AFF, \u0AE6-\u0AEF) → gujishta column
+ *   - Arabic 0-9 → azaim column
+ * Other column becomes empty. NEVER convert digit script.
+ * Log: "[ScanMerge] row=<n> → column=<x> value='<v>'"
+ */
+export function normalizeScanData(data: any): any {
+  if (!data || !Array.isArray(data.activities)) {
+    return data;
+  }
+
+  for (const row of data.activities) {
+    const rowNo = row.no;
+
+    const cellGuj = row.gujishata || row.gujishta;
+    const cellAz = row.agraaham || row.azaim;
+
+    if (!cellGuj || !cellAz) continue;
+
+    const valGuj = cellGuj.v != null ? String(cellGuj.v).trim() : '';
+    const valAz = cellAz.v != null ? String(cellAz.v).trim() : '';
+
+    let numVal = '';
+    let unitVal = '';
+    let numOk = true;
+    let unitOk = true;
+    let isMergeCandidate = false;
+
+    if (isNumericIsh(valGuj) && isPureAlphabeticUnit(valAz)) {
+      numVal = valGuj;
+      unitVal = valAz;
+      numOk = cellGuj.ok ?? true;
+      unitOk = cellAz.ok ?? true;
+      isMergeCandidate = true;
+    } else if (isNumericIsh(valAz) && isPureAlphabeticUnit(valGuj)) {
+      numVal = valAz;
+      unitVal = valGuj;
+      numOk = cellAz.ok ?? true;
+      unitOk = cellGuj.ok ?? true;
+      isMergeCandidate = true;
+    }
+
+    if (isMergeCandidate) {
+      const isGujaratiScript = GUJARATI_DIGITS_REGEX.test(numVal);
+      const isArabicScript = ARABIC_DIGITS_REGEX.test(numVal);
+      const targetCol = isGujaratiScript ? 'gujishta' : (isArabicScript ? 'azaim' : 'azaim');
+      const mergedValue = `${numVal} ${unitVal}`.trim();
+
+      if (targetCol === 'gujishta') {
+        if (row.gujishata) {
+          row.gujishata.v = mergedValue;
+          row.gujishata.ok = numOk && unitOk;
+        }
+        if (row.gujishta) {
+          row.gujishta.v = mergedValue;
+          row.gujishta.ok = numOk && unitOk;
+        }
+        if (row.agraaham) {
+          row.agraaham.v = '';
+          row.agraaham.ok = true;
+        }
+        if (row.azaim) {
+          row.azaim.v = '';
+          row.azaim.ok = true;
+        }
+      } else {
+        // azaim
+        if (row.agraaham) {
+          row.agraaham.v = mergedValue;
+          row.agraaham.ok = numOk && unitOk;
+        }
+        if (row.azaim) {
+          row.azaim.v = mergedValue;
+          row.azaim.ok = numOk && unitOk;
+        }
+        if (row.gujishata) {
+          row.gujishata.v = '';
+          row.gujishata.ok = true;
+        }
+        if (row.gujishta) {
+          row.gujishta.v = '';
+          row.gujishta.ok = true;
+        }
+      }
+
+      console.log(`[ScanMerge] row=${rowNo} → column=${targetCol} value='${mergedValue}'`);
+    }
+  }
+
+  return data;
+}
+
 export default async function handler(req: any, res: any) {
   const url = new URL(req.url || '', 'http://localhost');
   const isPing = req.query?.ping === '1' || url.searchParams.get('ping') === '1';
@@ -259,14 +384,14 @@ export default async function handler(req: any, res: any) {
 
   // Explicit mock header for testing locally during development
   if (isDev && req.headers['x-mock-scan'] === 'true') {
-    return res.status(200).json(getDevMockResponse());
+    return res.status(200).json(normalizeScanData(getDevMockResponse()));
   }
 
   // D2: Missing key → 500 { "code": "MISSING_KEY" }
   if (!apiKey) {
     if (isDev && process.env.SCAN_MOCK === 'true') {
       console.warn('[DEV ONLY] GEMINI_API_KEY missing in dev environment. Returning mock data matching test spec.');
-      return res.status(200).json(getDevMockResponse());
+      return res.status(200).json(normalizeScanData(getDevMockResponse()));
     }
     // Production MUST fail if GEMINI_API_KEY is not configured
     return res.status(500).json({ code: 'MISSING_KEY' });
@@ -364,7 +489,8 @@ export default async function handler(req: any, res: any) {
         // Clean potential markdown wrap if any
         const cleanJson = candidateText.replace(/^```json\s*/i, '').replace(/```\s*$/, '').trim();
         const parsed = JSON.parse(cleanJson);
-        return res.status(200).json(parsed);
+        const normalized = normalizeScanData(parsed);
+        return res.status(200).json(normalized);
 
       } catch (innerErr: any) {
         if (innerErr.name === 'AbortError') throw innerErr;
