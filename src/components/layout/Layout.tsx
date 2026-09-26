@@ -24,9 +24,15 @@ export const Layout: React.FC = () => {
     e.stopPropagation();
     if (isRefreshing) return;
     setIsRefreshing(true);
-    await refreshAll();
-    window.dispatchEvent(new CustomEvent('app-toast', { detail: 'ડેટા રિફ્રેશ થયો ✅' }));
-    setTimeout(() => setIsRefreshing(false), 500); // Ensures animation spins for at least 0.5s
+    try {
+      await refreshAll();
+      window.dispatchEvent(new CustomEvent('app-toast', { detail: 'ડેટા રિફ્રેશ થયો ✅' }));
+    } catch (err) {
+      console.error(err);
+      window.dispatchEvent(new CustomEvent('app-toast', { detail: 'રિફ્રેશ નિષ્ફળ: નેટવર્ક ચકાસો ❌' }));
+    } finally {
+      setTimeout(() => setIsRefreshing(false), 500); // Ensures animation spins for at least 0.5s
+    }
   };
 
   return (

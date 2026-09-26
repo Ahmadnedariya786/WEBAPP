@@ -17,6 +17,7 @@ import {
 import { formatDate, logActivity, cn } from '../lib/utils';
 import { useOverlayScrollLock } from '../lib/useOverlayScrollLock';
 import { nativeSave, NATIVE_SAVE_SUCCESS } from '../lib/nativeSave';
+import { isSessionExpiredError } from '../services/supabaseService';
 
 export const PastReports: React.FC = () => {
   const navigate = useNavigate();
@@ -29,6 +30,7 @@ export const PastReports: React.FC = () => {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isConfirming, setIsConfirming] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isDeletingSingle, setIsDeletingSingle] = useState(false);
   const [bulkBarHeight, setBulkBarHeight] = useState(64);
   const bulkBarRef = useRef<HTMLDivElement>(null);
 
@@ -68,17 +70,40 @@ export const PastReports: React.FC = () => {
   };
 
   const confirmDelete = () => {
+    if (isDeletingSingle) return;
     if (reportToDelete !== null) {
       useAppStore.getState().requireAuth(async () => {
+        setIsDeletingSingle(true);
+        const startTime = performance.now();
+        const unlock = () => {
+          const elapsed = performance.now() - startTime;
+          const remaining = Math.max(0, 400 - elapsed);
+          setTimeout(() => {
+            setIsDeletingSingle(false);
+          }, remaining);
+        };
+
         try {
           await deleteReport(reportToDelete);
           setReportToDelete(null);
           showNotification('રિપોર્ટ ડિલીટ થયો ✅');
         } catch (err: any) {
           console.error(err);
-          showNotification(err.message || 'ભૂલ આવી! ડિલીટ ન થઈ શક્યું ❌', true);
+          if (isSessionExpiredError(err)) {
+            showNotification('તમારો સત્ર સમાપ્ત થયો છે — ફરીથી લોગિન કરો', true);
+            useAppStore.setState({ authDialogOpen: true });
+          } else {
+            showNotification(err.message || 'ભૂલ આવી! ડિલીટ ન થઈ શક્યું ❌', true);
+          }
+        } finally {
+          unlock();
         }
       });
+
+      const state = useAppStore.getState();
+      if (!state.sessionCode || !state.sessionRole) {
+        setIsDeletingSingle(false);
+      }
     }
   };
 
@@ -127,44 +152,70 @@ export const PastReports: React.FC = () => {
   };
 
   const handleBulkDelete = () => {
+    if (isDeleting) return;
     const idsToDelete = Array.from(selectedIds);
     if (idsToDelete.length === 0) return;
 
     useAppStore.getState().requireAuth(async () => {
       setIsDeleting(true);
+      const startTime = performance.now();
+      const unlock = () => {
+        const elapsed = performance.now() - startTime;
+        const remaining = Math.max(0, 400 - elapsed);
+        setTimeout(() => {
+          setIsDeleting(false);
+        }, remaining);
+      };
+
       let successCount = 0;
       let failCount = 0;
+      let hasSessionExpired = false;
 
-      for (const id of idsToDelete) {
-        try {
-          await deleteReport(id);
-          successCount++;
-        } catch (err) {
-          console.error(`Error deleting report ${id}:`, err);
-          failCount++;
+      try {
+        for (const id of idsToDelete) {
+          try {
+            await deleteReport(id);
+            successCount++;
+          } catch (err) {
+            console.error(`Error deleting report ${id}:`, err);
+            if (isSessionExpiredError(err)) {
+              hasSessionExpired = true;
+              break;
+            }
+            failCount++;
+          }
         }
-      }
 
-      // D5: log via existing logging as one summary entry "બલ્ક ડિલીટ: N"
-      if (successCount > 0) {
-        logActivity(`બલ્ક ડિલીટ: ${successCount}`);
-      }
+        // D5: log via existing logging as one summary entry "બલ્ક ડિલીટ: N"
+        if (successCount > 0) {
+          logActivity(`બલ્ક ડિલીટ: ${successCount}`);
+        }
 
-      // D5: truthful end toast
-      if (failCount === 0 && successCount > 0) {
-        showNotification(`${successCount} રિપોર્ટ્સ કાઢી નાખ્યા ✅`, false);
-      } else if (successCount > 0 && failCount > 0) {
-        showNotification(`${successCount} કાઢી નાખ્યા, ${failCount} નિષ્ફળ ❌`, true);
-      } else {
-        showNotification('ડિલીટ નિષ્ફળ ❌', true);
-      }
+        // D5: truthful end toast
+        if (hasSessionExpired) {
+          showNotification('તમારો સત્ર સમાપ્ત થયો છે — ફરીથી લોગિન કરો', true);
+          useAppStore.setState({ authDialogOpen: true });
+        } else if (failCount === 0 && successCount > 0) {
+          showNotification(`${successCount} રિપોર્ટ્સ કાઢી નાખ્યા ✅`, false);
+        } else if (successCount > 0 && failCount > 0) {
+          showNotification(`${successCount} કાઢી નાખ્યા, ${failCount} નિષ્ફળ ❌`, true);
+        } else {
+          showNotification('ડિલીટ નિષ્ફળ ❌', true);
+        }
 
-      // Exit select mode after
-      setIsDeleting(false);
-      setIsConfirming(false);
-      setIsSelectMode(false);
-      setSelectedIds(new Set());
+        // Exit select mode after
+        setIsConfirming(false);
+        setIsSelectMode(false);
+        setSelectedIds(new Set());
+      } finally {
+        unlock();
+      }
     });
+
+    const state = useAppStore.getState();
+    if (!state.sessionCode || !state.sessionRole) {
+      setIsDeleting(false);
+    }
   };
 
   const getTotalStudents = (stats: any) => {
@@ -271,8 +322,8 @@ export const PastReports: React.FC = () => {
                   <LiquidButton variant="neutral" className="flex-1 min-w-[120px] px-4 py-2.5 whitespace-nowrap" onClick={() => setReportToDelete(null)}>
                     {t('action.cancel' as any)}
                   </LiquidButton>
-                  <LiquidButton variant="danger" className="flex-1 min-w-[120px] px-4 py-2.5 whitespace-nowrap" onClick={confirmDelete}>
-                    હા, કાઢી નાખો
+                  <LiquidButton variant="danger" disabled={isDeletingSingle} className={cn("flex-1 min-w-[120px] px-4 py-2.5 whitespace-nowrap", isDeletingSingle && "opacity-50 cursor-not-allowed")} onClick={confirmDelete}>
+                    {isDeletingSingle ? 'કાઢી રહ્યા છીએ...' : 'હા, કાઢી નાખો'}
                   </LiquidButton>
                 </div>
               </div>

@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { supabaseService } from '../services/supabaseService'
+import { supabaseService, SessionExpiredError, isSessionExpiredError } from '../services/supabaseService'
 import { logActivity } from '../lib/utils'
 
 export interface SavedReport {
@@ -39,6 +39,7 @@ interface AppState {
   addReport: (report: SavedReport) => Promise<void>
   updateReport: (id: string, report: SavedReport) => Promise<void>
   deleteReport: (id: string) => Promise<void>
+  removeReport: (id: string) => Promise<void>
   addCustomHalqa: (halqaName: string) => Promise<void>
   removeCustomHalqa: (id: string) => Promise<void>
   addAdminHalqa: (name: string, is_default: boolean) => Promise<void>
@@ -143,74 +144,86 @@ export const useAppStore = create<AppState>()(
       },
       
       refreshAll: async () => {
-        try {
-          const code = get().sessionCode;
-          if (code) {
-            try {
-              const role = await supabaseService.loginCode(code);
-              if (!role) {
-                get().setSession(null, null);
-                window.dispatchEvent(new CustomEvent('app-toast', { detail: 'કોડ રદ થયેલ છે — ફરી દાખલ કરો' }));
-              } else {
-                get().setSession(code, role);
-              }
-            } catch (err) {
+        const code = get().sessionCode;
+        if (code) {
+          try {
+            const role = await supabaseService.loginCode(code);
+            if (!role) {
               get().setSession(null, null);
+              window.dispatchEvent(new CustomEvent('app-toast', { detail: 'કોડ રદ થયેલ છે — ફરી દાખલ કરો' }));
+            } else {
+              get().setSession(code, role);
             }
+          } catch (err) {
+            get().setSession(null, null);
           }
-          const [reports, halqas] = await Promise.all([
-            supabaseService.listReports(),
-            supabaseService.listHalqas()
-          ])
-          set({ 
-            reports, 
-            halqas,
-            customHalqas: halqas.filter((h: any) => h.is_custom).map((h: any) => h.name)
-          })
-        } catch (err) {
-          console.error(err)
         }
+        const [reports, halqas] = await Promise.all([
+          supabaseService.listReports(),
+          supabaseService.listHalqas()
+        ]);
+        set({ 
+          reports, 
+          halqas,
+          customHalqas: halqas.filter((h: any) => h.is_custom).map((h: any) => h.name)
+        });
       },
       
       addReport: async (report) => {
         try {
           const code = get().sessionCode;
-          if (!code) throw new Error("Unauthorized");
-          const saved = await supabaseService.saveReport(report, code)
-          set((state) => ({ reports: [saved, ...state.reports] }))
+          if (!code) throw new SessionExpiredError("Unauthorized");
+          const saved = await supabaseService.saveReport(report, code);
+          set((state) => ({ reports: [saved, ...state.reports] }));
           logActivity('રિપોર્ટ સેવ કર્યો');
         } catch (err) {
-          console.error(err)
-          throw err
+          if (isSessionExpiredError(err)) {
+            get().setSession(null, null);
+            set({ authDialogOpen: true });
+          }
+          console.error(err);
+          throw err;
         }
       },
       
       updateReport: async (id, report) => {
         try {
           const code = get().sessionCode;
-          if (!code) throw new Error("Unauthorized");
-          const updated = await supabaseService.updateReport(id, report, code)
+          if (!code) throw new SessionExpiredError("Unauthorized");
+          const updated = await supabaseService.updateReport(id, report, code);
           set((state) => ({ 
             reports: state.reports.map(r => r.id === id ? updated : r) 
-          }))
+          }));
           logActivity('રિપોર્ટ અપડેટ કર્યો');
         } catch (err) {
-          console.error(err)
-          throw err
+          if (isSessionExpiredError(err)) {
+            get().setSession(null, null);
+            set({ authDialogOpen: true });
+          }
+          console.error(err);
+          throw err;
         }
       },
       
       deleteReport: async (id) => {
         try {
           const code = get().sessionCode;
-          if (!code) throw new Error("Unauthorized");
-          await supabaseService.deleteReport(id, code)
-          set((state) => ({ reports: state.reports.filter(r => r.id !== id) }))
+          if (!code) throw new SessionExpiredError("Unauthorized");
+          await supabaseService.deleteReport(id, code);
+          set((state) => ({ reports: state.reports.filter(r => r.id !== id) }));
           logActivity('રિપોર્ટ ડિલીટ કર્યો');
         } catch (err) {
-          console.error(err)
-          throw err
+          if (isSessionExpiredError(err)) {
+            get().setSession(null, null);
+            set({ authDialogOpen: true });
+          }
+          console.error(err);
+          throw err;
         }
+      },
+
+      removeReport: async (id) => {
+        return get().deleteReport(id);
       },
       
       addCustomHalqa: async (name) => {

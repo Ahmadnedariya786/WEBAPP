@@ -10,7 +10,7 @@ import {
   X, Copy, Lock, RotateCcw, Check, ListChecks 
 } from 'lucide-react';
 import { cn, formatDate, localTodayIso } from '../lib/utils';
-import { isDuplicateReportError, mapSupabaseError } from '../services/supabaseService';
+import { isDuplicateReportError, mapSupabaseError, isSessionExpiredError } from '../services/supabaseService';
 import { ScanPills } from '../components/ScanFill';
 import { NeumorphicCalendarDialog } from '../components/ui/NeumorphicCalendarDialog';
 import { useOverlayScrollLock } from '../lib/useOverlayScrollLock';
@@ -84,6 +84,8 @@ export const NewReport: React.FC = () => {
 
   // Save feedback state
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isDeletingHalqa, setIsDeletingHalqa] = useState(false);
   const [recentTileKey, setRecentTileKey] = useState<string | null>(null);
 
   // Total Students Calculation & Count-up Animation
@@ -220,10 +222,21 @@ export const NewReport: React.FC = () => {
   };
 
   const handleSave = () => {
+    if (isSaving) return;
     if (!halqa) {
       showNotification('કૃપા કરીને હલકો પસંદ કરો ❌');
       return;
     }
+    setIsSaving(true);
+    const startTime = performance.now();
+    const unlock = () => {
+      const elapsed = performance.now() - startTime;
+      const remaining = Math.max(0, 400 - elapsed);
+      setTimeout(() => {
+        setIsSaving(false);
+      }, remaining);
+    };
+
     useAppStore.getState().requireAuth(async () => {
       try {
         await addReport({
@@ -250,13 +263,23 @@ export const NewReport: React.FC = () => {
         clearDraft();
       } catch (err) {
         console.error(err);
-        if (isDuplicateReportError(err)) {
+        if (isSessionExpiredError(err)) {
+          showNotification('તમારો સત્ર સમાપ્ત થયો છે — ફરીથી લોગિન કરો');
+          useAppStore.setState({ authDialogOpen: true });
+        } else if (isDuplicateReportError(err)) {
           showNotification('આ હલકા માટે આ તારીખનો રિપોર્ટ પહેલેથી છે — એડિટ કરો');
         } else {
           showNotification('ભૂલ આવી! સેવ ન થઈ શક્યું ❌');
         }
+      } finally {
+        unlock();
       }
     });
+
+    const state = useAppStore.getState();
+    if (!state.sessionCode || !state.sessionRole) {
+      unlock();
+    }
   };
 
   const confirmClear = () => {
@@ -375,7 +398,16 @@ export const NewReport: React.FC = () => {
   };
 
   const confirmDeleteHalqa = async () => {
-    if (!halqaToDelete) return;
+    if (!halqaToDelete || isDeletingHalqa) return;
+    setIsDeletingHalqa(true);
+    const startTime = performance.now();
+    const unlock = () => {
+      const elapsed = performance.now() - startTime;
+      const remaining = Math.max(0, 400 - elapsed);
+      setTimeout(() => {
+        setIsDeletingHalqa(false);
+      }, remaining);
+    };
     const targetHalqa = halqas.find(h => h.name === halqaToDelete);
     const uuid = targetHalqa?.id || halqaToDelete;
     try {
@@ -386,6 +418,8 @@ export const NewReport: React.FC = () => {
       setHalqaToDelete(null);
     } catch (err: any) {
       showNotification('ભૂલ આવી: ' + (err.message || 'અજ્ઞાત ભૂલ'));
+    } finally {
+      unlock();
     }
   };
 
@@ -436,7 +470,9 @@ export const NewReport: React.FC = () => {
         {/* PRIMARY: "સાચવો" = Full-width 48px accent button */}
         <button
           type="button"
+          disabled={isSaving}
           onClick={() => { 
+            if (isSaving) return;
             if (!sessionRole) { 
               useAppStore.setState({ authDialogOpen: true, authPendingAction: null }); 
               return; 
@@ -444,7 +480,7 @@ export const NewReport: React.FC = () => {
             handleSave(); 
           }}
           aria-label="સાચવો"
-          className="action-cluster-primary-btn"
+          className={cn("action-cluster-primary-btn", isSaving && "opacity-75 cursor-not-allowed")}
         >
           {!sessionRole ? (
             <Lock size={18} className="shrink-0" />
@@ -674,11 +710,15 @@ export const NewReport: React.FC = () => {
                   </button>
                   <button 
                     type="button"
-                    className="flex-1 min-w-[120px] px-4 py-2.5 rounded-xl bg-danger text-white font-gujarati text-sm font-semibold hover:bg-danger/90 transition-all shadow-md cursor-pointer"
+                    disabled={isDeletingHalqa}
+                    className={cn(
+                      "flex-1 min-w-[120px] px-4 py-2.5 rounded-xl bg-danger text-white font-gujarati text-sm font-semibold hover:bg-danger/90 transition-all shadow-md cursor-pointer",
+                      isDeletingHalqa && "opacity-50 cursor-not-allowed"
+                    )}
                     onClick={confirmDeleteHalqa}
                     aria-label="હા, કાઢી નાખો"
                   >
-                    હા, કાઢી નાખો
+                    {isDeletingHalqa ? 'કાઢી રહ્યા છીએ...' : 'હા, કાઢી નાખો'}
                   </button>
                 </div>
               </div>

@@ -49,6 +49,53 @@ function mapReportToDb(r: SavedReport): any {
   };
 }
 
+export class SessionExpiredError extends Error {
+  code = 'SESSION_EXPIRED_ERROR';
+  constructor(message = 'SESSION_EXPIRED_ERROR') {
+    super(message);
+    this.name = 'SESSION_EXPIRED_ERROR';
+    Object.setPrototypeOf(this, SessionExpiredError.prototype);
+  }
+}
+
+export const SESSION_EXPIRED_ERROR = 'SESSION_EXPIRED_ERROR';
+
+export function isSessionExpiredError(err: unknown): boolean {
+  if (!err) return false;
+  if (err instanceof SessionExpiredError) return true;
+  const anyErr = err as any;
+  if (
+    anyErr === 'SESSION_EXPIRED_ERROR' ||
+    anyErr?.name === 'SESSION_EXPIRED_ERROR' ||
+    anyErr?.code === 'SESSION_EXPIRED_ERROR' ||
+    anyErr?.message === 'SESSION_EXPIRED_ERROR'
+  ) return true;
+  const msg = anyErr?.message || String(err);
+  return (
+    msg.includes('SESSION_EXPIRED_ERROR') ||
+    msg.includes('Unauthorized') ||
+    msg.includes('code_invalid') ||
+    msg.includes('code_expired') ||
+    msg.includes('code_revoked')
+  );
+}
+
+function checkAndThrowSessionExpired(error: any) {
+  if (!error) return;
+  const msg = error.message || '';
+  const details = error.details || '';
+  const hint = error.hint || '';
+  const combined = `${msg} ${details} ${hint} ${String(error)}`;
+  if (
+    combined.includes('Unauthorized') ||
+    combined.includes('code_invalid') ||
+    combined.includes('code_expired') ||
+    combined.includes('code_revoked')
+  ) {
+    throw new SessionExpiredError(msg || 'SESSION_EXPIRED_ERROR');
+  }
+}
+
 export const supabaseService = {
   async listReports() {
     const { data, error } = await supabase.from('reports').select('*').order('report_date', { ascending: false });
@@ -63,6 +110,7 @@ export const supabaseService = {
     const { data, error } = await supabase.rpc('fn_save_report', { p_code: code, p_payload: dbRow });
     if (error) {
       console.error('saveReport ERROR:', { message: error.message, code: error.code, details: error.details, hint: error.hint });
+      checkAndThrowSessionExpired(error);
       throw error;
     }
     return mapDbToReport(data);
@@ -72,13 +120,17 @@ export const supabaseService = {
     // Since fn_save_report handles both insert and update (based on id presence in payload), we can just use it
     dbRow.id = id;
     const { data, error } = await supabase.rpc('fn_save_report', { p_code: code, p_payload: dbRow });
-    if (error) throw error;
+    if (error) {
+      checkAndThrowSessionExpired(error);
+      throw error;
+    }
     return mapDbToReport(data);
   },
   async deleteReport(id: string, code: string) {
     const { error } = await supabase.rpc('fn_delete_report', { p_code: code, p_id: id });
     if (error) {
       console.error('deleteReport ERROR:', { message: error.message, code: error.code, details: error.details, hint: error.hint });
+      checkAndThrowSessionExpired(error);
       throw error;
     }
   },
@@ -89,18 +141,27 @@ export const supabaseService = {
   },
   async addHalqa(name: string, adminCode: string) {
     const { data, error } = await supabase.rpc('fn_save_halqa', { p_admin: adminCode, p_payload: { name, is_custom: true } });
-    if (error) throw error;
+    if (error) {
+      checkAndThrowSessionExpired(error);
+      throw error;
+    }
     return data;
   },
   async addAdminHalqa(name: string, adminCode: string, is_default: boolean) {
     const { data, error } = await supabase.rpc('fn_save_halqa', { p_admin: adminCode, p_payload: { name, is_custom: !is_default } });
-    if (error) throw error;
+    if (error) {
+      checkAndThrowSessionExpired(error);
+      throw error;
+    }
     return data;
   },
   async deleteHalqa(id: string, adminCode: string) {
     if (!/^[0-9a-f-]{36}$/i.test(id)) return;
     const { error } = await supabase.rpc('fn_delete_halqa', { p_admin: adminCode, p_id: id });
-    if (error) throw error;
+    if (error) {
+      checkAndThrowSessionExpired(error);
+      throw error;
+    }
   },
   async getSetting(key: string) {
     const { data, error } = await supabase.from('app_settings').select('value').eq('key', key).maybeSingle();
@@ -109,11 +170,17 @@ export const supabaseService = {
   },
   async setSetting(key: string, value: any, adminCode: string) {
     const { error } = await supabase.rpc('fn_update_settings', { p_admin: adminCode, p_payload: { key, value } });
-    if (error) throw error;
+    if (error) {
+      checkAndThrowSessionExpired(error);
+      throw error;
+    }
   },
   async setAdminCode(oldCode: string | null, newCode: string) {
     const { data, error } = await supabase.rpc('fn_set_admin_code', { p_old: oldCode, p_new: newCode });
-    if (error) throw error;
+    if (error) {
+      checkAndThrowSessionExpired(error);
+      throw error;
+    }
     return data as boolean;
   },
   async checkAdminConfigured(): Promise<boolean> {
@@ -131,22 +198,34 @@ export const supabaseService = {
   },
   async generateCode(adminCode: string, label: string) {
     const { data, error } = await supabase.rpc('fn_generate_code', { p_admin: adminCode, p_label: label });
-    if (error) throw error;
+    if (error) {
+      checkAndThrowSessionExpired(error);
+      throw error;
+    }
     return data as string;
   },
   async listCodes(adminCode: string) {
     const { data, error } = await supabase.rpc('fn_list_codes', { p_admin: adminCode });
-    if (error) throw error;
+    if (error) {
+      checkAndThrowSessionExpired(error);
+      throw error;
+    }
     return data;
   },
   async revokeCode(adminCode: string, id: string) {
     const { data, error } = await supabase.rpc('fn_revoke_code', { p_admin: adminCode, p_id: id });
-    if (error) throw error;
+    if (error) {
+      checkAndThrowSessionExpired(error);
+      throw error;
+    }
     return data as boolean;
   },
   async purgeRevoked(adminCode: string) {
     const { data, error } = await supabase.rpc('fn_purge_revoked', { p_admin: adminCode });
-    if (error) throw error;
+    if (error) {
+      checkAndThrowSessionExpired(error);
+      throw error;
+    }
     return data as number;
   }
 };
@@ -164,6 +243,6 @@ export function mapSupabaseError(err: unknown): string {
   const msg = anyErr?.message || String(err);
   const code = anyErr?.code;
   if (code === '23505' || msg.includes('duplicate') || msg.includes('unique constraint')) return 'આ નામનો હલકો પહેલેથી છે ✅';
-  if (msg.includes('Unauthorized')) return 'કોડ માન્ય નથી અથવા રદ થયેલ છે ❌';
+  if (msg.includes('Unauthorized') || msg.includes('SESSION_EXPIRED_ERROR')) return 'કોડ માન્ય નથી અથવા રદ થયેલ છે ❌';
   return 'ભૂલ આવી: નેટવર્ક ચકાસો';
 }

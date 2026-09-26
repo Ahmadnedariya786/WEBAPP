@@ -12,6 +12,7 @@ const dirs = [
   'android/app/src/main/res/mipmap-xxxhdpi',
   'android/app/src/main/res/mipmap-anydpi-v26',
   'android/app/src/main/res/drawable',
+  'android/app/src/main/res/xml',
   '.github/workflows'
 ];
 
@@ -102,8 +103,27 @@ dependencies {
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="\${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
     </application>
 </manifest>`,
+
+  'android/app/src/main/res/xml/file_paths.xml': `<?xml version="1.0" encoding="utf-8"?>
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
+    <cache-path name="camera_photos" path="." />
+    <external-cache-path name="external_camera_photos" path="." />
+    <files-path name="files" path="." />
+    <external-files-path name="external_files" path="." />
+</paths>
+`,
 
   'android/app/src/main/res/values/strings.xml': `<?xml version="1.0" encoding="utf-8"?>
 <resources>
@@ -564,7 +584,8 @@ class MainActivity : AppCompatActivity() {
         super.onSaveInstanceState(outState)
         cameraImageUri?.let { outState.putParcelable("camera_image_uri", it) }
     }
-}`,
+}
+`,
 
   '.github/workflows/android.yml': `name: Android CI Build
 
@@ -578,10 +599,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: set up JDK 17
-      uses: actions/setup-java@v3
+      uses: actions/setup-java@v5
       with:
         java-version: '17'
         distribution: 'temurin'
@@ -591,7 +612,7 @@ jobs:
       run: chmod +x android/gradlew || true
 
     - name: Setup Gradle (no wrapper)
-      uses: gradle/actions/setup-gradle@v3
+      uses: gradle/actions/setup-gradle@v4
       with:
         gradle-version: '8.4'
 
@@ -600,7 +621,7 @@ jobs:
       run: gradle assembleDebug
 
     - name: Upload APK
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: mehnat-tracker-debug.apk
         path: android/app/build/outputs/apk/debug/app-debug.apk
