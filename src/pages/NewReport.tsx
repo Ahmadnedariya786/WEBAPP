@@ -7,7 +7,7 @@ import { t } from '../i18n';
 import { PageHeading } from '../components/ui/PageHeading';
 import { 
   Calendar, Save, Trash2, Download, Share2, CheckCircle, 
-  X, Copy, Lock, RotateCcw, Check, ListChecks 
+  X, Lock, RotateCcw, Check, ListChecks 
 } from 'lucide-react';
 import { cn, formatDate, localTodayIso } from '../lib/utils';
 import { isDuplicateReportError, mapSupabaseError, isSessionExpiredError } from '../services/supabaseService';
@@ -161,11 +161,6 @@ export const NewReport: React.FC = () => {
     return `બનાસકાંઠા સ્ટુડન્ટ મહેનત ટ્રેકર\nહલકો: ${halqa || '-'} | તારીખ: ${formatDate(date)}\nકુલ સ્ટુડન્ટ: ${totalStudents}\n\nપ્રવૃત્તિ સારાંશ:\n` + 
     ACTIVITY_KEYS.map(k => `${t(k as any)}: ${activities[k]?.maujuda || '-'}`).join('\n') + 
     `\nમશવારો: ${activities['mashwara']?.maujuda || '-'}\nખાસ નોંધ: ${notes}`;
-  };
-
-  const handleCopy = () => {
-    navigator.clipboard.writeText(generateReportText());
-    showNotification('ટેક્સ્ટ કોપી થઈ ✅');
   };
 
   const handleWhatsApp = () => {
@@ -492,8 +487,8 @@ export const NewReport: React.FC = () => {
           <span className="font-gujarati font-bold text-base">સાચવો</span>
         </button>
 
-        {/* SECONDARY: 2×2 icon-pill grid at ALL widths */}
-        <div className="grid grid-cols-2 gap-2.5">
+        {/* SECONDARY: WhatsApp, Excel, PDF in a clean grid (F6) */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 action-cluster-grid">
           <button
             type="button"
             onClick={handleWhatsApp}
@@ -502,16 +497,6 @@ export const NewReport: React.FC = () => {
           >
             <Share2 size={15} className="text-acc shrink-0" />
             <span className="font-gujarati">WhatsApp પર શેર કરો</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={handleCopy}
-            aria-label="કૉપી કરો"
-            className="action-cluster-grid-btn"
-          >
-            <Copy size={15} className="text-acc shrink-0" />
-            <span className="font-gujarati">કૉપી કરો</span>
           </button>
 
           <button

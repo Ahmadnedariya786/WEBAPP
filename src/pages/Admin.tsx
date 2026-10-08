@@ -4,7 +4,7 @@ import { t } from '../i18n';
 import { GlassCard } from '../components/ui/GlassCard';
 import { PageHeading } from '../components/ui/PageHeading';
 import { LiquidButton } from '../components/ui/LiquidButton';
-import { Shield, Users, Activity, Database, Lock, ChevronLeft, CheckCircle, Key, KeyRound, Trash2, Copy, Share2, LogOut, MapPin, Plus, AlertCircle } from 'lucide-react';
+import { Shield, Users, Activity, Database, Lock, ChevronLeft, CheckCircle, Key, KeyRound, Trash2, Share2, LogOut, MapPin, Plus, AlertCircle } from 'lucide-react';
 import { getLogs, clearLogs, type SystemLog, logActivity, cn } from '../lib/utils';
 import { useAppStore } from '../store/appStore';
 import { supabaseService } from '../services/supabaseService';
@@ -209,11 +209,6 @@ export const Admin: React.FC = () => {
         setIsPurging(false);
       }
     });
-  };
-
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    showNotification('કોપી થઈ ગયું ✅');
   };
 
   const handleBackup = async () => {
@@ -632,11 +627,8 @@ export const Admin: React.FC = () => {
                       <div className="bg-card/50 py-3 px-4 rounded-xl border border-brd/10 font-num text-xl font-bold tracking-widest text-txt">
                         {generatedCode}
                       </div>
-                      <div className="grid grid-cols-2 gap-3">
-                        <LiquidButton variant="neutral" onClick={() => copyToClipboard(generatedCode)}>
-                          <Copy size={18} className="mr-2" /> કૉપિ
-                        </LiquidButton>
-                        <LiquidButton onClick={() => {
+                      <div className="w-full">
+                        <LiquidButton className="w-full" onClick={() => {
                           const text = `તમારો રિપોર્ટિંગ કોડ: ${generatedCode}`;
                           window.open(`https://wa.me/?text=${encodeURIComponent(text)}`);
                         }}>
