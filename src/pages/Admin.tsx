@@ -4,7 +4,7 @@ import { t } from '../i18n';
 import { GlassCard } from '../components/ui/GlassCard';
 import { PageHeading } from '../components/ui/PageHeading';
 import { LiquidButton } from '../components/ui/LiquidButton';
-import { Shield, Users, Activity, Database, Lock, ChevronLeft, CheckCircle, Key, KeyRound, Trash2, Copy, Share2, LogOut, MapPin, Plus } from 'lucide-react';
+import { Shield, Users, Activity, Database, Lock, ChevronLeft, CheckCircle, Key, KeyRound, Trash2, Copy, Share2, LogOut, MapPin, Plus, AlertCircle } from 'lucide-react';
 import { getLogs, clearLogs, type SystemLog, logActivity, cn } from '../lib/utils';
 import { useAppStore } from '../store/appStore';
 import { supabaseService } from '../services/supabaseService';
@@ -39,8 +39,19 @@ export const Admin: React.FC = () => {
   const [newAdminHalqa, setNewAdminHalqa] = useState('');
   const [halqaToDelete, setHalqaToDelete] = useState<{ id: string, name: string } | null>(null);
 
+  // In-app Confirmation Dialog State (F1)
+  const [confirmDialog, setConfirmDialog] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    confirmLabel: string;
+    isDestructive?: boolean;
+    onConfirm: () => void | Promise<void>;
+  } | null>(null);
+
   useOverlayScrollLock({ isOpen: showGenerateModal, onClose: () => setShowGenerateModal(false) });
   useOverlayScrollLock({ isOpen: !!halqaToDelete, onClose: () => setHalqaToDelete(null) });
+  useOverlayScrollLock({ isOpen: !!confirmDialog, onClose: () => setConfirmDialog(null) });
 
   const showNotification = (msg: string) => {
     setToastMessage(msg);
@@ -130,10 +141,17 @@ export const Admin: React.FC = () => {
   }, [activeScreen, sessionRole]);
 
   const handleLogout = () => {
-    if (window.confirm('શું તમે ખરેખર લૉગઆઉટ કરવા માંગો છો?')) {
-      setSession(null, null);
-      navigate('/');
-    }
+    setConfirmDialog({
+      isOpen: true,
+      title: 'લૉગઆઉટ',
+      message: 'શું તમે ખરેખર લૉગઆઉટ કરવા માંગો છો?',
+      confirmLabel: 'હા, લૉગઆઉટ કરો',
+      isDestructive: true,
+      onConfirm: () => {
+        setSession(null, null);
+        navigate('/');
+      }
+    });
   };
 
   const handleGenerateCode = async (e: React.FormEvent) => {
@@ -151,30 +169,46 @@ export const Admin: React.FC = () => {
     setIsLoading(false);
   };
 
-  const handleRevokeCode = async (id: string) => {
+  const handleRevokeCode = (id: string) => {
     if (!sessionCode) return;
-    if (!window.confirm('શું તમે ખરેખર આ કોડ રદ કરવા માંગો છો?')) return;
-    try {
-      await supabaseService.revokeCode(sessionCode, id);
-      showNotification('કોડ રદ કરાયેલ છે');
-      loadCodes();
-    } catch (err) {
-      showNotification('ભૂલ આવી ❌');
-    }
+    setConfirmDialog({
+      isOpen: true,
+      title: 'કોડ રદ કરો',
+      message: 'શું તમે ખરેખર આ કોડ રદ કરવા માંગો છો?',
+      confirmLabel: 'હા, રદ કરો',
+      isDestructive: true,
+      onConfirm: async () => {
+        try {
+          await supabaseService.revokeCode(sessionCode, id);
+          showNotification('કોડ રદ કરાયેલ છે');
+          loadCodes();
+        } catch (err) {
+          showNotification('ભૂલ આવી ❌');
+        }
+      }
+    });
   };
 
-  const handlePurgeRevoked = async () => {
+  const handlePurgeRevoked = () => {
     if (!sessionCode) return;
-    if (!window.confirm('બધા રદ થયેલા કોડ કાયમ માટે ભૂંસાશે. ચાલુ રાખવું છે?')) return;
-    setIsPurging(true);
-    try {
-      const n = await supabaseService.purgeRevoked(sessionCode);
-      showNotification(`${n} જૂના કોડ સાફ થયા ✅`);
-      await loadCodes();
-    } catch (err) {
-      showNotification('ભૂલ આવી ❌');
-    }
-    setIsPurging(false);
+    setConfirmDialog({
+      isOpen: true,
+      title: 'જૂના કોડ સાફ કરો',
+      message: 'બધા રદ થયેલા કોડ કાયમ માટે ભૂંસાશે. ચાલુ રાખવું છે?',
+      confirmLabel: 'હા, ભૂંસી નાખો',
+      isDestructive: true,
+      onConfirm: async () => {
+        setIsPurging(true);
+        try {
+          const n = await supabaseService.purgeRevoked(sessionCode);
+          showNotification(`${n} જૂના કોડ સાફ થયા ✅`);
+          await loadCodes();
+        } catch (err) {
+          showNotification('ભૂલ આવી ❌');
+        }
+        setIsPurging(false);
+      }
+    });
   };
 
   const copyToClipboard = (text: string) => {
@@ -204,9 +238,18 @@ export const Admin: React.FC = () => {
   };
 
   const handleClearLogs = () => {
-    clearLogs();
-    setLogs([]);
-    showNotification('લૉગ્સ સાફ થયા ✅');
+    setConfirmDialog({
+      isOpen: true,
+      title: 'લૉગ્સ સાફ કરો',
+      message: 'શું તમે બધા લૉગ્સ સાફ કરવા માંગો છો?',
+      confirmLabel: 'હા, સાફ કરો',
+      isDestructive: true,
+      onConfirm: () => {
+        clearLogs();
+        setLogs([]);
+        showNotification('લૉગ્સ સાફ થયા ✅');
+      }
+    });
   };
 
   if (sessionRole === 'team') {
@@ -232,7 +275,10 @@ export const Admin: React.FC = () => {
         {/* Toast */}
         <AnimatePresence>
           {showToast && (
-            <div className="fixed inset-x-4 bottom-24 z-[80] flex justify-center pointer-events-none">
+            <div 
+              className="fixed inset-x-4 bottom-24 z-[80] flex justify-center pointer-events-none"
+              style={{ bottom: 'calc(124px + env(safe-area-inset-bottom, 0px))' }}
+            >
               <motion.div
                 initial={{ opacity: 0, y: 50, scale: 0.9 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -340,7 +386,10 @@ export const Admin: React.FC = () => {
     <div className="space-y-6 pb-12 relative">
       <AnimatePresence>
         {showToast && (
-          <div className="fixed inset-x-4 bottom-24 z-[80] flex justify-center pointer-events-none">
+          <div 
+            className="fixed inset-x-4 bottom-24 z-[80] flex justify-center pointer-events-none"
+            style={{ bottom: 'calc(124px + env(safe-area-inset-bottom, 0px))' }}
+          >
             <motion.div
               initial={{ opacity: 0, y: 50, scale: 0.9 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -352,6 +401,69 @@ export const Admin: React.FC = () => {
               <span className="flex-1 text-sm text-txt font-gujarati font-medium">{toastMessage}</span>
             </motion.div>
           </div>
+        )}
+      </AnimatePresence>
+
+      {/* Styled In-App Confirmation Dialog (F1) */}
+      <AnimatePresence>
+        {confirmDialog && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.14 }}
+            className="viewport-fixed-overlay bg-black/50 backdrop-blur-sm" 
+            onClick={(e) => { if (e.target === e.currentTarget) setConfirmDialog(null); }}
+            id="admin-confirm-overlay"
+          >
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.98 }} 
+              animate={{ opacity: 1, scale: 1 }} 
+              exit={{ opacity: 0, scale: 0.98 }} 
+              transition={{ duration: 0.14, ease: 'easeOut' }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-[92%] max-w-sm max-h-[85vh] overflow-y-auto rounded-2xl bg-card p-6 shadow-2xl border border-brd/10 space-y-5 select-none"
+              role="dialog"
+              aria-modal="true"
+              aria-label={confirmDialog.title}
+              id="admin-confirm-container"
+              tabIndex={-1}
+            >
+              <div className="w-12 h-12 bg-danger/10 text-danger rounded-full flex items-center justify-center mx-auto mb-2">
+                <AlertCircle size={24} />
+              </div>
+              <h3 className="font-gujarati font-bold text-lg text-txt text-center leading-tight">
+                {confirmDialog.title}
+              </h3>
+              
+              <p className="font-gujarati text-sub text-center text-sm leading-relaxed">
+                {confirmDialog.message}
+              </p>
+
+              <div className="flex gap-3 pt-2">
+                <LiquidButton 
+                  type="button" 
+                  variant="neutral" 
+                  className="flex-1 font-gujarati font-semibold" 
+                  onClick={() => setConfirmDialog(null)}
+                >
+                  રદ કરો
+                </LiquidButton>
+                <LiquidButton
+                  type="button"
+                  variant="danger"
+                  className="flex-1 font-gujarati font-semibold bg-danger text-white border-danger hover:bg-danger/90"
+                  onClick={async () => {
+                    const action = confirmDialog.onConfirm;
+                    setConfirmDialog(null);
+                    await action();
+                  }}
+                >
+                  {confirmDialog.confirmLabel}
+                </LiquidButton>
+              </div>
+            </motion.div>
+          </motion.div>
         )}
       </AnimatePresence>
 

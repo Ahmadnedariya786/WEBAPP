@@ -130,6 +130,8 @@ export const Dashboard: React.FC = () => {
     return () => cancelAnimationFrame(animId);
   }, [totalStudents]);
 
+  const hasReports = reports.length > 0;
+
   // 13 Activity items
   const ACTIVITY_KEYS = [
     { key: 'activity.namaz', value: 85 },
@@ -154,6 +156,7 @@ export const Dashboard: React.FC = () => {
   const sortedActivities = useMemo(() => {
     const list = ACTIVITY_KEYS.map((item, index) => ({
       ...item,
+      value: hasReports ? item.value : 0,
       originalIndex: index + 1,
       label: t(item.key as any),
     }));
@@ -162,7 +165,7 @@ export const Dashboard: React.FC = () => {
       return [...list].sort((a, b) => b.value - a.value);
     }
     return list;
-  }, [sortBy]);
+  }, [hasReports, sortBy]);
 
   return (
     <div className="space-y-4 pb-12 relative">
@@ -221,19 +224,25 @@ export const Dashboard: React.FC = () => {
 
             {/* Two Donut Rings side by side */}
             <div className="flex items-start justify-around gap-2">
-              {/* Donut 1: Canonical label "નમાઝોની પાબંદી 85/100" */}
+              {/* Donut 1: Canonical label "નમાઝોની પાબંદી 85/100" (or 0/100 when empty) */}
               <DonutRing
-                progress={85}
-                label={`${t('activity.namaz')} 85/100`}
+                progress={hasReports ? 85 : 0}
+                label={`${t('activity.namaz')} ${hasReports ? '85/100' : '0/100'}`}
                 delay={prefersReducedMotion ? 0 : 0.1}
               />
               {/* Donut 2: "મુલાકાત કેટલી થઈ (%)" */}
               <DonutRing
-                progress={60}
+                progress={hasReports ? 60 : 0}
                 label={t('activity.mulaqat_percent')}
                 delay={prefersReducedMotion ? 0 : 0.15}
               />
             </div>
+
+            {!hasReports && (
+              <p className="text-center font-gujarati text-xs text-sub/70 mt-3">
+                કોઈ ડેટા નથી
+              </p>
+            )}
           </motion.div>
         </div>
 

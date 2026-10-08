@@ -560,7 +560,10 @@ export const NewReport: React.FC = () => {
       {/* Toast & Undo Pill */}
       <AnimatePresence>
         {showToast && (
-          <div className="fixed inset-x-4 bottom-24 z-[80] flex justify-center pointer-events-none">
+          <div 
+            className="fixed inset-x-4 bottom-24 z-[80] flex justify-center pointer-events-none"
+            style={{ bottom: 'calc(124px + env(safe-area-inset-bottom, 0px))' }}
+          >
             <motion.div
               initial={{ opacity: 0, y: 50, scale: 0.9 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -592,7 +595,10 @@ export const NewReport: React.FC = () => {
       {/* Persistent Floating Undo Pill */}
       <AnimatePresence>
         {undoSnapshot && !showToast && (
-          <div className="fixed bottom-24 right-4 z-[80]">
+          <div 
+            className="fixed bottom-24 right-4 z-[80]"
+            style={{ bottom: 'calc(124px + env(safe-area-inset-bottom, 0px))' }}
+          >
             <motion.button
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}

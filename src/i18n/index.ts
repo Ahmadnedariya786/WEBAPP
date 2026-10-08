@@ -82,7 +82,7 @@ const dictionary = {
   'admin.password_placeholder': 'પાસવર્ડ દાખલ કરો...',
   'admin.btn_login': 'લૉગિન કરો',
   'admin.dashboard_title': 'એડમિન પેનલ',
-  'admin.manage_users': 'યુઝર્સ મેનેજ કરો',
+  'admin.manage_users': 'પાસવર્ડ મેનેજ કરો',
   'admin.system_logs': 'સિસ્ટમ લૉગ્સ',
   'admin.error_incorrect': 'ખોટો પાસવર્ડ',
 

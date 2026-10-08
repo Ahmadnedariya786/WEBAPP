@@ -59,7 +59,10 @@ export const AuthDialog: React.FC = () => {
     <AnimatePresence>
       {/* Toast */}
       {showToast && (
-        <div className="fixed inset-x-4 bottom-24 z-[100] flex justify-center pointer-events-none">
+        <div 
+          className="fixed inset-x-4 bottom-24 z-[100] flex justify-center pointer-events-none"
+          style={{ bottom: 'calc(124px + env(safe-area-inset-bottom, 0px))' }}
+        >
           <motion.div
             initial={{ opacity: 0, y: 50, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}

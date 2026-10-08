@@ -272,7 +272,10 @@ export const PastReports: React.FC = () => {
     <div className="space-y-6 pb-12 relative">
       <AnimatePresence>
         {showToast && (
-          <div className="fixed inset-x-4 bottom-24 z-[80] flex justify-center pointer-events-none">
+          <div 
+            className="fixed inset-x-4 bottom-24 z-[80] flex justify-center pointer-events-none"
+            style={{ bottom: 'calc(124px + env(safe-area-inset-bottom, 0px))' }}
+          >
             <motion.div
               initial={{ opacity: 0, y: 50, scale: 0.9 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -369,7 +372,7 @@ export const PastReports: React.FC = () => {
         {sessionRole && (
           <LiquidButton variant="neutral" className="flex-1 flex flex-row items-center justify-center gap-2 whitespace-nowrap px-4 py-3.5 max-[380px]:text-sm text-acc border-acc2/30 min-w-0 shrink-0" onClick={handleDownloadAllExcel}>
             <Download size={18} className="shrink-0" />
-            <span className="font-gujarati truncate">એક્સેલ ડાઉનલોડ</span>
+            <span className="font-gujarati">એક્સેલ</span>
           </LiquidButton>
         )}
       </div>
