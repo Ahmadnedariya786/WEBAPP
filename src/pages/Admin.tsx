@@ -4,6 +4,7 @@ import { t } from '../i18n';
 import { GlassCard } from '../components/ui/GlassCard';
 import { PageHeading } from '../components/ui/PageHeading';
 import { LiquidButton } from '../components/ui/LiquidButton';
+import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { Shield, Users, Activity, Database, Lock, ChevronLeft, CheckCircle, Key, KeyRound, Trash2, Share2, LogOut, MapPin, Plus, AlertCircle } from 'lucide-react';
 import { getLogs, clearLogs, type SystemLog, logActivity, cn } from '../lib/utils';
 import { useAppStore } from '../store/appStore';
@@ -399,68 +400,28 @@ export const Admin: React.FC = () => {
         )}
       </AnimatePresence>
 
-      {/* Styled In-App Confirmation Dialog (F1) */}
-      <AnimatePresence>
-        {confirmDialog && (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.14 }}
-            className="viewport-fixed-overlay bg-black/50 backdrop-blur-sm" 
-            onClick={(e) => { if (e.target === e.currentTarget) setConfirmDialog(null); }}
-            id="admin-confirm-overlay"
-          >
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.98 }} 
-              animate={{ opacity: 1, scale: 1 }} 
-              exit={{ opacity: 0, scale: 0.98 }} 
-              transition={{ duration: 0.14, ease: 'easeOut' }}
-              onClick={(e) => e.stopPropagation()}
-              className="w-[92%] max-w-sm max-h-[85vh] overflow-y-auto rounded-2xl bg-card p-6 shadow-2xl border border-brd/10 space-y-5 select-none"
-              role="dialog"
-              aria-modal="true"
-              aria-label={confirmDialog.title}
-              id="admin-confirm-container"
-              tabIndex={-1}
-            >
-              <div className="w-12 h-12 bg-danger/10 text-danger rounded-full flex items-center justify-center mx-auto mb-2">
-                <AlertCircle size={24} />
-              </div>
-              <h3 className="font-gujarati font-bold text-lg text-txt text-center leading-tight">
-                {confirmDialog.title}
-              </h3>
-              
-              <p className="font-gujarati text-sub text-center text-sm leading-relaxed">
-                {confirmDialog.message}
-              </p>
-
-              <div className="flex gap-3 pt-2">
-                <LiquidButton 
-                  type="button" 
-                  variant="neutral" 
-                  className="flex-1 font-gujarati font-semibold" 
-                  onClick={() => setConfirmDialog(null)}
-                >
-                  રદ કરો
-                </LiquidButton>
-                <LiquidButton
-                  type="button"
-                  variant="danger"
-                  className="flex-1 font-gujarati font-semibold bg-danger text-white border-danger hover:bg-danger/90"
-                  onClick={async () => {
-                    const action = confirmDialog.onConfirm;
-                    setConfirmDialog(null);
-                    await action();
-                  }}
-                >
-                  {confirmDialog.confirmLabel}
-                </LiquidButton>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Styled In-App Confirmation Dialog (WEB-FIX2) */}
+      <ConfirmDialog
+        isOpen={!!confirmDialog}
+        title={confirmDialog?.title || ''}
+        message={confirmDialog?.message || ''}
+        confirmLabel={confirmDialog?.confirmLabel || 'હા, ખાતરી કરો'}
+        cancelLabel="રદ કરો"
+        isDestructive={confirmDialog?.isDestructive ?? true}
+        isLoading={isLoading}
+        onConfirm={async () => {
+          if (!confirmDialog) return;
+          const action = confirmDialog.onConfirm;
+          setConfirmDialog(null);
+          await action();
+        }}
+        onCancel={() => setConfirmDialog(null)}
+        overlayId="admin-confirm-overlay"
+        containerId="admin-confirm-container"
+        confirmBtnId="admin-confirm-btn"
+        cancelBtnId="admin-cancel-btn"
+        icon={<AlertCircle size={24} />}
+      />
 
       {activeScreen === 'main' && (
         <div className="space-y-6">
@@ -469,7 +430,7 @@ export const Admin: React.FC = () => {
               <PageHeading title={t('admin.dashboard_title' as any)} icon={<Shield className="text-acc shrink-0" />} />
             </div>
             <div className="flex-1 min-w-0"></div>
-            <button onClick={handleLogout} className="h-9 px-3 shrink-0 rounded-full text-sm font-semibold font-gujarati bg-card hover:bg-card/80 border border-brd/10 text-txt transition-colors inline-flex items-center gap-1.5 whitespace-nowrap">
+            <button id="btn-admin-logout" onClick={handleLogout} className="h-9 px-3 shrink-0 rounded-full text-sm font-semibold font-gujarati bg-card hover:bg-card/80 border border-brd/10 text-txt transition-colors inline-flex items-center gap-1.5 whitespace-nowrap cursor-pointer">
               <LogOut className="w-4 h-4 shrink-0" />
               લૉગઆઉટ
             </button>
@@ -507,7 +468,7 @@ export const Admin: React.FC = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.22, delay: 2 * 0.06, ease: 'easeOut' }}
             >
-              <GlassCard onClick={openLogs} hoverEffect className="cursor-pointer rounded-2xl p-6 flex flex-col items-center justify-center text-center gap-3 min-h-[160px] max-h-[220px]">
+              <GlassCard id="card-admin-logs" onClick={openLogs} hoverEffect className="cursor-pointer rounded-2xl p-6 flex flex-col items-center justify-center text-center gap-3 min-h-[160px] max-h-[220px]">
                 <Activity size={32} className="text-sub" />
                 <span className="font-gujarati font-medium text-sm">{t('admin.system_logs' as any)}</span>
               </GlassCard>
@@ -680,7 +641,7 @@ export const Admin: React.FC = () => {
           <GlassCard className="p-4 space-y-4">
             <div className="flex justify-between items-center pb-4 border-b border-brd/10">
               <span className="font-gujarati font-medium text-sub">છેલ્લા 50 લૉગ્સ</span>
-              <LiquidButton variant="danger" onClick={handleClearLogs} className="py-2 px-4 text-sm font-gujarati">
+              <LiquidButton id="btn-clear-logs" variant="danger" onClick={handleClearLogs} className="py-2 px-4 text-sm font-gujarati">
                 લૉગ્સ સાફ કરો
               </LiquidButton>
             </div>
@@ -777,70 +738,38 @@ export const Admin: React.FC = () => {
             ))}
           </div>
 
-          <AnimatePresence>
-            {halqaToDelete && (
-              <motion.div 
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.14 }}
-                className="viewport-fixed-overlay bg-black/50 backdrop-blur-sm" 
-                onClick={(e) => { if (e.target === e.currentTarget) setHalqaToDelete(null); }}
-                id="admin-halqa-delete-overlay"
-              >
-                <motion.div 
-                  initial={{opacity:0, scale:0.98}} 
-                  animate={{opacity:1, scale:1}} 
-                  exit={{opacity:0, scale:0.98}} 
-                  transition={{ duration: 0.14, ease: 'easeOut' }}
-                  onClick={(e) => e.stopPropagation()}
-                  className="w-[92%] max-w-sm max-h-[85vh] overflow-y-auto rounded-2xl bg-card p-6 shadow-2xl border border-brd/10 space-y-5 select-none"
-                  role="dialog"
-                  aria-modal="true"
-                  aria-label="હલકો કાઢી નાખવાની ખાતરી"
-                  id="admin-halqa-delete-container"
-                  tabIndex={-1}
-                >
-                  <div className="w-12 h-12 bg-danger/10 text-danger rounded-full flex items-center justify-center mx-auto mb-2">
-                    <Trash2 size={24} />
-                  </div>
-                  <h3 className="font-gujarati font-bold text-lg text-txt text-center leading-tight">
-                    શું તમે ખરેખર '{halqaToDelete.name}' કાઢી નાખવા માંગો છો?
-                  </h3>
-                  
-                  <div className="bg-danger/5 border border-danger/20 p-3 rounded-lg text-danger font-gujarati text-sm leading-relaxed text-center">
-                    <span className="font-bold">ચેતવણી:</span> આ હલકામાં રિપોર્ટ્સ હોઈ શકે છે — રિપોર્ટ્સ ક્યારેય નહીં કાઢી નાખવામાં આવે, ફક્ત હલકો દૂર થશે.
-                  </div>
-
-                  <div className="flex gap-3 pt-2">
-                    <LiquidButton type="button" variant="neutral" className="flex-1 font-gujarati font-semibold" onClick={() => setHalqaToDelete(null)}>
-                      રદ કરો
-                    </LiquidButton>
-                    <LiquidButton
-                      type="button"
-                      variant="danger"
-                      className="flex-1 font-gujarati font-semibold bg-danger text-white border-danger hover:bg-danger/90"
-                      disabled={isLoading}
-                      onClick={async () => {
-                        setIsLoading(true);
-                        try {
-                          await useAppStore.getState().removeAdminHalqa(halqaToDelete.id);
-                          useAppStore.getState().refreshAll();
-                          setHalqaToDelete(null);
-                          showNotification('હલકો ડિલીટ થયો ✅');
-                        } catch (err: any) {
-                          showNotification('ભૂલ આવી: ' + (err.message || 'અજ્ઞાત ભૂલ'));
-                        }
-                        setIsLoading(false);
-                      }}
-                    >
-                      {isLoading ? '...' : 'હા, કાઢી નાખો'}
-                    </LiquidButton>
-                  </div>
-                </motion.div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+          <ConfirmDialog
+            isOpen={!!halqaToDelete}
+            title={halqaToDelete ? `શું તમે ખરેખર '${halqaToDelete.name}' કાઢી નાખવા માંગો છો?` : ''}
+            message={
+              <div className="bg-danger/5 border border-danger/20 p-3 rounded-lg text-danger font-gujarati text-sm leading-relaxed text-center">
+                <span className="font-bold">ચેતવણી:</span> આ હલકામાં રિપોર્ટ્સ હોઈ શકે છે — રિપોર્ટ્સ ક્યારેય નહીં કાઢી નાખવામાં આવે, ફક્ત હલકો દૂર થશે.
+              </div>
+            }
+            confirmLabel={isLoading ? '...' : 'હા, કાઢી નાખો'}
+            cancelLabel="રદ કરો"
+            isDestructive={true}
+            isLoading={isLoading}
+            onConfirm={async () => {
+              if (!halqaToDelete) return;
+              setIsLoading(true);
+              try {
+                await useAppStore.getState().removeAdminHalqa(halqaToDelete.id);
+                useAppStore.getState().refreshAll();
+                setHalqaToDelete(null);
+                showNotification('હલકો ડિલીટ થયો ✅');
+              } catch (err: any) {
+                showNotification('ભૂલ આવી: ' + (err.message || 'અજ્ઞાત ભૂલ'));
+              }
+              setIsLoading(false);
+            }}
+            onCancel={() => setHalqaToDelete(null)}
+            overlayId="admin-halqa-delete-overlay"
+            containerId="admin-halqa-delete-container"
+            confirmBtnId="admin-halqa-delete-confirm-btn"
+            cancelBtnId="admin-halqa-delete-cancel-btn"
+            icon={<Trash2 size={24} />}
+          />
         </div>
       )}
     </div>

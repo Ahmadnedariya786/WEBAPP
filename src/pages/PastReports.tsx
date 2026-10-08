@@ -9,10 +9,11 @@ import { t } from '../i18n';
 import { GlassCard } from '../components/ui/GlassCard';
 import { PageHeading } from '../components/ui/PageHeading';
 import { LiquidButton } from '../components/ui/LiquidButton';
+import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { 
   Calendar, Users, MapPin, Download, Share2, Edit3, Trash2, 
   Search, CheckCircle, Plus, Lock, Check, CheckSquare, Square, 
-  X, AlertCircle, Loader2 
+  X, AlertCircle 
 } from 'lucide-react';
 import { formatDate, logActivity, cn } from '../lib/utils';
 import { useOverlayScrollLock } from '../lib/useOverlayScrollLock';
@@ -294,46 +295,23 @@ export const PastReports: React.FC = () => {
         )}
       </AnimatePresence>
 
-      <AnimatePresence>
-        {reportToDelete !== null && (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.14 }}
-            className="viewport-fixed-overlay bg-black/50 backdrop-blur-sm"
-            onClick={(e) => { if (e.target === e.currentTarget) setReportToDelete(null); }}
-            id="report-delete-dialog-overlay"
-          >
-            <motion.div 
-              initial={{ scale: 0.98, opacity: 0 }} 
-              animate={{ scale: 1, opacity: 1 }} 
-              exit={{ scale: 0.98, opacity: 0 }}
-              transition={{ duration: 0.14, ease: 'easeOut' }}
-              onClick={(e) => e.stopPropagation()}
-              className="w-full max-w-sm max-h-[85vh] overflow-y-auto select-none"
-              role="dialog"
-              aria-modal="true"
-              aria-label="રિપોર્ટ ડિલીટ ખાતરી"
-              id="report-delete-dialog-container"
-              tabIndex={-1}
-            >
-              <div className="bg-card rounded-[24px] shadow-2xl p-6 space-y-4 text-center border border-brd/20">
-                <h3 className="text-xl font-bold font-gujarati text-danger">ખાતરી કરો</h3>
-                <p className="font-gujarati text-sub">શું તમે ખરેખર આ રિપોર્ટ કાઢી નાખવા માંગો છો?</p>
-                <div className="flex flex-wrap gap-3 pt-2 justify-center">
-                  <LiquidButton variant="neutral" className="flex-1 min-w-[120px] px-4 py-2.5 whitespace-nowrap" onClick={() => setReportToDelete(null)}>
-                    {t('action.cancel' as any)}
-                  </LiquidButton>
-                  <LiquidButton variant="danger" disabled={isDeletingSingle} className={cn("flex-1 min-w-[120px] px-4 py-2.5 whitespace-nowrap", isDeletingSingle && "opacity-50 cursor-not-allowed")} onClick={confirmDelete}>
-                    {isDeletingSingle ? 'કાઢી રહ્યા છીએ...' : 'હા, કાઢી નાખો'}
-                  </LiquidButton>
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Shared In-App Confirm Dialog (WEB-FIX2) */}
+      <ConfirmDialog
+        isOpen={reportToDelete !== null}
+        title="ખાતરી કરો"
+        message="શું તમે ખરેખર આ રિપોર્ટ કાઢી નાખવા માંગો છો?"
+        confirmLabel={isDeletingSingle ? 'કાઢી રહ્યા છીએ...' : 'હા, કાઢી નાખો'}
+        cancelLabel={t('action.cancel' as any)}
+        isDestructive={true}
+        isLoading={isDeletingSingle}
+        onConfirm={confirmDelete}
+        onCancel={() => setReportToDelete(null)}
+        overlayId="report-delete-dialog-overlay"
+        containerId="report-delete-dialog-container"
+        confirmBtnId="report-delete-confirm-btn"
+        cancelBtnId="report-delete-cancel-btn"
+        icon={<AlertCircle size={24} />}
+      />
 
       {/* D1. Header Row with SELECT MODE Button */}
       <header className="flex flex-wrap gap-2 justify-between items-center">
@@ -585,7 +563,16 @@ export const PastReports: React.FC = () => {
                         id="bulk-cancel-confirm-btn"
                         onClick={() => setIsConfirming(false)}
                         disabled={isDeleting}
-                        className="px-3.5 py-2 rounded-xl text-sm font-gujarati font-medium border border-brd/30 hover:bg-sub/10 text-txt transition-colors cursor-pointer"
+                        style={{
+                          height: '48px',
+                          padding: '0 24px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          overflow: 'hidden',
+                          lineHeight: 1,
+                        }}
+                        className="rounded-xl text-sm font-gujarati font-medium border border-brd/30 hover:bg-sub/10 text-txt transition-colors cursor-pointer select-none"
                       >
                         રદ કરો
                       </button>
@@ -594,16 +581,18 @@ export const PastReports: React.FC = () => {
                         id="bulk-execute-delete-btn"
                         onClick={handleBulkDelete}
                         disabled={isDeleting}
-                        className="px-4 py-2 rounded-xl text-sm font-gujarati font-bold bg-danger text-white hover:opacity-95 shadow-md flex items-center gap-1.5 transition-all active:scale-[0.97] cursor-pointer"
+                        style={{
+                          height: '48px',
+                          padding: '0 24px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          overflow: 'hidden',
+                          lineHeight: 1,
+                        }}
+                        className="rounded-xl text-sm font-gujarati font-bold bg-danger text-white hover:opacity-95 shadow-md flex items-center justify-center transition-all active:scale-[0.97] cursor-pointer border-none select-none"
                       >
-                        {isDeleting ? (
-                          <>
-                            <Loader2 size={16} className="animate-spin" />
-                            <span>કાઢી રહ્યા છીએ...</span>
-                          </>
-                        ) : (
-                          <span>હા, કાઢી નાખો</span>
-                        )}
+                        {isDeleting ? 'કાઢી રહ્યા છીએ...' : 'હા, કાઢી નાખો'}
                       </button>
                     </div>
                   </div>

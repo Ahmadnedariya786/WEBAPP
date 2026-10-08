@@ -13,6 +13,7 @@ import { cn, formatDate, localTodayIso } from '../lib/utils';
 import { isDuplicateReportError, mapSupabaseError, isSessionExpiredError } from '../services/supabaseService';
 import { ScanPills } from '../components/ScanFill';
 import { NeumorphicCalendarDialog } from '../components/ui/NeumorphicCalendarDialog';
+import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { useOverlayScrollLock } from '../lib/useOverlayScrollLock';
 import { nativeSave, NATIVE_SAVE_SUCCESS } from '../lib/nativeSave';
 
@@ -664,107 +665,38 @@ export const NewReport: React.FC = () => {
           </motion.div>
         )}
 
-        {halqaToDelete && (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.14 }}
-            className="viewport-fixed-overlay bg-black/50 backdrop-blur-sm"
-            onClick={(e) => { if (e.target === e.currentTarget) setHalqaToDelete(null); }}
-            id="halqa-delete-dialog-overlay"
-          >
-            <motion.div 
-              initial={{ scale: 0.98, opacity: 0 }} 
-              animate={{ scale: 1, opacity: 1 }} 
-              exit={{ scale: 0.98, opacity: 0 }}
-              transition={{ duration: 0.14, ease: 'easeOut' }}
-              onClick={(e) => e.stopPropagation()}
-              className="w-full max-w-sm max-h-[85vh] overflow-y-auto select-none"
-              role="dialog"
-              aria-modal="true"
-              aria-label="હલકો કાઢી નાખવાની ખાતરી"
-              id="halqa-delete-dialog-container"
-              tabIndex={-1}
-            >
-              <div className="bg-card rounded-[24px] shadow-2xl p-6 space-y-4 text-center border border-brd/20">
-                <h3 className="text-xl font-bold font-gujarati text-danger">ખાતરી કરો</h3>
-                <p className="font-gujarati text-sub">શું તમે ખરેખર "{halqaToDelete}" કાઢી નાખવા માંગો છો?</p>
-                <div className="flex flex-wrap gap-3 pt-2 justify-center">
-                  <button 
-                    type="button"
-                    className="flex-1 min-w-[120px] px-4 py-2.5 rounded-xl border border-brd/30 text-txt hover:bg-card/80 font-gujarati text-sm font-medium transition-all cursor-pointer"
-                    onClick={() => setHalqaToDelete(null)}
-                    aria-label="રદ કરો"
-                  >
-                    {t('action.cancel' as any)}
-                  </button>
-                  <button 
-                    type="button"
-                    disabled={isDeletingHalqa}
-                    className={cn(
-                      "flex-1 min-w-[120px] px-4 py-2.5 rounded-xl bg-danger text-white font-gujarati text-sm font-semibold hover:bg-danger/90 transition-all shadow-md cursor-pointer",
-                      isDeletingHalqa && "opacity-50 cursor-not-allowed"
-                    )}
-                    onClick={confirmDeleteHalqa}
-                    aria-label="હા, કાઢી નાખો"
-                  >
-                    {isDeletingHalqa ? 'કાઢી રહ્યા છીએ...' : 'હા, કાઢી નાખો'}
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
+        <ConfirmDialog
+          isOpen={!!halqaToDelete}
+          title="ખાતરી કરો"
+          message={`શું તમે ખરેખર "${halqaToDelete}" કાઢી નાખવા માંગો છો?`}
+          confirmLabel={isDeletingHalqa ? 'કાઢી રહ્યા છીએ...' : 'હા, કાઢી નાખો'}
+          cancelLabel={t('action.cancel' as any)}
+          isDestructive={true}
+          isLoading={isDeletingHalqa}
+          onConfirm={confirmDeleteHalqa}
+          onCancel={() => setHalqaToDelete(null)}
+          overlayId="halqa-delete-dialog-overlay"
+          containerId="halqa-delete-dialog-container"
+          confirmBtnId="halqa-delete-confirm-btn"
+          cancelBtnId="halqa-delete-cancel-btn"
+          icon={<Trash2 size={24} />}
+        />
 
-        {showClearConfirm && (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.14 }}
-            className="viewport-fixed-overlay bg-black/50 backdrop-blur-sm"
-            onClick={(e) => { if (e.target === e.currentTarget) setShowClearConfirm(false); }}
-            id="clear-confirm-dialog-overlay"
-          >
-            <motion.div 
-              initial={{ scale: 0.98, opacity: 0 }} 
-              animate={{ scale: 1, opacity: 1 }} 
-              exit={{ scale: 0.98, opacity: 0 }}
-              transition={{ duration: 0.14, ease: 'easeOut' }}
-              onClick={(e) => e.stopPropagation()}
-              className="w-full max-w-sm max-h-[85vh] overflow-y-auto select-none"
-              role="dialog"
-              aria-modal="true"
-              aria-label="ડ્રાફ્ટ ડિલીટ ખાતરી"
-              id="clear-confirm-dialog-container"
-              tabIndex={-1}
-            >
-              <div className="bg-card rounded-[24px] shadow-2xl p-6 space-y-4 text-center border border-brd/20">
-                <h3 className="text-xl font-bold font-gujarati text-danger">ડ્રાફ્ટ ડિલીટ</h3>
-                <p className="font-gujarati text-sub">શું તમે બધી માહિતી ભૂંસવા માંગો છો?</p>
-                <div className="flex flex-wrap gap-3 pt-2 justify-center">
-                  <button 
-                    type="button"
-                    className="flex-1 min-w-[120px] px-4 py-2.5 rounded-xl border border-brd/30 text-txt hover:bg-card/80 font-gujarati text-sm font-medium transition-all cursor-pointer"
-                    onClick={() => setShowClearConfirm(false)}
-                    aria-label="રદ કરો"
-                  >
-                    {t('action.cancel' as any)}
-                  </button>
-                  <button 
-                    type="button"
-                    className="flex-1 min-w-[120px] px-4 py-2.5 rounded-xl bg-danger text-white font-gujarati text-sm font-semibold hover:bg-danger/90 transition-all shadow-md cursor-pointer"
-                    onClick={confirmClear}
-                    aria-label="હા, ભૂંસી નાખો"
-                  >
-                    હા, ભૂંસી નાખો
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
+        <ConfirmDialog
+          isOpen={showClearConfirm}
+          title="ડ્રાફ્ટ ડિલીટ"
+          message="શું તમે બધી માહિતી ભૂંસવા માંગો છો?"
+          confirmLabel="હા, ભૂંસી નાખો"
+          cancelLabel={t('action.cancel' as any)}
+          isDestructive={true}
+          onConfirm={confirmClear}
+          onCancel={() => setShowClearConfirm(false)}
+          overlayId="clear-confirm-dialog-overlay"
+          containerId="clear-confirm-dialog-container"
+          confirmBtnId="clear-confirm-confirm-btn"
+          cancelBtnId="clear-confirm-cancel-btn"
+          icon={<Trash2 size={24} />}
+        />
       </AnimatePresence>
 
       {/* Page Heading */}

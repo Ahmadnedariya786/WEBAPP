@@ -293,14 +293,20 @@ html[data-theme="outdoor"] .fixed.inset-0.z-\[100\] input.app-input {
   border: 1px solid rgba(30, 47, 115, 0.20) !important;
   color: #1E2F73 !important;
 }
-html[data-theme="outdoor"] .fixed.inset-0.z-\[100\] button:has(span):not([class*="bg-danger"]):not([class*="bg-acc"]) {
+html[data-theme="outdoor"] .fixed.inset-0.z-\[100\] button:not([class*="bg-danger"]):not([class*="bg-acc"]) {
   background-color: #FFFDF6 !important;
   color: #1E2F73 !important;
   border: 1px solid rgba(30, 47, 115, 0.20) !important;
 }
-html[data-theme="outdoor"] .fixed.inset-0.z-\[100\] button:has(span):not([class*="bg-danger"]):not([class*="bg-acc"]):hover {
+html[data-theme="outdoor"] .fixed.inset-0.z-\[100\] button:not([class*="bg-danger"]):not([class*="bg-acc"]):hover {
   background-color: rgba(36, 59, 143, 0.10) !important;
   color: #1E2F73 !important;
+}
+html[data-theme="outdoor"] .fixed.inset-0.z-\[100\] button[class*="bg-danger"],
+html[data-theme="outdoor"] .fixed.inset-0.z-\[100\] button.bg-danger {
+  background-color: #dc2626 !important;
+  color: #ffffff !important;
+  border: none !important;
 }
 
 /* ReviewOverlay Bottom Sheet */
@@ -1844,6 +1850,26 @@ html[data-theme="premium"] .action-cluster-primary-btn:hover {
 }
 .route-transition-enter {
   animation: route-enter 180ms ease-out forwards;
+}
+
+/* ── WEB-FIX2: Shared In-App Confirm Dialog Centering & Clean Button ── */
+.confirm-dialog-overlay {
+  position: fixed !important;
+  inset: 0 !important;
+  margin: 0 !important;
+  z-index: 100 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 16px !important;
+  background-color: rgba(0, 0, 0, 0.6) !important;
+  backdrop-filter: blur(4px) !important;
+  -webkit-backdrop-filter: blur(4px) !important;
+}
+
+.confirm-dialog-card {
+  margin: auto !important;
+  align-self: center !important;
 }
 
 /* ── S43-MASTER: All overlays strictly viewport-fixed, top-anchored & immune to ancestor transforms ── */
