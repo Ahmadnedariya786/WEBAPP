@@ -10,6 +10,7 @@ import { useAppStore } from '../store/appStore';
 
 export const Settings: React.FC = () => {
   const { theme, setTheme } = useThemeStore();
+  const sessionRole = useAppStore((s) => s.sessionRole);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -21,9 +22,9 @@ export const Settings: React.FC = () => {
       <header className="flex flex-wrap gap-2 justify-between items-center">
         <PageHeading title={t('settings.title' as any)} />
         <div className="text-xs shrink-0 font-gujarati bg-card px-3 py-1.5 rounded-full shadow-sm text-sub flex items-center gap-1.5">
-          {useAppStore().sessionRole === 'admin' 
+          {sessionRole === 'admin' 
             ? <span className="inline-flex items-center gap-1">એડમિન લૉગિન <CheckCircle className="w-4 h-4 text-acc2" /></span>
-            : useAppStore().sessionRole === 'team' 
+            : sessionRole === 'team' 
               ? <span className="inline-flex items-center gap-1">ટીમ કોડ સક્રિય <CheckCircle className="w-4 h-4 text-acc2" /></span>
               : 'મહેમાન મોડ'}
         </div>
@@ -34,7 +35,7 @@ export const Settings: React.FC = () => {
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.22, delay: 0 * 0.06, ease: 'easeOut' }}
+          transition={{ duration: 0.22, delay: 0, ease: 'easeOut' }}
         >
           <GlassCard className="p-5 flex flex-col">
             <div className="flex items-center gap-3">
@@ -48,6 +49,7 @@ export const Settings: React.FC = () => {
               {(['outdoor', 'dark', 'premium'] as Theme[]).map((tVal) => (
                 <button
                   key={tVal}
+                  id={`settings-theme-${tVal}`}
                   onClick={() => setTheme(tVal)}
                   className={`min-h-[48px] flex items-center justify-center font-gujarati text-[14px] font-medium rounded-[16px] transition-all ${
                     theme === tVal 

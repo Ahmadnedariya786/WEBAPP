@@ -169,7 +169,7 @@ html[data-theme="outdoor"] .app-header {
   color: #1E2F73;
 }
 html[data-theme="outdoor"] .app-header h1,
-html[data-theme="outdoor"] .app-header button {
+html[data-theme="outdoor"] .app-header button:not(.theme-segment) {
   color: #1E2F73 !important;
 }
 
@@ -179,7 +179,7 @@ html[data-theme="dark"] .app-header {
   color: #F3F4F6;
 }
 html[data-theme="dark"] .app-header h1,
-html[data-theme="dark"] .app-header button {
+html[data-theme="dark"] .app-header button:not(.theme-segment) {
   color: #F3F4F6 !important;
 }
 
@@ -189,11 +189,94 @@ html[data-theme="premium"] .app-header {
   color: #FFFFFF;
 }
 html[data-theme="premium"] .app-header h1,
-html[data-theme="premium"] .app-header button {
+html[data-theme="premium"] .app-header button:not(.theme-segment) {
   color: #FFFFFF !important;
 }
 
+/* ── WEB-FIX4: Three-Way Theme Switcher Pill & Segments ── */
+.theme-switcher-pill {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  height: 32px;
+  width: 88px;
+  padding: 2px;
+  border-radius: 9999px;
+  user-select: none;
+  touch-action: manipulation;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
+}
 
+html[data-theme="outdoor"] .theme-switcher-pill {
+  background-color: #EFE9D9 !important;
+  box-shadow: inset 0 0 0 1px rgba(30, 47, 115, 0.18) !important;
+}
+
+html[data-theme="dark"] .theme-switcher-pill {
+  background-color: rgba(255, 255, 255, 0.06) !important;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12) !important;
+}
+
+html[data-theme="premium"] .theme-switcher-pill {
+  background-color: rgba(255, 255, 255, 0.07) !important;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14) !important;
+}
+
+.theme-segment {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 9999px;
+  border: none !important;
+  background-color: transparent !important;
+  padding: 0 !important;
+  cursor: pointer;
+  z-index: 2;
+  transition: opacity 0.2s ease;
+  touch-action: manipulation;
+}
+
+.theme-segment:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 1px;
+}
+
+.theme-segment.active,
+.theme-segment.active svg {
+  color: #FFFFFF !important;
+  stroke: #FFFFFF !important;
+  opacity: 1 !important;
+}
+
+.theme-segment:not(.active) {
+  opacity: 0.55;
+  background-color: transparent !important;
+}
+
+html[data-theme="outdoor"] .theme-segment:not(.active),
+html[data-theme="outdoor"] .theme-segment:not(.active) svg {
+  color: #5A6BA8 !important;
+  stroke: #5A6BA8 !important;
+}
+
+html[data-theme="dark"] .theme-segment:not(.active),
+html[data-theme="dark"] .theme-segment:not(.active) svg {
+  color: #9CA3AF !important;
+  stroke: #9CA3AF !important;
+}
+
+html[data-theme="premium"] .theme-segment:not(.active),
+html[data-theme="premium"] .theme-segment:not(.active) svg {
+  color: rgba(255, 255, 255, 0.55) !important;
+  stroke: rgba(255, 255, 255, 0.55) !important;
+}
+
+.theme-segment:not(.active):hover {
+  opacity: 0.95 !important;
+}
 
 /* Halqa Chips: Unselected = Card BG + Navy Text + 1px Border; Selected = #243B8F + White Text */
 html[data-theme="outdoor"] .snap-start > button:not(.bg-acc) {
@@ -215,7 +298,7 @@ html[data-theme="outdoor"] #btn-gallery-scan:hover,
 html[data-theme="outdoor"] #btn-toast-undo:hover,
 html[data-theme="outdoor"] #btn-floating-undo:hover,
 html[data-theme="outdoor"] .snap-start > button:hover:not(.bg-acc),
-html[data-theme="outdoor"] header button:hover {
+html[data-theme="outdoor"] header button:not(.theme-segment):hover {
   background-color: rgba(36, 59, 143, 0.10) !important;
   color: #1E2F73 !important;
 }
@@ -223,7 +306,7 @@ html[data-theme="outdoor"] header button:hover {
 html[data-theme="outdoor"] #btn-camera-scan:active,
 html[data-theme="outdoor"] #btn-gallery-scan:active,
 html[data-theme="outdoor"] .snap-start > button:active:not(.bg-acc),
-html[data-theme="outdoor"] header button:active {
+html[data-theme="outdoor"] header button:not(.theme-segment):active {
   background-color: rgba(36, 59, 143, 0.18) !important;
   color: #1E2F73 !important;
 }
