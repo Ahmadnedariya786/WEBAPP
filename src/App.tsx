@@ -19,7 +19,22 @@ function App() {
   const [showGreeting] = useState(() => !sessionStorage.getItem('mt_greeted'));
   
   useEffect(() => {
-    loadData();
+    let mounted = true;
+    const initApp = async () => {
+      try {
+        await loadData();
+      } catch (err) {
+        console.error('Initial data load error:', err);
+      } finally {
+        if (mounted) {
+          window.dispatchEvent(new CustomEvent('app-ready'));
+        }
+      }
+    };
+    initApp();
+    return () => {
+      mounted = false;
+    };
   }, [loadData]);
 
   useEffect(() => {

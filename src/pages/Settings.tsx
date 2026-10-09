@@ -124,6 +124,15 @@ export const Settings: React.FC = () => {
             <div className="font-gujarati font-medium">{t('nav.help' as any)}</div>
           </GlassCard>
         </motion.div>
+
+        {/* F4: App Version Footer (Single Source with meta app-version) */}
+        <div className="pt-2 pb-6 text-center">
+          <p id="settings-app-version" className="text-xs text-sub/70 font-gujarati tracking-wider">
+            {typeof document !== 'undefined'
+              ? document.querySelector('meta[name="app-version"]')?.getAttribute('content') || 'વર્ઝન 6.0.0'
+              : 'વર્ઝન 6.0.0'}
+          </p>
+        </div>
       </div>
     </div>
   );

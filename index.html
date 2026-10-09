@@ -7,29 +7,32 @@
     <link rel="manifest" href="/manifest.json" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <meta name="theme-color" content="#243B8F" />
+    <meta name="app-version" content="વર્ઝન 6.0.0" />
     <title>Mehnat Tracker</title>
     <script>
-      let t = localStorage.getItem('theme');
-      if (!t) { t = 'dark'; localStorage.setItem('theme', t); }
-      document.documentElement.setAttribute('data-theme', t);
-      const m = document.querySelector('meta[name="theme-color"]');
-      let bg = '#20242B';
-      if (t === 'outdoor') {
-        bg = '#F5F0E1';
-      } else if (t === 'premium') {
-        bg = '#171238';
-      } else {
-        bg = '#20242B';
-      }
-      if (m) m.setAttribute('content', bg);
-      document.documentElement.style.backgroundColor = bg;
-      if (document.body) {
-        document.body.style.backgroundColor = bg;
-      } else {
-        document.addEventListener('DOMContentLoaded', () => {
-          if (document.body) document.body.style.backgroundColor = bg;
-        });
-      }
+      (function() {
+        var t = localStorage.getItem('theme');
+        if (!t) { t = 'premium'; localStorage.setItem('theme', t); }
+        document.documentElement.setAttribute('data-theme', t);
+        var m = document.querySelector('meta[name="theme-color"]');
+        var bg = '#171238';
+        if (t === 'outdoor') {
+          bg = '#F5F0E1';
+        } else if (t === 'dark') {
+          bg = '#20242B';
+        } else {
+          bg = '#171238';
+        }
+        if (m) m.setAttribute('content', bg);
+        document.documentElement.style.backgroundColor = bg;
+        if (document.body) {
+          document.body.style.backgroundColor = bg;
+        } else {
+          document.addEventListener('DOMContentLoaded', function() {
+            if (document.body) document.body.style.backgroundColor = bg;
+          });
+        }
+      })();
       
       window.AndroidPrepareDownload = function(filename, mime) {
         window.AndroidPreparedFilename = filename;
@@ -37,7 +40,77 @@
       };
     </script>
   </head>
-  <body style="margin: 0; background-color: #20242B;">
+  <body style="margin: 0; background-color: #171238;">
+    <!-- F1 & F2: Branded Splash Screen (Zero Blank Gap, Instant Static Paint) -->
+    <div id="app-splash" style="position: fixed; inset: 0; z-index: 99999; display: flex; flex-direction: column; align-items: center; justify-content: center; background-color: #171238; transition: opacity 300ms ease; user-select: none;">
+      <div id="app-splash-circle" style="width: 96px; height: 96px; border-radius: 50%; background-color: #EC4899; display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);">
+        <svg width="52" height="52" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg" style="display: block;">
+          <path d="M12 3L1 9l11 6 9-4.91V17h2V9L12 3z" />
+          <path d="M5 13.18v4.46c0 1.25 3.13 2.27 7 2.27s7-1.02 7-2.27v-4.46l-7 3.82-7-3.82z" opacity="0.9" />
+        </svg>
+      </div>
+      <div id="app-splash-title" style="margin-top: 20px; font-size: 20px; font-weight: 700; color: #FFFFFF; font-family: system-ui, -apple-system, sans-serif; text-align: center; letter-spacing: 0.01em;">
+        બનાસકાંઠા સ્ટુડન્ટ મહેનત ટ્રેકર
+      </div>
+      <div id="app-splash-version" style="margin-top: 8px; font-size: 12px; font-weight: 500; color: rgba(255, 255, 255, 0.7); font-family: system-ui, -apple-system, sans-serif; text-align: center; letter-spacing: 0.04em;">
+        વર્ઝન 6.0.0
+      </div>
+    </div>
+    <script>
+      (function() {
+        var t = localStorage.getItem('theme');
+        var s = document.getElementById('app-splash');
+        var c = document.getElementById('app-splash-circle');
+        var h = document.getElementById('app-splash-title');
+        var v = document.getElementById('app-splash-version');
+        var b = document.body;
+        
+        var vm = document.querySelector('meta[name="app-version"]');
+        var vt = vm ? (vm.getAttribute('content') || 'વર્ઝન 6.0.0') : 'વર્ઝન 6.0.0';
+        if (v) v.textContent = vt;
+
+        if (t === 'outdoor') {
+          if (s) s.style.backgroundColor = '#F5F0E1';
+          if (b) b.style.backgroundColor = '#F5F0E1';
+          if (c) c.style.backgroundColor = '#243B8F';
+          if (h) h.style.color = '#1E2F73';
+          if (v) v.style.color = '#5A6BA8';
+        } else if (t === 'dark') {
+          if (s) s.style.backgroundColor = '#20242B';
+          if (b) b.style.backgroundColor = '#20242B';
+          if (c) c.style.backgroundColor = '#65A30D';
+          if (h) h.style.color = '#F3F4F6';
+          if (v) v.style.color = '#9CA3AF';
+        } else {
+          // premium or unset
+          if (s) s.style.backgroundColor = '#171238';
+          if (b) b.style.backgroundColor = '#171238';
+          if (c) c.style.backgroundColor = '#EC4899';
+          if (h) h.style.color = '#FFFFFF';
+          if (v) v.style.color = 'rgba(255, 255, 255, 0.7)';
+        }
+
+        // F3: Fade and Remove on app-ready, with 4000ms safety fallback
+        var splashFaded = false;
+        function hideSplash() {
+          if (window.__holdSplashForInspection) return;
+          if (splashFaded) return;
+          splashFaded = true;
+          if (!s) return;
+          s.style.transition = 'opacity 300ms ease';
+          s.style.opacity = '0';
+          s.style.pointerEvents = 'none';
+          setTimeout(function() {
+            if (s && s.parentNode) {
+              s.parentNode.removeChild(s);
+            }
+          }, 350);
+        }
+
+        window.addEventListener('app-ready', hideSplash, { once: true });
+        setTimeout(hideSplash, 4000);
+      })();
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
