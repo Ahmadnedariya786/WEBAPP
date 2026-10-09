@@ -610,7 +610,16 @@ export const NewReport: React.FC = () => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.14 }}
-            className="viewport-fixed-overlay bg-black/50 backdrop-blur-sm"
+            className="viewport-fixed-overlay fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+            style={{
+              position: 'fixed',
+              inset: 0,
+              zIndex: 70,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '16px',
+            }}
             onClick={(e) => { if (e.target === e.currentTarget && !isAddingHalqa) setShowHalqaDialog(false); }}
             id="halqa-dialog-overlay"
           >
@@ -620,7 +629,11 @@ export const NewReport: React.FC = () => {
               exit={{ scale: 0.98, opacity: 0 }}
               transition={{ duration: 0.14, ease: 'easeOut' }}
               onClick={(e) => e.stopPropagation()}
-              className="w-full max-w-sm max-h-[85vh] overflow-y-auto select-none"
+              className="w-full max-w-sm max-h-[90vh] overflow-y-auto select-none my-auto self-center"
+              style={{
+                margin: 'auto',
+                alignSelf: 'center',
+              }}
               role="dialog"
               aria-modal="true"
               aria-label="નવા હલકાનું નામ લખો"

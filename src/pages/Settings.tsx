@@ -70,7 +70,7 @@ export const Settings: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.22, delay: 1 * 0.06, ease: 'easeOut' }}
         >
-          <GlassCard hoverEffect className="p-4 flex items-center gap-3 cursor-pointer" onClick={() => useAppStore.setState({ authDialogOpen: true, authPendingAction: null })}>
+          <GlassCard id="btn-settings-team-code" hoverEffect className="p-4 flex items-center gap-3 cursor-pointer" onClick={() => useAppStore.setState({ authDialogOpen: true, authPendingAction: null })}>
             <div className="w-10 h-10 rounded-full bg-acc/10 flex items-center justify-center text-acc">
               <Key className="w-5 h-5" />
             </div>

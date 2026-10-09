@@ -82,7 +82,16 @@ export const ReviewOverlay: React.FC<ReviewOverlayProps> = ({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.14 }}
-          className="viewport-fixed-overlay bg-black/60 backdrop-blur-md"
+          className="viewport-fixed-overlay fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md"
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 70,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '16px',
+          }}
           onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
           id="scan-review-overlay"
         >
@@ -93,7 +102,11 @@ export const ReviewOverlay: React.FC<ReviewOverlayProps> = ({
             exit={{ opacity: 0, scale: 0.98 }}
             transition={{ duration: 0.14, ease: 'easeOut' }}
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-3xl max-h-[85vh] bg-card rounded-[28px] shadow-2xl flex flex-col border border-brd/30 overflow-hidden select-none"
+            className="w-full max-w-3xl max-h-[90vh] bg-card rounded-[28px] shadow-2xl flex flex-col border border-brd/30 overflow-hidden select-none my-auto self-center"
+            style={{
+              margin: 'auto',
+              alignSelf: 'center',
+            }}
             role="dialog"
             aria-modal="true"
             aria-label="સ્કેન રિવ્યુ"

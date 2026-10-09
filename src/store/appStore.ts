@@ -410,5 +410,10 @@ export const useAppStore = create<AppState>()(
       })
     }
   )
-)
+);
+
+if (typeof window !== 'undefined') {
+  (window as any).useAppStore = useAppStore;
+}
+
 

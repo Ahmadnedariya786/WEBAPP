@@ -1956,24 +1956,26 @@ html[data-theme="premium"] .action-cluster-primary-btn:hover {
   -webkit-backdrop-filter: blur(4px) !important;
 }
 
-.confirm-dialog-card {
+.confirm-dialog-card,
+#auth-dialog-container,
+#calendar-dialog-container,
+#scan-review-container,
+#halqa-dialog-container,
+#generate-modal-container {
   margin: auto !important;
   align-self: center !important;
 }
 
-/* ── S43-MASTER: All overlays strictly viewport-fixed, top-anchored & immune to ancestor transforms ── */
+/* ── WEB-FIX7: All overlays vertically & horizontally centered ── */
 .viewport-fixed-overlay {
   position: fixed !important;
   inset: 0 !important;
   margin: 0 !important;
   z-index: 70 !important;
   display: flex !important;
-  align-items: flex-start !important;
+  align-items: center !important;
   justify-content: center !important;
-  padding-top: calc(12px + env(safe-area-inset-top, 0px)) !important;
-  padding-right: calc(16px + env(safe-area-inset-right, 0px)) !important;
-  padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px)) !important;
-  padding-left: calc(16px + env(safe-area-inset-left, 0px)) !important;
+  padding: calc(16px + env(safe-area-inset-top, 0px)) calc(16px + env(safe-area-inset-right, 0px)) calc(16px + env(safe-area-inset-bottom, 0px)) calc(16px + env(safe-area-inset-left, 0px)) !important;
   overflow-y: auto !important;
   -webkit-overflow-scrolling: touch !important;
 }
@@ -1997,12 +1999,14 @@ html[data-theme="premium"] .action-cluster-primary-btn:hover {
   }
 }
 
-/* N3: Panel max-height fallback line (100vh) before 100dvh line for older WebViews */
+/* N3: Panel max-height fallback line (90vh) before 90dvh line for older WebViews with internal scrolling */
 .viewport-fixed-overlay > [role="dialog"],
 .viewport-fixed-overlay > div,
 .neu-cal-dialog {
-  max-height: calc(100vh - 24px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)) !important;
-  max-height: calc(100dvh - 24px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)) !important;
+  margin: auto !important;
+  align-self: center !important;
+  max-height: calc(90vh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)) !important;
+  max-height: calc(90dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)) !important;
 }
 
 /* N2: Standalone nav/FAB hide rule using ONLY body.has-overlay-open (do not comma-join with :has()) */

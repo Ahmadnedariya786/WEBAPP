@@ -81,7 +81,16 @@ export const AuthDialog: React.FC = () => {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.14 }}
-          className="viewport-fixed-overlay bg-black/50 backdrop-blur-sm"
+          className="viewport-fixed-overlay fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm select-none"
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 70,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '16px',
+          }}
           onClick={(e) => { if (e.target === e.currentTarget) closeAuthDialog(); }}
           id="auth-dialog-overlay"
         >
@@ -93,7 +102,11 @@ export const AuthDialog: React.FC = () => {
             exit={{ opacity: 0, scale: 0.98 }}
             transition={{ duration: 0.14, ease: 'easeOut' }}
             onClick={(e) => e.stopPropagation()}
-            className="w-[92%] max-w-sm max-h-[85vh] overflow-y-auto neu-raised rounded-3xl p-6 relative pointer-events-auto select-none"
+            className="w-[90%] max-w-[420px] max-h-[90vh] overflow-y-auto neu-raised rounded-3xl p-6 relative pointer-events-auto select-none my-auto self-center"
+            style={{
+              margin: 'auto',
+              alignSelf: 'center',
+            }}
             role="dialog"
             aria-modal="true"
             aria-label="ટીમ કોડ લૉગિન"

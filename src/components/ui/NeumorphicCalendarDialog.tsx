@@ -253,7 +253,16 @@ export const NeumorphicCalendarDialog = React.memo<NeumorphicCalendarDialogProps
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.14 }}
-          className="viewport-fixed-overlay bg-black/50 md:backdrop-blur-sm"
+          className="viewport-fixed-overlay fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/50 md:backdrop-blur-sm"
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 70,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '16px',
+          }}
           onClick={onClose}
           id="calendar-dialog-overlay"
         >
@@ -268,7 +277,11 @@ export const NeumorphicCalendarDialog = React.memo<NeumorphicCalendarDialogProps
               setMonthDropdownOpen(false);
               setYearDropdownOpen(false);
             }}
-            className="neu-cal-dialog flex flex-col select-none max-h-[90vh] overflow-y-auto relative"
+            className="neu-cal-dialog flex flex-col select-none max-h-[90vh] overflow-y-auto relative my-auto self-center"
+            style={{
+              margin: 'auto',
+              alignSelf: 'center',
+            }}
             id="calendar-dialog-container"
             role="dialog"
             aria-modal="true"

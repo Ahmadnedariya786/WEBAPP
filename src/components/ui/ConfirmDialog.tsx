@@ -77,9 +77,10 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
             aria-label={title}
             tabIndex={-1}
             onClick={(e) => e.stopPropagation()}
-            className="confirm-dialog-card w-full max-w-sm max-h-[85vh] overflow-y-auto select-none rounded-[24px] bg-card p-5 sm:p-6 shadow-2xl border border-brd/20 space-y-4 text-center my-auto pointer-events-auto"
+            className="confirm-dialog-card w-full max-w-sm max-h-[90vh] overflow-y-auto select-none rounded-[24px] bg-card p-5 sm:p-6 shadow-2xl border border-brd/20 space-y-4 text-center my-auto pointer-events-auto"
             style={{
               margin: 'auto',
+              alignSelf: 'center',
             }}
           >
             {icon && (
