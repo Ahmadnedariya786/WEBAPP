@@ -1,14 +1,16 @@
-<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+<svg width="512" height="512" viewBox="0 0 112 112" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <linearGradient id="bg-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#243B8F" />
-      <stop offset="100%" stop-color="#3D5AFD" />
+    <linearGradient id="maskable-doc-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#d946ef" />
+      <stop offset="100%" stop-color="#7e22ce" />
     </linearGradient>
   </defs>
-  <rect width="512" height="512" fill="url(#bg-grad)" />
-  <g transform="translate(256, 256) scale(13) translate(-12, -11.5)">
-    <path d="M12 3L1 9l11 6 9-4.91V17h2V9L12 3z" fill="white" />
-    <path d="M5 13.18v4.46c0 1.25 3.13 2.27 7 2.27s7-1.02 7-2.27v-4.46l-7 3.82-7-3.82z" fill="white" opacity="0.85"/>
-    <circle cx="22" cy="18.5" r="1.5" fill="#B6FF2E" />
+  <rect width="112" height="112" fill="url(#maskable-doc-grad)" />
+  <g transform="translate(11.2, 11.2) scale(0.8)">
+    <path d="M40 25h24l14 14v42c0 3.3-2.7 6-6 6H40c-3.3 0-6-2.7-6-6V31c0-3.3 2.7-6 6-6z" fill="#FFFFFF" />
+    <path d="M64 25v14h14z" fill="#EDE9FE" />
+    <rect x="46" y="49" width="20" height="4" rx="2" fill="#d946ef" />
+    <rect x="46" y="59" width="20" height="4" rx="2" fill="#d946ef" />
+    <rect x="46" y="69" width="14" height="4" rx="2" fill="#d946ef" />
   </g>
 </svg>
