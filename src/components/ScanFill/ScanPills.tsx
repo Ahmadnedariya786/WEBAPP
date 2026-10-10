@@ -1,9 +1,11 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { Image as ImageIcon, Loader2 } from 'lucide-react';
-import { processImageFile } from './imageUtils';
+import { processImageFile, UnsupportedFormatError } from './imageUtils';
+import { runSelfContainedOcr, resetOcrWorker } from './ocrClient';
 import { ReviewOverlay } from './ReviewOverlay';
 import type { ExtractedReport, ReviewData, ColumnHeaderDef, EditableActivityRow } from './types';
 import { t } from '../../i18n';
+import { logActivity } from '../../lib/utils';
 
 interface ScanPillsProps {
   onFill: (reviewData: ReviewData) => void;
@@ -60,73 +62,37 @@ export const ScanPills: React.FC<ScanPillsProps> = ({
       return;
     }
 
-    // Check offline
-    if (typeof navigator !== 'undefined' && !navigator.onLine) {
-      showToast('સ્કેન નિષ્ફળ — ફોટો ફરીથી લો', true);
-      setScanStage('idle');
-      return;
-    }
-
     setScanStage('scanning');
 
     try {
-      // Stage 1: EXIF normalize + compress max 1200px JPEG q0.75
-      const processed = await processImageFile(file, 'gallery');
+      // Stage 1: Preprocessing — downscaled to max 1600px on canvas (F2)
+      let processed;
+      try {
+        processed = await processImageFile(file, 'gallery');
+      } catch (err: any) {
+        if (err instanceof UnsupportedFormatError || err?.isFormatError || err?.message === 'ફોટો ફોર્મેટ સપોર્ટેડ નથી') {
+          showToast('ફોટો ફોર્મેટ સપોર્ટેડ નથી', true);
+          return;
+        }
+        throw err;
+      }
 
-      // Stage 2: Call /api/scan-extract with AbortController 20s timeout & single retry
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => {
-        controller.abort();
-      }, 20000);
-
+      // Stage 2: Self-contained OCR with automatic single retry (F1 & F3)
       let extracted: ExtractedReport | null = null;
       let lastError: any = null;
 
-      try {
-        for (let attempt = 0; attempt < 2; attempt++) {
-          if (controller.signal.aborted) {
-            break;
-          }
-
-          try {
-            const response = await fetch('/api/scan-extract', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify({
-                image: processed.base64,
-                mimeType: processed.mimeType
-              }),
-              signal: controller.signal
-            });
-
-            if (!response.ok) {
-              let errJson: any = null;
-              try {
-                errJson = await response.json();
-              } catch {
-                errJson = { status: response.status, statusText: response.statusText };
-              }
-              throw new Error(errJson?.detail || errJson?.code || `API response not ok: ${response.status}`);
-            }
-
-            extracted = await response.json();
-            break; // Succeeded!
-          } catch (err: any) {
-            lastError = err;
-            if (controller.signal.aborted) {
-              // Timeout reached (20s)
-              break;
-            }
-            // Retry once on network error or server failure after brief pause
-            if (attempt === 0) {
-              await new Promise((r) => setTimeout(r, 300));
-            }
+      for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+          extracted = await runSelfContainedOcr(processed.canvas, currentHalqas);
+          break; // Succeeded!
+        } catch (err: any) {
+          lastError = err;
+          console.warn(`[ScanPath] OCR attempt ${attempt + 1} failed:`, err);
+          if (attempt === 0) {
+            await resetOcrWorker();
+            await new Promise((r) => setTimeout(r, 300));
           }
         }
-      } finally {
-        clearTimeout(timeoutId);
       }
 
       if (!extracted) {
@@ -139,9 +105,24 @@ export const ScanPills: React.FC<ScanPillsProps> = ({
       setIsOverlayOpen(true);
     } catch (err: any) {
       console.error('[ScanPath] gallery error:', err);
-      showToast('સ્કેન નિષ્ફળ — ફોટો ફરીથી લો', true);
+      // F3: Determine short real reason: engine / network / memory / timeout
+      const errMsg = (err?.message || err?.toString() || '').toLowerCase();
+      let reason = 'engine';
+      if (errMsg.includes('memory') || errMsg.includes('allocation') || errMsg.includes('heap') || errMsg.includes('quota')) {
+        reason = 'memory';
+      } else if (errMsg.includes('network') || errMsg.includes('fetch') || errMsg.includes('offline') || errMsg.includes('download')) {
+        reason = 'network';
+      } else if (errMsg.includes('timeout') || errMsg.includes('aborted')) {
+        reason = 'timeout';
+      } else if (errMsg.includes('engine') || errMsg.includes('worker') || errMsg.includes('wasm') || errMsg.includes('tesseract')) {
+        reason = 'engine';
+      }
+
+      const failMsg = `સ્કેન નિષ્ફળ: ${reason}`;
+      showToast(failMsg, true);
+      logActivity(failMsg);
     } finally {
-      // Reset scanStage to 'idle' covering success, error, and timeout
+      // Reset scanStage to 'idle' covering success, error, and format errors
       setScanStage('idle');
     }
   };

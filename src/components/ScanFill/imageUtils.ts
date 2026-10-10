@@ -6,9 +6,18 @@
  * 4. Base64 encoding via FileReader
  */
 
+export class UnsupportedFormatError extends Error {
+  readonly isFormatError = true;
+  constructor(message = 'ફોટો ફોર્મેટ સપોર્ટેડ નથી') {
+    super(message);
+    this.name = 'UnsupportedFormatError';
+  }
+}
+
 export interface ProcessedImage {
   base64: string; // pure base64 without data URI prefix
   dataUrl: string; // full data URL for preview
+  canvas: HTMLCanvasElement;
   mimeType: string;
   width: number;
   height: number;
@@ -19,8 +28,10 @@ export interface ProcessedImage {
 export async function processImageFile(file: File, source?: 'camera' | 'gallery'): Promise<ProcessedImage> {
   const startTime = performance.now();
 
-  if (!file.type.startsWith('image/')) {
-    throw new Error('અમાન્ય ફાઇલ પ્રકાર: કૃપા કરીને ફોટો અપલોડ કરો');
+  const isHeic = /\.(heic|heif)$/i.test(file.name) || (file.type && (file.type.includes('heic') || file.type.includes('heif')));
+
+  if (file.type && !file.type.startsWith('image/') && !isHeic) {
+    throw new UnsupportedFormatError('ફોટો ફોર્મેટ સપોર્ટેડ નથી');
   }
 
   let imgSource: ImageBitmap | HTMLImageElement;
@@ -30,34 +41,42 @@ export async function processImageFile(file: File, source?: 'camera' | 'gallery'
   // D2 & D5: Detect createImageBitmap in window
   const hasCreateImageBitmap = typeof window !== 'undefined' && 'createImageBitmap' in window;
 
-  if (hasCreateImageBitmap) {
-    try {
-      // Primary: imageOrientation 'from-image' for EXIF normalization
-      imgSource = await window.createImageBitmap(file, { imageOrientation: 'from-image' });
-      naturalWidth = imgSource.width;
-      naturalHeight = imgSource.height;
-    } catch {
-      // N2: On TypeError (older Safari) retry createImageBitmap without options
+  try {
+    if (hasCreateImageBitmap) {
       try {
-        imgSource = await window.createImageBitmap(file);
+        // Primary: imageOrientation 'from-image' for EXIF normalization
+        imgSource = await window.createImageBitmap(file, { imageOrientation: 'from-image' });
         naturalWidth = imgSource.width;
         naturalHeight = imgSource.height;
       } catch {
-        // Fallback to Image() path (HEIC/unsupported format or broken bitmap)
-        imgSource = await loadImageElement(file);
-        naturalWidth = (imgSource as HTMLImageElement).naturalWidth;
-        naturalHeight = (imgSource as HTMLImageElement).naturalHeight;
+        // Retry createImageBitmap without options
+        try {
+          imgSource = await window.createImageBitmap(file);
+          naturalWidth = imgSource.width;
+          naturalHeight = imgSource.height;
+        } catch {
+          // Fallback to Image() path (HEIC/unsupported format or broken bitmap)
+          imgSource = await loadImageElement(file);
+          naturalWidth = (imgSource as HTMLImageElement).naturalWidth;
+          naturalHeight = (imgSource as HTMLImageElement).naturalHeight;
+        }
       }
+    } else {
+      imgSource = await loadImageElement(file);
+      naturalWidth = (imgSource as HTMLImageElement).naturalWidth;
+      naturalHeight = (imgSource as HTMLImageElement).naturalHeight;
     }
-  } else {
-    // D5: Fallback for older browsers
-    imgSource = await loadImageElement(file);
-    naturalWidth = (imgSource as HTMLImageElement).naturalWidth;
-    naturalHeight = (imgSource as HTMLImageElement).naturalHeight;
+  } catch {
+    // Decoding failed (e.g. unsupported HEIC, corrupt file, invalid image)
+    throw new UnsupportedFormatError('ફોટો ફોર્મેટ સપોર્ટેડ નથી');
   }
 
-  // D2: Reduce MAX_DIM from 1600 to 1200px
-  const MAX_DIM = 1200;
+  if (!naturalWidth || !naturalHeight) {
+    throw new UnsupportedFormatError('ફોટો ફોર્મેટ સપોર્ટેડ નથી');
+  }
+
+  // F2: Downscale canvas to max 1600px on the longest side
+  const MAX_DIM = 1600;
   const longest = Math.max(naturalWidth, naturalHeight);
   const scale = longest > MAX_DIM ? MAX_DIM / longest : 1;
   const targetWidth = Math.round(naturalWidth * scale);
@@ -130,6 +149,7 @@ export async function processImageFile(file: File, source?: 'camera' | 'gallery'
   return {
     base64,
     dataUrl,
+    canvas,
     mimeType,
     width: targetWidth,
     height: targetHeight,
