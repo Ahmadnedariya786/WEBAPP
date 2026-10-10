@@ -6,7 +6,7 @@ import { useAppStore } from '../store/appStore';
 import { t } from '../i18n';
 import { PageHeading } from '../components/ui/PageHeading';
 import { 
-  Calendar, Save, Trash2, Download, Share2, CheckCircle, 
+  Calendar, Save, Trash2, Download, Share2, CheckCircle, AlertCircle,
   X, Lock, RotateCcw, Check, ListChecks 
 } from 'lucide-react';
 import { cn, formatDate, localTodayIso } from '../lib/utils';
@@ -52,6 +52,7 @@ export const NewReport: React.FC = () => {
   // Toasts
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
+  const [isErrorToast, setIsErrorToast] = useState(false);
 
   // Scan & Fill State
   const [recentlyFilledKeys, setRecentlyFilledKeys] = useState<Set<string>>(new Set());
@@ -328,8 +329,9 @@ export const NewReport: React.FC = () => {
     if (route === 'desktop') showNotification(NATIVE_SAVE_SUCCESS);
   };
 
-  const showNotification = (msg: string) => {
+  const showNotification = (msg: string, isError: boolean = false) => {
     setToastMessage(msg);
+    setIsErrorToast(isError || msg.includes('નિષ્ફળ') || msg.includes('❌') || msg.includes('નથી'));
     setShowToast(true);
     setTimeout(() => setShowToast(false), 3000);
   };
@@ -557,9 +559,15 @@ export const NewReport: React.FC = () => {
               transition={{ duration: 0.16, ease: 'easeIn' }}
               className="w-full max-w-md rounded-2xl bg-card/95 backdrop-blur px-4 py-3 flex items-center justify-between gap-2 shadow-lg border border-brd/10 pointer-events-auto"
             >
-              <div className="flex items-center gap-2 min-w-0">
-                <CheckCircle size={18} className="text-acc shrink-0" />
-                <span className="flex-1 text-sm text-txt font-gujarati font-medium truncate">{toastMessage}</span>
+              <div className="flex items-center gap-2 min-w-0" id="toast-message-container">
+                {isErrorToast ? (
+                  <AlertCircle size={18} className="text-danger shrink-0" />
+                ) : (
+                  <CheckCircle size={18} className="text-acc shrink-0" />
+                )}
+                <span className={cn("flex-1 text-sm font-gujarati font-medium truncate", isErrorToast ? "text-danger" : "text-txt")}>
+                  {toastMessage}
+                </span>
               </div>
               {undoSnapshot && (
                 <button

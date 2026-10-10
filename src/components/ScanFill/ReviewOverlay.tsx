@@ -329,18 +329,20 @@ export const ReviewOverlay: React.FC<ReviewOverlayProps> = ({
           <div className="sticky bottom-0 z-10 grid grid-cols-2 gap-3 p-4 border-t border-brd/20 bg-card shrink-0">
             <LiquidButton
               variant="neutral"
-              className="w-full min-h-[48px] h-[48px] px-4 font-gujarati text-sm flex items-center justify-center"
+              className="w-full min-h-[48px] h-[48px] px-4 font-gujarati text-sm flex items-center justify-center cursor-pointer"
               onClick={onClose}
+              id="btn-scan-review-cancel"
             >
               રદ કરો
             </LiquidButton>
             <LiquidButton
               variant="primary"
-              className="w-full min-h-[48px] h-[48px] px-4 font-gujarati text-sm flex items-center justify-center gap-1.5"
+              className="w-full min-h-[48px] h-[48px] px-4 font-gujarati text-sm flex items-center justify-center gap-1.5 cursor-pointer"
               onClick={() => onConfirmFill(data)}
+              id="btn-scan-review-confirm"
             >
               <Check size={16} />
-              <span>ફોર્મમાં ભરો ✅</span>
+              <span>ફોર્મમાં ભરો</span>
             </LiquidButton>
           </div>
         </motion.div>

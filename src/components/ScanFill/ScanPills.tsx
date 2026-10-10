@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { Camera, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { Image as ImageIcon, Loader2 } from 'lucide-react';
 import { processImageFile } from './imageUtils';
 import { ReviewOverlay } from './ReviewOverlay';
 import type { ExtractedReport, ReviewData, ColumnHeaderDef, EditableActivityRow } from './types';
@@ -7,7 +7,7 @@ import { t } from '../../i18n';
 
 interface ScanPillsProps {
   onFill: (reviewData: ReviewData) => void;
-  showToast: (msg: string) => void;
+  showToast: (msg: string, isError?: boolean) => void;
   currentHalqas: string[];
 }
 
@@ -32,36 +32,29 @@ export const ScanPills: React.FC<ScanPillsProps> = ({
   showToast,
   currentHalqas
 }) => {
-  const [scanStage, setScanStage] = useState<'idle' | 'compressing' | 'scanning'>('idle');
-  const [isLargeFile, setIsLargeFile] = useState(false);
+  const [scanStage, setScanStage] = useState<'idle' | 'scanning'>('idle');
   const [reviewData, setReviewData] = useState<ReviewData | null>(null);
   const [isOverlayOpen, setIsOverlayOpen] = useState(false);
 
-  const cameraInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
 
-  const isScanning = scanStage !== 'idle';
+  const isScanning = scanStage === 'scanning';
 
-  // N1: Reset scanStage to idle on native cancel event
+  // Reset scanStage to idle on native cancel event
   useEffect(() => {
     const handleCancel = () => {
       setScanStage('idle');
-      setIsLargeFile(false);
     };
 
-    const cam = cameraInputRef.current;
     const gal = galleryInputRef.current;
-
-    cam?.addEventListener('cancel', handleCancel);
     gal?.addEventListener('cancel', handleCancel);
 
     return () => {
-      cam?.removeEventListener('cancel', handleCancel);
       gal?.removeEventListener('cancel', handleCancel);
     };
   }, []);
 
-  const processAndScan = async (file: File, source: 'camera' | 'gallery' = 'gallery') => {
+  const processAndScan = async (file: File) => {
     if (!file) {
       setScanStage('idle');
       return;
@@ -69,26 +62,22 @@ export const ScanPills: React.FC<ScanPillsProps> = ({
 
     // Check offline
     if (typeof navigator !== 'undefined' && !navigator.onLine) {
-      showToast('ઇન્ટરનેટ કનેક્શન જરૂરી છે ❌');
+      showToast('સ્કેન નિષ્ફળ — ફોટો ફરીથી લો', true);
       setScanStage('idle');
       return;
     }
 
-    const large = file.size > 5 * 1024 * 1024;
-    setIsLargeFile(large);
-    setScanStage('compressing');
+    setScanStage('scanning');
 
     try {
       // Stage 1: EXIF normalize + compress max 1200px JPEG q0.75
-      const processed = await processImageFile(file, source);
+      const processed = await processImageFile(file, 'gallery');
 
-      // Stage 2: Call /api/scan-extract with AbortController 30s timeout & single retry
-      setScanStage('scanning');
-
+      // Stage 2: Call /api/scan-extract with AbortController 20s timeout & single retry
       const controller = new AbortController();
       const timeoutId = setTimeout(() => {
         controller.abort();
-      }, 30000);
+      }, 20000);
 
       let extracted: ExtractedReport | null = null;
       let lastError: any = null;
@@ -127,7 +116,7 @@ export const ScanPills: React.FC<ScanPillsProps> = ({
           } catch (err: any) {
             lastError = err;
             if (controller.signal.aborted) {
-              // Timeout reached (30s)
+              // Timeout reached (20s)
               break;
             }
             // Retry once on network error or server failure after brief pause
@@ -149,12 +138,11 @@ export const ScanPills: React.FC<ScanPillsProps> = ({
       setReviewData(parsedReviewData);
       setIsOverlayOpen(true);
     } catch (err: any) {
-      console.error(`[ScanPath] ${source} error:`, err);
-      showToast('સ્કેન નિષ્ફળ ❌ — સાફ રોશનીમાં ફોટો લઈને ફરી પ્રયત્ન કરો');
+      console.error('[ScanPath] gallery error:', err);
+      showToast('સ્કેન નિષ્ફળ — ફોટો ફરીથી લો', true);
     } finally {
-      // N1: Reset scanStage to 'idle' in finally-block covering success, error, and cancel paths
+      // Reset scanStage to 'idle' covering success, error, and timeout
       setScanStage('idle');
-      setIsLargeFile(false);
     }
   };
 
@@ -231,7 +219,7 @@ export const ScanPills: React.FC<ScanPillsProps> = ({
     const extractedHalqa = ext.halqa_name?.v?.trim();
     if (extractedHalqa) {
       const normExtracted = extractedHalqa.replace(/\s+/g, '');
-      const matched = halqas.some(h => h.trim().replace(/\s+/g, '') === normExtracted);
+      const matched = halqas.some(h => (typeof h === 'string' ? h : (h as any)?.name || '').trim().replace(/\s+/g, '') === normExtracted);
       if (!matched && !skipped_columns.includes(extractedHalqa)) {
         // Not matched with registered halqas
         skipped_columns.push(extractedHalqa);
@@ -255,32 +243,9 @@ export const ScanPills: React.FC<ScanPillsProps> = ({
     onFill(data);
   };
 
-  const getSpinnerText = () => {
-    if (scanStage === 'compressing') {
-      return isLargeFile ? 'કમ્પ્રેસ થઈ રહ્યું છે...' : 'ફોટો તૈયાર થઈ રહ્યો છે...';
-    }
-    if (scanStage === 'scanning') {
-      return 'સ્કેન થઈ રહ્યું છે...';
-    }
-    return '';
-  };
-
   return (
     <div className="w-full space-y-1.5" id="scan-fill-module">
-      {/* Hidden file inputs for Camera & Gallery (never display:none for mobile browser compatibility) */}
-      <input
-        ref={cameraInputRef}
-        type="file"
-        accept="image/*"
-        capture="environment"
-        id="camera-scan-input"
-        style={{ position: 'absolute', left: '-9999px', width: '1px', height: '1px', opacity: 0, pointerEvents: 'none' }}
-        onChange={(e) => {
-          if (e.target.files?.[0]) processAndScan(e.target.files[0], 'camera');
-          e.target.value = '';
-        }}
-        disabled={isScanning}
-      />
+      {/* Hidden file input for Gallery only */}
       <input
         ref={galleryInputRef}
         type="file"
@@ -288,33 +253,17 @@ export const ScanPills: React.FC<ScanPillsProps> = ({
         id="gallery-scan-input"
         style={{ position: 'absolute', left: '-9999px', width: '1px', height: '1px', opacity: 0, pointerEvents: 'none' }}
         onChange={(e) => {
-          if (e.target.files?.[0]) processAndScan(e.target.files[0], 'gallery');
+          const file = e.target.files?.[0];
+          if (file) {
+            processAndScan(file);
+          }
           e.target.value = '';
         }}
         disabled={isScanning}
       />
 
-      {/* Two Trigger Pills: Equal Height (items-stretch, min-h-[56px]) */}
-      <div className="flex items-stretch gap-2.5">
-        <button
-          type="button"
-          onClick={() => {
-            if (isScanning) return;
-            cameraInputRef.current?.click();
-          }}
-          disabled={isScanning}
-          id="btn-camera-scan"
-          aria-label="કેમેરાથી સ્કાન"
-          className="flex-1 min-h-[56px] flex items-center justify-center gap-2 py-2.5 px-3 rounded-2xl bg-card hover:bg-card/90 active:scale-[0.98] border border-brd/30 shadow-sm text-txt font-gujarati text-sm font-semibold transition-all disabled:opacity-60 disabled:pointer-events-none text-center cursor-pointer"
-        >
-          {isScanning ? (
-            <Loader2 size={16} className="animate-spin text-acc shrink-0" />
-          ) : (
-            <Camera size={16} className="text-acc shrink-0" />
-          )}
-          <span>{isScanning ? getSpinnerText() : 'કેમેરાથી સ્કાન'}</span>
-        </button>
-
+      {/* Single full-width Gallery Trigger Button: min-h-[56px] */}
+      <div className="w-full">
         <button
           type="button"
           onClick={() => {
@@ -324,14 +273,14 @@ export const ScanPills: React.FC<ScanPillsProps> = ({
           disabled={isScanning}
           id="btn-gallery-scan"
           aria-label="ગેલરીથી ઇમ્પોર્ટ"
-          className="flex-1 min-h-[56px] flex items-center justify-center gap-2 py-2.5 px-3 rounded-2xl bg-card hover:bg-card/90 active:scale-[0.98] border border-brd/30 shadow-sm text-txt font-gujarati text-sm font-semibold transition-all disabled:opacity-60 disabled:pointer-events-none text-center cursor-pointer"
+          className="w-full min-h-[56px] flex items-center justify-center gap-2 py-2.5 px-3 rounded-2xl bg-card hover:bg-card/90 active:scale-[0.98] border border-brd/30 shadow-sm text-txt font-gujarati text-sm font-semibold transition-all disabled:opacity-60 disabled:pointer-events-none text-center cursor-pointer"
         >
           {isScanning ? (
             <Loader2 size={16} className="animate-spin text-acc shrink-0" />
           ) : (
             <ImageIcon size={16} className="text-acc shrink-0" />
           )}
-          <span>{isScanning ? getSpinnerText() : 'ગેલરીથી ઇમ્પોર્ટ'}</span>
+          <span>{isScanning ? 'સ્કેન થઈ રહ્યું છે...' : 'ગેલરીથી ઇમ્પોર્ટ'}</span>
         </button>
       </div>
 
@@ -340,7 +289,7 @@ export const ScanPills: React.FC<ScanPillsProps> = ({
         પૂરું પેજ, સાફ રોશની, છાયા વિના
       </p>
 
-      {/* Review Bottom Sheet Overlay */}
+      {/* Review Modal Dialog Overlay */}
       {reviewData && (
         <ReviewOverlay
           isOpen={isOverlayOpen}

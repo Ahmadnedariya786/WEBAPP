@@ -293,7 +293,6 @@ html[data-theme="outdoor"] .snap-start > button.bg-acc {
 }
 
 /* D2: Hover & Press States — Light Blueberry Tint (--acc-soft) with Navy Text */
-html[data-theme="outdoor"] #btn-camera-scan:hover,
 html[data-theme="outdoor"] #btn-gallery-scan:hover,
 html[data-theme="outdoor"] #btn-toast-undo:hover,
 html[data-theme="outdoor"] #btn-floating-undo:hover,
@@ -303,7 +302,6 @@ html[data-theme="outdoor"] header button:not(.theme-segment):hover {
   color: #1E2F73 !important;
 }
 
-html[data-theme="outdoor"] #btn-camera-scan:active,
 html[data-theme="outdoor"] #btn-gallery-scan:active,
 html[data-theme="outdoor"] .snap-start > button:active:not(.bg-acc),
 html[data-theme="outdoor"] header button:not(.theme-segment):active {

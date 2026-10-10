@@ -50,6 +50,53 @@ function apiDevMiddleware(): Plugin {
         }
         next();
       });
+    },
+    configurePreviewServer(server) {
+      server.middlewares.use(async (req, res, next) => {
+        if (req.url && req.url.startsWith('/api/scan-extract')) {
+          try {
+            const { default: handler } = await import('./api/scan-extract.ts');
+            if (!process.env.GEMINI_API_KEY) {
+              process.env.SCAN_MOCK = 'true';
+            }
+            const urlObj = new URL(req.url, 'http://localhost');
+            (req as any).query = Object.fromEntries(urlObj.searchParams.entries());
+
+            let rawBody = '';
+            req.on('data', chunk => { rawBody += chunk; });
+            req.on('end', async () => {
+              let body = {};
+              if (rawBody && rawBody.trim()) {
+                try {
+                  body = JSON.parse(rawBody);
+                } catch {
+                  body = rawBody;
+                }
+              }
+              const resMock: any = res;
+              resMock.status = (statusCode: number) => {
+                resMock.statusCode = statusCode;
+                return resMock;
+              };
+              resMock.json = (data: any) => {
+                resMock.setHeader('Content-Type', 'application/json');
+                resMock.end(JSON.stringify(data));
+                return resMock;
+              };
+              (req as any).body = body;
+              await handler(req, resMock);
+            });
+            return;
+          } catch (err: any) {
+            console.error('API preview middleware error:', err);
+            res.statusCode = 500;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({ error: err.message || 'Internal Server Error' }));
+            return;
+          }
+        }
+        next();
+      });
     }
   };
 }
