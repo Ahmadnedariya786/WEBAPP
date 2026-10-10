@@ -1,5 +1,71 @@
 import react from '@vitejs/plugin-react'
 import { defineConfig, type Plugin } from 'vite'
+import fs from 'node:fs'
+import path from 'node:path'
+
+function tesseractAssetsMiddleware(): Plugin {
+  const handler = (req: any, res: any, next: () => void) => {
+    if (!req.url) return next();
+    try {
+      const urlObj = new URL(req.url, 'http://localhost');
+      const pathname = urlObj.pathname;
+
+      if (pathname.startsWith('/tesseract/lang-data/')) {
+        const fileName = pathname.replace('/tesseract/lang-data/', '');
+        const distPath = path.resolve(process.cwd(), 'dist', 'tesseract', 'lang-data', fileName);
+        const publicPath = path.resolve(process.cwd(), 'public', 'tesseract', 'lang-data', fileName);
+        const filePath = fs.existsSync(distPath) ? distPath : publicPath;
+
+        if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
+          const stat = fs.statSync(filePath);
+          const contentType = fileName.endsWith('.gz') ? 'application/gzip' : 'application/octet-stream';
+
+          if (req.method === 'OPTIONS') {
+            res.statusCode = 204;
+            res.setHeader('Access-Control-Allow-Origin', '*');
+            res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
+            res.setHeader('Access-Control-Allow-Headers', '*');
+            return res.end();
+          }
+
+          if (req.method === 'HEAD') {
+            res.writeHead(200, {
+              'Content-Type': contentType,
+              'Cache-Control': 'public, max-age=31536000, immutable',
+              'Content-Disposition': 'inline',
+              'Content-Length': String(stat.size),
+              'Access-Control-Allow-Origin': '*'
+            });
+            return res.end();
+          }
+
+          res.writeHead(200, {
+            'Content-Type': contentType,
+            'Cache-Control': 'public, max-age=31536000, immutable',
+            'Content-Disposition': 'inline',
+            'Content-Length': String(stat.size),
+            'Access-Control-Allow-Origin': '*'
+          });
+          const stream = fs.createReadStream(filePath);
+          return stream.pipe(res);
+        }
+      }
+    } catch (err) {
+      console.warn('Tesseract assets middleware warning:', err);
+    }
+    next();
+  };
+
+  return {
+    name: 'tesseract-assets-middleware',
+    configureServer(server) {
+      server.middlewares.use(handler);
+    },
+    configurePreviewServer(server) {
+      server.middlewares.use(handler);
+    }
+  };
+}
 
 function apiDevMiddleware(): Plugin {
   return {
@@ -103,5 +169,6 @@ function apiDevMiddleware(): Plugin {
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), apiDevMiddleware()],
+  plugins: [react(), tesseractAssetsMiddleware(), apiDevMiddleware()],
 })
+

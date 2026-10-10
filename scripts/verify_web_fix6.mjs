@@ -1,6 +1,7 @@
 import puppeteer from 'puppeteer';
 import fs from 'fs';
 import path from 'path';
+import { launchHeadlessBrowser, configureDownloadSafety } from './verify_helpers.mjs';
 
 const outDir = 'c:\\Users\\DELL\\OneDrive\\Desktop\\NEW WEB APP\\web_fix6_screenshots';
 if (!fs.existsSync(outDir)) {
@@ -10,7 +11,7 @@ if (!fs.existsSync(outDir)) {
 const APP_URL = 'http://localhost:5173/';
 
 (async () => {
-  const browser = await puppeteer.launch();
+  const { browser, tempDownloadDir } = await launchHeadlessBrowser(puppeteer);
 
   // Helper to enable network conditions (fast local connection)
   const enableNetwork = async (page) => {

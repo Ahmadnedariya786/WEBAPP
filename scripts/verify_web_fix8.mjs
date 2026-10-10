@@ -1,6 +1,7 @@
 import puppeteer from 'puppeteer';
 import fs from 'fs';
 import path from 'path';
+import { launchHeadlessBrowser, configureDownloadSafety } from './verify_helpers.mjs';
 
 const SCREENSHOT_DIR = 'c:\\Users\\DELL\\OneDrive\\Desktop\\NEW WEB APP\\web_fix8_screenshots';
 if (!fs.existsSync(SCREENSHOT_DIR)) {
@@ -16,11 +17,9 @@ fs.writeFileSync(sampleImgPath, Buffer.from(sampleJpgBase64, 'base64'));
 
 (async () => {
   console.log('--- Starting WEB-FIX8 Comprehensive Verification ---');
-  const browser = await puppeteer.launch({
-    headless: true,
-    args: ['--no-sandbox', '--disable-setuid-sandbox']
-  });
+  const { browser, tempDownloadDir } = await launchHeadlessBrowser(puppeteer);
   const page = await browser.newPage();
+  await configureDownloadSafety(page, tempDownloadDir);
   await page.setViewport({ width: 375, height: 812, deviceScaleFactor: 2 });
 
   let mockOcrMode = 'normal'; // 'normal' | 'fail'

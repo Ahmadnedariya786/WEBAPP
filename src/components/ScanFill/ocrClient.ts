@@ -28,7 +28,7 @@ export async function getOcrWorker() {
       workerPath: '/tesseract/worker.min.js',
       corePath: '/tesseract/tesseract-core-lstm.wasm.js',
       langPath: '/tesseract/lang-data',
-      gzip: false
+      gzip: true
     });
 
     cachedWorker = worker;

@@ -1,6 +1,9 @@
 import fs from 'fs';
 import path from 'path';
 import { execSync } from 'child_process';
+import { preseedTesseractLangData } from './verify_helpers.mjs';
+
+await preseedTesseractLangData();
 
 console.log('=== RUNNING B2-WEB-P1 VERIFICATION SUITE ===\n');
 

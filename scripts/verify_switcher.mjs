@@ -1,6 +1,7 @@
 import puppeteer from 'puppeteer';
 import fs from 'fs';
 import path from 'path';
+import { launchHeadlessBrowser, configureDownloadSafety } from './verify_helpers.mjs';
 
 const outDir = 'c:\\Users\\DELL\\OneDrive\\Desktop\\NEW WEB APP\\web_fix4_screenshots';
 if (!fs.existsSync(outDir)) {
@@ -8,8 +9,9 @@ if (!fs.existsSync(outDir)) {
 }
 
 (async () => {
-  const browser = await puppeteer.launch();
+  const { browser, tempDownloadDir } = await launchHeadlessBrowser(puppeteer);
   const page = await browser.newPage();
+  await configureDownloadSafety(page, tempDownloadDir);
   
   // Set viewport to mobile standard 375x812
   await page.setViewport({ width: 375, height: 812, deviceScaleFactor: 2 });

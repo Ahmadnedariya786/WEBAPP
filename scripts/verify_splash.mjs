@@ -1,6 +1,7 @@
 import puppeteer from 'puppeteer';
 import fs from 'fs';
 import path from 'path';
+import { launchHeadlessBrowser, configureDownloadSafety } from './verify_helpers.mjs';
 
 const outDir = 'c:\\Users\\DELL\\OneDrive\\Desktop\\NEW WEB APP\\web_fix5_screenshots';
 if (!fs.existsSync(outDir)) {
@@ -10,7 +11,7 @@ if (!fs.existsSync(outDir)) {
 const APP_URL = 'http://localhost:4173/';
 
 (async () => {
-  const browser = await puppeteer.launch();
+  const { browser, tempDownloadDir } = await launchHeadlessBrowser(puppeteer);
 
   // Helper to enable Slow 4G network throttling
   const enableSlow4G = async (page) => {

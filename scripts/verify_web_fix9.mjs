@@ -1,6 +1,7 @@
 import puppeteer from 'puppeteer';
 import fs from 'fs';
 import path from 'path';
+import { launchHeadlessBrowser, configureDownloadSafety } from './verify_helpers.mjs';
 
 const SCREENSHOT_DIR = 'c:\\Users\\DELL\\OneDrive\\Desktop\\NEW WEB APP\\web_fix9_screenshots';
 if (!fs.existsSync(SCREENSHOT_DIR)) {
@@ -18,13 +19,11 @@ fs.writeFileSync(corruptImgPath, Buffer.from('NOT_A_REAL_IMAGE_CORRUPT_BYTES_XYZ
   console.log('--- Starting WEB-FIX9 Comprehensive Verification ---');
   console.log('Conditions: CPU 4x throttled, Network OFFLINE after page load (proves self-hosted local assets)');
 
-  const browser = await puppeteer.launch({
-    headless: true,
-    args: ['--no-sandbox', '--disable-setuid-sandbox']
-  });
+  const { browser, tempDownloadDir } = await launchHeadlessBrowser(puppeteer);
 
   try {
     const page = await browser.newPage();
+    await configureDownloadSafety(page, tempDownloadDir);
     await page.setViewport({ width: 375, height: 812, deviceScaleFactor: 2 });
 
     // Setup authenticated session

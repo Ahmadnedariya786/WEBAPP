@@ -2,6 +2,7 @@ import puppeteer from 'puppeteer';
 import fs from 'fs';
 import path from 'path';
 import { spawn } from 'child_process';
+import { launchHeadlessBrowser, configureDownloadSafety } from './verify_helpers.mjs';
 
 const SCREENSHOT_DIR = path.resolve('web_fix10_screenshots');
 if (!fs.existsSync(SCREENSHOT_DIR)) {
@@ -60,13 +61,18 @@ function stopServer() {
   await startServer();
   console.log(`[Server] Vite preview running at ${APP_URL}`);
 
-  const browser = await puppeteer.launch({
-    headless: true,
-    args: ['--no-sandbox', '--disable-setuid-sandbox']
-  });
+  const { browser, tempDownloadDir } = await launchHeadlessBrowser(puppeteer);
 
   try {
     const page = await browser.newPage();
+    await configureDownloadSafety(page, tempDownloadDir);
+    page.on('console', (msg) => console.log('[Browser]', msg.text()));
+    page.on('pageerror', (err) => console.error('[Browser Error]', err.message));
+    page.on('response', (resp) => {
+      if (resp.url().includes('tesseract')) {
+        console.log('[Network]', resp.url(), resp.status(), resp.headers()['content-type']);
+      }
+    });
     await page.setViewport({ width: 375, height: 812, deviceScaleFactor: 2 });
 
     // Preload session & onboarded flags
@@ -339,7 +345,11 @@ function stopServer() {
     console.error('VERIFICATION ERROR:', err);
     process.exitCode = 1;
   } finally {
-    await browser.close();
+    if (browser) await browser.close();
     stopServer();
+    if (tempDownloadDir) {
+      try { fs.rmSync(tempDownloadDir, { recursive: true, force: true }); } catch {}
+    }
   }
 })();
+
