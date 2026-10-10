@@ -122,8 +122,8 @@ export const ReviewOverlay: React.FC<ReviewOverlayProps> = ({
                   ચકાસો અને સુધારો
                 </span>
               </h3>
-              <p className="text-xs text-sub font-gujarati mt-0.5">
-                પીળા ટપકાવાળા ખાના અસ્પષ્ટ લખાણ દર્શાવે છે
+              <p className="text-xs text-sub font-gujarati mt-0.5" id="review-picker-subtitle">
+                ઓસીઆર હાથપ્રત માટે અંદાજ છે — દરેક ખાનું ચકાસો અને સુધારો
               </p>
             </div>
             <button
@@ -180,9 +180,12 @@ export const ReviewOverlay: React.FC<ReviewOverlayProps> = ({
                         </span>
                         {!stat.ok && (
                           <span
-                            className="w-2 h-2 rounded-full bg-amber-500 shrink-0"
+                            className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 font-gujarati font-medium shrink-0"
                             title="અસ્પષ્ટ લખાણ"
-                          />
+                          >
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                            <span>અસ્પષ્ટ</span>
+                          </span>
                         )}
                       </div>
                       <input
@@ -255,9 +258,12 @@ export const ReviewOverlay: React.FC<ReviewOverlayProps> = ({
                                 />
                                 {!act.cols['mojuda']?.ok && (
                                   <span
-                                    className="w-2 h-2 rounded-full bg-amber-500 absolute right-3 shrink-0"
+                                    className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-md bg-amber-500/15 text-amber-600 dark:text-amber-400 font-gujarati font-medium absolute right-3 shrink-0 pointer-events-none"
                                     title="અસ્પષ્ટ લખાણ"
-                                  />
+                                  >
+                                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                                    <span>અસ્પષ્ટ</span>
+                                  </span>
                                 )}
                               </div>
                             </td>
@@ -278,9 +284,11 @@ export const ReviewOverlay: React.FC<ReviewOverlayProps> = ({
                                     />
                                     {!cell.ok && (
                                       <span
-                                        className="w-1.5 h-1.5 rounded-full bg-amber-500 absolute right-1.5 top-1.5 shrink-0"
-                                        title="અસ્પષ્ટ લખાણ"
-                                      />
+                                        className="inline-flex items-center text-[9px] px-1 py-0.2 rounded bg-amber-500/20 text-amber-700 dark:text-amber-300 font-gujarati font-semibold absolute right-1 top-0.5 pointer-events-none"
+                                        title="અસ્પષ્ટ"
+                                      >
+                                        અસ્પષ્ટ
+                                      </span>
                                     )}
                                   </div>
                                 </td>

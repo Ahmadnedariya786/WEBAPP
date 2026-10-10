@@ -523,22 +523,37 @@ export const NewReport: React.FC = () => {
           </button>
         </div>
 
-        {/* DANGER LAST: "કાઢી નાખો" muted outline, red token text */}
-        <button
-          type="button"
-          onClick={() => { 
-            if (!sessionRole) { 
-              useAppStore.setState({ authDialogOpen: true, authPendingAction: null }); 
-              return; 
-            } 
-            setShowClearConfirm(true); 
-          }}
-          aria-label="કાઢી નાખો"
-          className="action-cluster-danger-btn"
-        >
-          {!sessionRole ? <Lock size={16} className="shrink-0" /> : <Trash2 size={16} className="shrink-0" />}
-          <span className="font-gujarati">કાઢી નાખો</span>
-        </button>
+        {/* ACTION ROW: "અન્ડૂ" and "કાઢી નાખો" side by side (two equal buttons) */}
+        <div className="grid grid-cols-2 gap-2.5">
+          <button
+            type="button"
+            disabled={!undoSnapshot}
+            onClick={handleUndo}
+            id={instanceKey === 'mobile' ? 'btn-inline-undo' : 'btn-inline-undo-desktop'}
+            aria-label="અન્ડૂ"
+            className="action-cluster-undo-btn"
+          >
+            <RotateCcw size={16} className="shrink-0" />
+            <span className="font-gujarati">અન્ડૂ</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => { 
+              if (!sessionRole) { 
+                useAppStore.setState({ authDialogOpen: true, authPendingAction: null }); 
+                return; 
+              } 
+              setShowClearConfirm(true); 
+            }}
+            id={instanceKey === 'mobile' ? 'btn-action-clear' : 'btn-action-clear-desktop'}
+            aria-label="કાઢી નાખો"
+            className="action-cluster-danger-btn"
+          >
+            {!sessionRole ? <Lock size={16} className="shrink-0" /> : <Trash2 size={16} className="shrink-0" />}
+            <span className="font-gujarati">કાઢી નાખો</span>
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -586,29 +601,7 @@ export const NewReport: React.FC = () => {
         )}
       </AnimatePresence>
 
-      {/* Persistent Floating Undo Pill */}
-      <AnimatePresence>
-        {undoSnapshot && !showToast && (
-          <div 
-            className="fixed bottom-24 right-4 z-[80]"
-            style={{ bottom: 'calc(124px + env(safe-area-inset-bottom, 0px))' }}
-          >
-            <motion.button
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.8 }}
-              type="button"
-              onClick={handleUndo}
-              id="btn-floating-undo"
-              aria-label="અન્ડૂ"
-              className="px-4 py-2 rounded-full bg-card/95 backdrop-blur shadow-lg border border-acc/40 text-acc hover:bg-acc hover:text-white text-sm font-gujarati font-bold flex items-center gap-1.5 transition-all cursor-pointer"
-            >
-              <RotateCcw size={14} />
-              <span>અન્ડૂ</span>
-            </motion.button>
-          </div>
-        )}
-      </AnimatePresence>
+
 
       {/* Halqa Dialog */}
       <AnimatePresence>

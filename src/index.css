@@ -295,7 +295,6 @@ html[data-theme="outdoor"] .snap-start > button.bg-acc {
 /* D2: Hover & Press States — Light Blueberry Tint (--acc-soft) with Navy Text */
 html[data-theme="outdoor"] #btn-gallery-scan:hover,
 html[data-theme="outdoor"] #btn-toast-undo:hover,
-html[data-theme="outdoor"] #btn-floating-undo:hover,
 html[data-theme="outdoor"] .snap-start > button:hover:not(.bg-acc),
 html[data-theme="outdoor"] header button:not(.theme-segment):hover {
   background-color: rgba(36, 59, 143, 0.10) !important;
@@ -1891,6 +1890,53 @@ html[data-theme="premium"] .action-cluster-primary-btn:hover {
   border-color: rgba(239, 68, 68, 0.55);
 }
 
+/* Undo Button - Inline companion to Danger Button */
+.action-cluster-undo-btn {
+  height: 44px;
+  width: 100%;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  outline: none;
+  background-color: transparent;
+  transition: all 180ms ease;
+}
+html[data-theme="outdoor"] .action-cluster-undo-btn {
+  border: 1.5px solid rgba(36, 59, 143, 0.35);
+  color: #243B8F;
+}
+html[data-theme="outdoor"] .action-cluster-undo-btn:hover:not(:disabled) {
+  background-color: rgba(36, 59, 143, 0.08);
+  border-color: rgba(36, 59, 143, 0.65);
+}
+html[data-theme="dark"] .action-cluster-undo-btn {
+  border: 1.5px solid rgba(132, 204, 22, 0.35);
+  color: #84CC16;
+}
+html[data-theme="dark"] .action-cluster-undo-btn:hover:not(:disabled) {
+  background-color: rgba(132, 204, 22, 0.08);
+  border-color: rgba(132, 204, 22, 0.65);
+}
+html[data-theme="premium"] .action-cluster-undo-btn {
+  border: 1.5px solid rgba(236, 72, 153, 0.35);
+  color: #EC4899;
+}
+html[data-theme="premium"] .action-cluster-undo-btn:hover:not(:disabled) {
+  background-color: rgba(236, 72, 153, 0.08);
+  border-color: rgba(236, 72, 153, 0.65);
+}
+.action-cluster-undo-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  border-color: rgba(128, 128, 128, 0.25) !important;
+  color: rgba(128, 128, 128, 0.5) !important;
+}
+
 /* Card Entrance Stagger */
 .new-report-card {
   transition: transform 200ms ease, box-shadow 200ms ease;
@@ -1904,6 +1950,7 @@ html[data-theme="premium"] .action-cluster-primary-btn:hover {
   .action-cluster-primary-btn,
   .action-cluster-grid-btn,
   .action-cluster-danger-btn,
+  .action-cluster-undo-btn,
   .new-report-card,
   .activity-mobile-card,
   .route-transition-enter {
@@ -2009,20 +2056,16 @@ html[data-theme="premium"] .action-cluster-primary-btn:hover {
 
 /* N2: Standalone nav/FAB hide rule using ONLY body.has-overlay-open (do not comma-join with :has()) */
 body.has-overlay-open .bottom-nav-root,
-body.has-overlay-open #btn-floating-undo,
 body.has-overlay-open .fab {
   display: none !important;
 }
 
 /* Secondary hide rule for modern browsers with native :has() support */
 body:has([role="dialog"]) .bottom-nav-root,
-body:has([role="dialog"]) #btn-floating-undo,
 body:has([role="dialog"]) .fab,
 body:has(#calendar-dialog-overlay) .bottom-nav-root,
-body:has(#calendar-dialog-overlay) #btn-floating-undo,
 body:has(#calendar-dialog-overlay) .fab,
 body:has(.viewport-fixed-overlay) .bottom-nav-root,
-body:has(.viewport-fixed-overlay) #btn-floating-undo,
 body:has(.viewport-fixed-overlay) .fab {
   display: none !important;
 }
