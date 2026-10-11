@@ -3,7 +3,7 @@ import { Image as ImageIcon, Loader2 } from 'lucide-react';
 import { processImageFile, UnsupportedFormatError } from './imageUtils';
 import { runSelfContainedOcr, resetOcrWorker } from './ocrClient';
 import { ReviewOverlay } from './ReviewOverlay';
-import type { ExtractedReport, ReviewData, ColumnHeaderDef, EditableActivityRow } from './types';
+import type { ExtractedReport, ReviewData, ColumnHeaderDef, EditableActivityRow, LeafField } from './types';
 import { t } from '../../i18n';
 import { logActivity } from '../../lib/utils';
 
@@ -35,6 +35,7 @@ export const ScanPills: React.FC<ScanPillsProps> = ({
   currentHalqas
 }) => {
   const [scanStage, setScanStage] = useState<'idle' | 'scanning'>('idle');
+  const [scanProgressText, setScanProgressText] = useState<string>('');
   const [reviewData, setReviewData] = useState<ReviewData | null>(null);
   const [isOverlayOpen, setIsOverlayOpen] = useState(false);
 
@@ -46,6 +47,7 @@ export const ScanPills: React.FC<ScanPillsProps> = ({
   useEffect(() => {
     const handleCancel = () => {
       setScanStage('idle');
+      setScanProgressText('');
     };
 
     const gal = galleryInputRef.current;
@@ -59,10 +61,12 @@ export const ScanPills: React.FC<ScanPillsProps> = ({
   const processAndScan = async (file: File) => {
     if (!file) {
       setScanStage('idle');
+      setScanProgressText('');
       return;
     }
 
     setScanStage('scanning');
+    setScanProgressText('ઇમેજ તૈયાર થઈ રહી છે…');
 
     try {
       // Stage 1: Preprocessing — downscaled to max 1600px on canvas (F2)
@@ -77,13 +81,17 @@ export const ScanPills: React.FC<ScanPillsProps> = ({
         throw err;
       }
 
-      // Stage 2: Self-contained OCR with automatic single retry (F1 & F3)
+      // Stage 2: Self-contained OCR with automatic single retry and staged progress (F1, F3)
       let extracted: ExtractedReport | null = null;
       let lastError: any = null;
 
       for (let attempt = 0; attempt < 2; attempt++) {
         try {
-          extracted = await runSelfContainedOcr(processed.canvas, currentHalqas);
+          extracted = await runSelfContainedOcr(
+            processed.canvas,
+            currentHalqas,
+            (stage) => setScanProgressText(stage)
+          );
           break; // Succeeded!
         } catch (err: any) {
           lastError = err;
@@ -124,6 +132,7 @@ export const ScanPills: React.FC<ScanPillsProps> = ({
     } finally {
       // Reset scanStage to 'idle' covering success, error, and format errors
       setScanStage('idle');
+      setScanProgressText('');
     }
   };
 
@@ -138,16 +147,25 @@ export const ScanPills: React.FC<ScanPillsProps> = ({
       { key: 'mojuda', label: t('header.maujuda' as any) || 'મોજૂદા' }
     ];
 
-    // Map stats
+    // F1 STRICT STAT GATING:
+    // No stat input may show a value without the અસ્પષ્ટ badge unless OCR confidence is 70 or above
+    // AND passed y-band test. Values failing either rule render as empty input + badge.
+    const sanitizeStatForReview = (field?: LeafField) => {
+      if (field?.v && field.ok) {
+        return { v: field.v, ok: true };
+      }
+      return { v: '', ok: false };
+    };
+
     const stats: Record<string, { v: string; ok: boolean }> = {
-      student_count: { v: ext.student_count?.v || '', ok: ext.student_count?.ok ?? true },
-      std10: { v: ext.std10?.v || '', ok: ext.std10?.ok ?? true },
-      std11: { v: ext.std11?.v || '', ok: ext.std11?.ok ?? true },
-      std12: { v: ext.std12?.v || '', ok: ext.std12?.ok ?? true },
-      college: { v: ext.college?.v || '', ok: ext.college?.ok ?? true },
-      engineer: { v: ext.engineer?.v || '', ok: ext.engineer?.ok ?? true },
-      medical: { v: ext.medical?.v || '', ok: ext.medical?.ok ?? true },
-      muslim_teachers: { v: ext.muslim_teachers?.v || '', ok: ext.muslim_teachers?.ok ?? true }
+      student_count: sanitizeStatForReview(ext.student_count),
+      std10: sanitizeStatForReview(ext.std10),
+      std11: sanitizeStatForReview(ext.std11),
+      std12: sanitizeStatForReview(ext.std12),
+      college: sanitizeStatForReview(ext.college),
+      engineer: sanitizeStatForReview(ext.engineer),
+      medical: sanitizeStatForReview(ext.medical),
+      muslim_teachers: sanitizeStatForReview(ext.muslim_teachers)
     };
 
     // 13 Activities map
@@ -261,7 +279,7 @@ export const ScanPills: React.FC<ScanPillsProps> = ({
           ) : (
             <ImageIcon size={16} className="text-acc shrink-0" />
           )}
-          <span>{isScanning ? 'સ્કેન થઈ રહ્યું છે...' : 'ગેલરીથી ઇમ્પોર્ટ'}</span>
+          <span id="scan-progress-text">{isScanning ? (scanProgressText || 'સ્કેન થઈ રહ્યું છે…') : 'ગેલરીથી ઇમ્પોર્ટ'}</span>
         </button>
       </div>
 

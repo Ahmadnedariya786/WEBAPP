@@ -102,7 +102,7 @@ export const STAT_HEADER_DEFS = [
   },
   {
     key: 'std11',
-    patterns: ['ધોરણ 11', 'ધોરણ ૧૧', 'ધો. 11', 'ધો. ૧૧', 'ધોરણ11', 'ધોરણ૧૧', 'ધોરણ1', 'ધોરણ૧'],
+    patterns: ['ધોરણ 11', 'ધોરણ ૧૧', 'ધો. 11', 'ધો. ૧૧', 'ધોરણ11', 'ધોરણ૧૧', 'ધોરણ1', 'ધોરણ૧', 'ધોરણ॥1', '॥1'],
   },
   {
     key: 'college',
@@ -157,12 +157,50 @@ export function computeCellInkCoverage(
     const g = data[i + 1];
     const b = data[i + 2];
     const gray = 0.299 * r + 0.587 * g + 0.114 * b;
-    if (gray < 160) {
+    if (gray < 165) {
       darkPixelCount++;
     }
   }
 
   return darkPixelCount / totalPixels;
+}
+
+/**
+ * F4. Contrast-stretch algorithm for cropped cell canvas:
+ * Normalizes luminance range so faint pencil or ballpoint handwritten strokes
+ * are darkened and background paper noise is pushed to white before cell OCR.
+ */
+export function applyContrastStretch(cellCanvas: HTMLCanvasElement): void {
+  const ctx = cellCanvas.getContext('2d', { willReadFrequently: true });
+  if (!ctx) return;
+  const w = cellCanvas.width;
+  const h = cellCanvas.height;
+  if (w <= 0 || h <= 0) return;
+
+  const imgData = ctx.getImageData(0, 0, w, h);
+  const data = imgData.data;
+
+  let minVal = 255;
+  let maxVal = 0;
+
+  for (let i = 0; i < data.length; i += 4) {
+    const gray = Math.round(0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2]);
+    if (gray < minVal) minVal = gray;
+    if (gray > maxVal) maxVal = gray;
+  }
+
+  // Only stretch if there is a meaningful range and contrast isn't already binary 0 & 255
+  if (maxVal > minVal && (maxVal - minVal) >= 15 && (minVal > 10 || maxVal < 245)) {
+    const range = maxVal - minVal;
+    for (let i = 0; i < data.length; i += 4) {
+      const gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+      const stretched = Math.min(255, Math.max(0, Math.round(((gray - minVal) / range) * 255)));
+      data[i] = stretched;
+      data[i + 1] = stretched;
+      data[i + 2] = stretched;
+    }
+    ctx.putImageData(imgData, 0, 0);
+  }
 }
 
 /**
@@ -869,20 +907,26 @@ export function parseOcrText(
   };
 }
 
+export type OcrProgressCallback = (stage: string) => void;
+
 /**
  * Runs self-contained OCR with:
  * F1: Label-based row alignment (fuzzy matching against canonical activities)
- * F2: Header-anchored stats extraction (x-range overlap with detected headers)
- * F3: OCR preprocessing for print, PSM 6 numeric cells with whitelist, PSM 7 label cells
+ * F2: Header-anchored stats extraction with strict confidence + y-band gating
+ * F3: Staged progress callback updating import button text visibly
+ * F4: Cell ink-coverage threshold at 1% with contrast stretching before cell OCR
  */
 export async function runSelfContainedOcr(
   canvas: HTMLCanvasElement,
-  currentHalqas: string[] = []
+  currentHalqas: string[] = [],
+  onProgress?: OcrProgressCallback
 ): Promise<ExtractedReport> {
   if (typeof window !== 'undefined' && (window as any).__simulateOcrFail) {
     const customReason = (window as any).__simulateOcrFailReason || 'Engine allocation failed';
     throw new Error(customReason);
   }
+
+  onProgress?.('ટેબલ શોધાઈ રહ્યું છે…');
 
   const worker = await getOcrWorker();
 
@@ -933,12 +977,13 @@ export async function runSelfContainedOcr(
     console.log('[ScanPath] Sample text:', text.slice(0, 300).replace(/\n+/g, ' '));
   }
 
-  // Helper to crop a sub-canvas region cleanly
+  // Helper to crop a sub-canvas region cleanly with contrast-stretch
   const cropRectToCanvas = (
     srcCanvas: HTMLCanvasElement,
     rect: CellRect,
     padRatioX = 0.04,
-    padRatioY = 0.06
+    padRatioY = 0.06,
+    scale = 1
   ): HTMLCanvasElement => {
     const padX = Math.round(rect.width * padRatioX);
     const padY = Math.round(rect.height * padRatioY);
@@ -947,15 +992,20 @@ export async function runSelfContainedOcr(
     const w = Math.max(8, Math.min(srcCanvas.width - x, rect.width - 2 * padX));
     const h = Math.max(8, Math.min(srcCanvas.height - y, rect.height - 2 * padY));
 
+    const border = scale > 1 ? 12 : 0;
     const sub = document.createElement('canvas');
-    sub.width = w;
-    sub.height = h;
+    sub.width = Math.round(w * scale) + 2 * border;
+    sub.height = Math.round(h * scale) + 2 * border;
     const subCtx = sub.getContext('2d', { willReadFrequently: true });
     if (subCtx) {
       subCtx.fillStyle = '#ffffff';
-      subCtx.fillRect(0, 0, w, h);
-      subCtx.drawImage(srcCanvas, x, y, w, h, 0, 0, w, h);
+      subCtx.fillRect(0, 0, sub.width, sub.height);
+      subCtx.imageSmoothingEnabled = true;
+      subCtx.imageSmoothingQuality = 'high';
+      subCtx.drawImage(srcCanvas, x, y, w, h, border, border, Math.round(w * scale), Math.round(h * scale));
     }
+    // F4: Contrast-stretch step before cell OCR
+    applyContrastStretch(sub);
     return sub;
   };
 
@@ -971,9 +1021,14 @@ export async function runSelfContainedOcr(
       headerTokens?: string[];
     }
   ): Promise<LeafField> => {
+    // F4: cell ink-coverage threshold lowered to ~1% (0.008, safely covers wide cells with single digits)
     const ink = computeCellInkCoverage(canvas, rect);
-    if (ink < 0.003) {
+    if (options?.isStatCell) {
+      console.log(`[StatCellDebug Ink] rect=${JSON.stringify(rect)} ink=${ink}`);
+    }
+    if (ink < 0.008) {
       if (fallbackField && !fallbackField.ok) return fallbackField;
+      if (options?.isStatCell) return { v: null, ok: false };
       return { v: null, ok: true };
     }
 
@@ -1025,53 +1080,103 @@ export async function runSelfContainedOcr(
       sanitizedWords = null;
     }
 
-    // Fast path: if initial pass recognized the numeric digits in this cell, use immediately
-    if (sanitizedWords) {
+    // Fast path: if initial pass recognized the numeric digits in this cell with high confidence, use immediately
+    if (sanitizedWords && avgConf >= 70) {
       console.log('[NumericDebug Fast] rect:', JSON.stringify(rect), 'words:', wordsInCell.map(w => w.text).join(','), 'sanitized:', sanitizedWords);
-      return { v: sanitizedWords, ok: avgConf >= 70 };
+      return { v: sanitizedWords, ok: true };
     }
 
-    // Fallback: Run targeted PSM 6 recognition with numeric whitelist on isolated cell canvas
+    // Fallback: Run targeted recognition with numeric whitelist on isolated cell canvas (2x upscale for stats)
     try {
-      await worker.setParameters({
-        tessedit_pageseg_mode: '6',
-        tessedit_char_whitelist: '0123456789%'
-      });
-
+      const cellScale = options?.isStatCell ? 2 : 1;
       const cropY = options?.isStatCell && options.headerBaseline
         ? Math.max(rect.y, options.headerBaseline)
         : rect.y;
       const cropH = (rect.y + rect.height) - cropY;
       const cropRect = { ...rect, y: cropY, height: Math.max(10, cropH) };
 
-      const cellCanvas = cropRectToCanvas(canvas, cropRect, 0.05, 0.10);
+      const cellCanvas = cropRectToCanvas(canvas, cropRect, 0.05, 0.10, cellScale);
+
+      await worker.setParameters({
+        tessedit_pageseg_mode: '6',
+        tessedit_char_whitelist: '0123456789%'
+      });
+
       let cellRes = await worker.recognize(cellCanvas);
       let conf = cellRes?.data?.confidence ?? 0;
       let rawText = cellRes?.data?.text?.trim() || '';
       let sanitized = sanitizeNumericField(rawText);
 
-      if (!sanitized) {
+      // Try PSM 7 (single line) if confidence < 70 or not recognized
+      if (!sanitized || conf < 70) {
         await worker.setParameters({
           tessedit_pageseg_mode: '7',
           tessedit_char_whitelist: '0123456789%'
         });
-        cellRes = await worker.recognize(cellCanvas);
-        conf = cellRes?.data?.confidence ?? 0;
-        rawText = cellRes?.data?.text?.trim() || '';
-        sanitized = sanitizeNumericField(rawText);
+        const psm7Res = await worker.recognize(cellCanvas);
+        const psm7Conf = psm7Res?.data?.confidence ?? 0;
+        const psm7San = sanitizeNumericField(psm7Res?.data?.text?.trim() || '');
+        if (psm7San && (psm7Conf > conf || !sanitized)) {
+          conf = psm7Conf;
+          rawText = psm7Res?.data?.text?.trim() || '';
+          sanitized = psm7San;
+        }
+      }
+
+      // Try PSM 8 (single word) if still confidence < 70
+      if (!sanitized || conf < 70) {
+        await worker.setParameters({
+          tessedit_pageseg_mode: '8',
+          tessedit_char_whitelist: '0123456789%'
+        });
+        const psm8Res = await worker.recognize(cellCanvas);
+        const psm8Conf = psm8Res?.data?.confidence ?? 0;
+        const psm8San = sanitizeNumericField(psm8Res?.data?.text?.trim() || '');
+        if (psm8San && (psm8Conf > conf || !sanitized)) {
+          conf = psm8Conf;
+          rawText = psm8Res?.data?.text?.trim() || '';
+          sanitized = psm8San;
+        }
+      }
+
+      // Try PSM 10 (single char) if still confidence < 70
+      if (!sanitized || conf < 70) {
+        await worker.setParameters({
+          tessedit_pageseg_mode: '10',
+          tessedit_char_whitelist: '0123456789%'
+        });
+        const psm10Res = await worker.recognize(cellCanvas);
+        const psm10Conf = psm10Res?.data?.confidence ?? 0;
+        const psm10San = sanitizeNumericField(psm10Res?.data?.text?.trim() || '');
+        if (psm10San && (psm10Conf > conf || !sanitized)) {
+          conf = psm10Conf;
+          rawText = psm10Res?.data?.text?.trim() || '';
+          sanitized = psm10San;
+        }
       }
 
       if (options?.isStatCell && sanitized && options.headerTokens && options.headerTokens.includes(sanitized)) {
         sanitized = null;
       }
 
-      const best = sanitized || (fallbackField?.v ? sanitizeNumericField(fallbackField.v) : null);
+      const isConf = conf >= 70;
+      if (options?.isStatCell) {
+        console.log(`[StatCellDebug Fallback] conf=${conf} rawText="${rawText}" sanitized="${sanitized}"`);
+        if (!isConf || !sanitized) {
+          return { v: null, ok: false };
+        }
+        return { v: sanitized, ok: true };
+      }
 
+      const best = sanitized || (fallbackField?.v ? sanitizeNumericField(fallbackField.v) : null);
       return {
         v: best || null,
-        ok: conf >= 70 || (Boolean(best) && (fallbackField?.ok ?? false))
+        ok: isConf || (Boolean(best) && (fallbackField?.ok ?? false))
       };
     } catch {
+      if (options?.isStatCell) {
+        return { v: null, ok: false };
+      }
       return fallbackField || { v: null, ok: true };
     }
   };
@@ -1152,206 +1257,7 @@ export async function runSelfContainedOcr(
   const baseReport = parseOcrText(text, currentHalqas, lineConfidences);
 
   // --------------------------------------------------------------------------
-  // F1 & F2 & F3: Y-BAND CONSTRAINED STATS EXTRACTION + GEOMETRY FALLBACK
-  // --------------------------------------------------------------------------
-  const statsRegion = tables.statsRegion;
-  const headerBaseline = statsRegion.headerBand.yBottom;
-  const headerHeight = Math.max(20, statsRegion.headerBand.yBottom - statsRegion.headerBand.yTop);
-  const dataRowHeight = Math.max(20, statsRegion.dataBand.yBottom - statsRegion.dataBand.yTop);
-  // F1: band = header baseline + 5 percent tolerance to header bottom edge, up to header bottom + one row height
-  const tol5Pct = Math.round(headerHeight * 0.05);
-  const valBandTop = headerBaseline - tol5Pct;
-  const valBandBottom = headerBaseline + dataRowHeight;
-  const actTop = tables.activityRows[0]?.yTop;
-  // F1: Accept ONLY text blocks whose vertical center lies inside this band as stat values.
-  // Any block below the band (activities table etc.) must never be used for stats!
-  const maxAllowedStatY = actTop && actTop > valBandBottom
-    ? Math.min(valBandBottom, actTop - 8)
-    : valBandBottom;
-
-  const STAT_HEADER_TOKENS: Record<string, string[]> = {
-    std10: ['10', 'ધોરણ 10', 'ધોરણ', 'ધો.'],
-    std11: ['11', 'ધોરણ 11', 'ધોરણ', 'ધો.', '1'],
-    std12: ['12', 'ધોરણ 12', 'ધોરણ', 'ધો.'],
-    student_count: ['13', 'કુલ', 'સંખ્યા', 'સ્ટુડન્ટની સંખ્યા', 'સ્ટુડન્ટ'],
-    college: ['કોલેજ', 'કોલે'],
-    engineer: ['એન્જિનિયર', 'એન્જી'],
-    medical: ['મેડિકલ', 'મેડીક'],
-    muslim_teachers: ['શિક્ષક', 'મુસ્લિમ']
-  };
-
-  const statsResult: Record<string, LeafField> = {
-    student_count: { v: null, ok: false },
-    std10: { v: null, ok: false },
-    std11: { v: null, ok: false },
-    std12: { v: null, ok: false },
-    college: { v: null, ok: false },
-    engineer: { v: null, ok: false },
-    medical: { v: null, ok: false },
-    muslim_teachers: { v: null, ok: false }
-  };
-
-  // Build candidate columns for header-band OCR
-  let candidateCols = tables.statsCols;
-  const W11 = (statsRegion.tableRight - statsRegion.tableLeft) / 11;
-  if (!candidateCols || candidateCols.length < 8) {
-    candidateCols = [];
-    for (let c = 0; c < 11; c++) {
-      const xLeft = Math.round(statsRegion.tableLeft + c * W11);
-      const xRight = Math.round(statsRegion.tableLeft + (c + 1) * W11);
-      candidateCols.push({
-        headerRect: {
-          x: xLeft,
-          y: statsRegion.headerBand.yTop,
-          width: xRight - xLeft,
-          height: statsRegion.headerBand.yBottom - statsRegion.headerBand.yTop
-        },
-        dataRect: {
-          x: xLeft,
-          y: statsRegion.dataBand.yTop,
-          width: xRight - xLeft,
-          height: statsRegion.dataBand.yBottom - statsRegion.dataBand.yTop
-        }
-      });
-    }
-  }
-
-  // F2: Run header-band OCR with F3 preprocessing (upscale + Otsu) and PSM 7 per header cell;
-  // fuzzy-match the 8 needed headers (સ્ટુડન્ટની સંખ્યા/કુલ, ધોરણ 10, 11, 12, કોલેજ, એન્જિનિયર, મેડિકલ, મુસ્લિમ શિક્ષકો)
-  for (let ci = 0; ci < candidateCols.length; ci++) {
-    const col = candidateCols[ci];
-    const headerText = await extractLabelCell(col.headerRect);
-    const valueRect = col.dataRect;
-
-    let matchedKey: string | null = null;
-    const digitsInH = gujaratiToAsciiDigits(headerText).replace(/[^0-9]/g, '');
-
-    if (headerText.includes('કોલેજ') || headerText.includes('કોલે')) {
-      matchedKey = 'college';
-    } else if (headerText.includes('એન્જિનિયર') || headerText.includes('એન્જી') || headerText.includes('ઈજનેર')) {
-      matchedKey = 'engineer';
-    } else if (headerText.includes('મેડિક') || headerText.includes('મેડીક') || headerText.includes('મેક્કિલ') || headerText.includes('મેડિ')) {
-      matchedKey = 'medical';
-    } else if (headerText.includes('મુસ્લિમ') || headerText.includes('શિક્ષક')) {
-      matchedKey = 'muslim_teachers';
-    } else if (headerText.includes('સ્ટુડન્ટ') || headerText.includes('વિદ્યાર્થી') || (headerText.includes('સંખ્યા') && !headerText.includes('શિક્ષક')) || headerText.includes('કુલ')) {
-      matchedKey = 'student_count';
-    } else if (headerText.includes('ધોરણ') || headerText.includes('ધો.')) {
-      if (digitsInH.includes('10')) {
-        matchedKey = 'std10';
-      } else if (digitsInH.includes('12')) {
-        matchedKey = 'std12';
-      } else if (digitsInH.includes('11') || digitsInH === '1') {
-        matchedKey = 'std11';
-      }
-    } else {
-      for (const def of STAT_HEADER_DEFS) {
-        if (def.patterns.some((p) => headerText.includes(p))) {
-          matchedKey = def.key;
-          break;
-        }
-      }
-    }
-
-    if (matchedKey && !statsResult[matchedKey].v) {
-      // F1 constraint: Accept ONLY text blocks whose vertical center lies inside [valBandTop, maxAllowedStatY]
-      const valCenterY = valueRect.y + valueRect.height / 2;
-      if (valCenterY >= valBandTop && valCenterY <= maxAllowedStatY) {
-        const val = await extractNumericCell(valueRect, undefined, {
-          isStatCell: true,
-          headerBaseline,
-          minAllowedY: valBandTop,
-          maxAllowedY: maxAllowedStatY,
-          headerTokens: STAT_HEADER_TOKENS[matchedKey]
-        });
-        if (val.v) {
-          statsResult[matchedKey] = val;
-          console.log(`[StatsDetectHeader] col ${ci} (${matchedKey}) -> val="${val.v}"`);
-        }
-      }
-    }
-  }
-
-  // F2: Fixed-grid geometry fallback for any stat not detected via headers:
-  // divide the stats table width into its 11 equal columns and read the value cell under each column index;
-  // map columns 1-7 and 11 to the eight stat inputs.
-  const FIXED_11_MAP: Record<string, number> = {
-    student_count: 0, // Column 1
-    std10: 1,         // Column 2
-    std11: 2,         // Column 3
-    std12: 3,         // Column 4
-    college: 4,       // Column 5
-    engineer: 5,      // Column 6
-    medical: 6,       // Column 7
-    muslim_teachers: 10 // Column 11
-  };
-
-  for (const [key, colIdx] of Object.entries(FIXED_11_MAP)) {
-    if (!statsResult[key].v) {
-      let geoRect: CellRect;
-      if (candidateCols && candidateCols.length === 11 && candidateCols[colIdx]) {
-        geoRect = candidateCols[colIdx].dataRect;
-      } else {
-        const xLeft = Math.round(statsRegion.tableLeft + colIdx * W11);
-        const xRight = Math.round(statsRegion.tableLeft + (colIdx + 1) * W11);
-        geoRect = {
-          x: xLeft,
-          y: statsRegion.dataBand.yTop,
-          width: xRight - xLeft,
-          height: dataRowHeight
-        };
-      }
-      const valCenterY = geoRect.y + geoRect.height / 2;
-      if (valCenterY >= valBandTop && valCenterY <= maxAllowedStatY) {
-        const geoVal = await extractNumericCell(geoRect, undefined, {
-          isStatCell: true,
-          headerBaseline,
-          minAllowedY: valBandTop,
-          maxAllowedY: maxAllowedStatY,
-          headerTokens: STAT_HEADER_TOKENS[key]
-        });
-        if (geoVal.v) {
-          statsResult[key] = geoVal;
-          console.log(`[StatsDetectGeometry11] ${key} from Col ${colIdx + 1} -> val="${geoVal.v}"`);
-        }
-      }
-    }
-  }
-
-  // Support 8-column table fallback for muslim_teachers if table had 8 detected columns
-  if (!statsResult.muslim_teachers.v && candidateCols && candidateCols.length >= 8) {
-    const lastCol = candidateCols[candidateCols.length - 1];
-    const valCenterY = lastCol.dataRect.y + lastCol.dataRect.height / 2;
-    if (valCenterY >= valBandTop && valCenterY <= maxAllowedStatY) {
-      const lastVal = await extractNumericCell(lastCol.dataRect, undefined, {
-        isStatCell: true,
-        headerBaseline,
-        minAllowedY: valBandTop,
-        maxAllowedY: maxAllowedStatY,
-        headerTokens: STAT_HEADER_TOKENS.muslim_teachers
-      });
-      if (lastVal.v) {
-        statsResult.muslim_teachers = lastVal;
-        console.log(`[StatsDetectGeometry8] muslim_teachers from last col -> val="${lastVal.v}"`);
-      }
-    }
-  }
-
-  // F3: NO UNANCHORED FILLS.
-  // Any stat not filled within the y-band remains empty tagged અસ્પષ્ટ — never guess by index, never use global search.
-  for (const key of Object.keys(FIXED_11_MAP)) {
-    if (!statsResult[key].v) {
-      statsResult[key] = { v: null, ok: false };
-    }
-  }
-
-  // CRITICAL SAFETY GUARD: college must never receive 172 from Activity row 8!
-  if (statsResult.college.v === '172') {
-    statsResult.college = { v: null, ok: false };
-  }
-
-  // --------------------------------------------------------------------------
-  // F1. LABEL-BASED ROW ALIGNMENT (kills the off-by-one)
+  // F1 & F3. LABEL-BASED ROW ALIGNMENT & STAGED PROGRESS FOR 13 ACTIVITIES
   // --------------------------------------------------------------------------
   // Template rows start empty: unmatched detected rows are discarded; template rows with no match stay empty
   const activities: ExtractedActivity[] = [];
@@ -1365,6 +1271,7 @@ export async function runSelfContainedOcr(
   }
 
   // Process each detected table row
+  let matchedActivityCount = 0;
   for (let ri = 0; ri < tables.activityRows.length; ri++) {
     const detectedRow = tables.activityRows[ri];
     const labelText = await extractLabelCell(detectedRow.labelRect);
@@ -1381,9 +1288,11 @@ export async function runSelfContainedOcr(
     const matchedActivityNo = matchCanonicalActivity(labelText);
     console.log(`[ActDetect] row ${ri} matchedActivityNo=${matchedActivityNo}`);
     if (!matchedActivityNo) {
-      // Unmatched detected rows are discarded
       continue;
     }
+
+    matchedActivityCount++;
+    onProgress?.(`હરોળ ${matchedActivityNo}/13…`);
 
     // Assign row's three values to the MATCHED activity only!
     if (matchedActivityNo <= 12) {
@@ -1412,15 +1321,230 @@ export async function runSelfContainedOcr(
     }
   }
 
-  // If table detection did not populate all activities, fill missing activities from baseReport if label-matched
+  // If table detection did not populate all activities, fill missing activities from baseReport and report progress
   for (let k = 1; k <= 12; k++) {
     const act = activities[k - 1];
     if (act && !act.gujishata?.v && !act.agraaham?.v && !act.mojuda?.v) {
+      onProgress?.(`હરોળ ${k}/13…`);
       const baseAct = baseReport.activities[k - 1];
       if (baseAct && (baseAct.gujishata?.v || baseAct.agraaham?.v || baseAct.mojuda?.v)) {
         activities[k - 1] = baseAct;
       }
     }
+  }
+  if (!activities[12]?.mojuda?.v) {
+    onProgress?.('હરોળ 13/13…');
+  }
+
+  // --------------------------------------------------------------------------
+  // F1 & F3: Y-BAND CONSTRAINED STATS EXTRACTION WITH STRICT GATING
+  // --------------------------------------------------------------------------
+  onProgress?.('ચકાસણ થઈ રહી છે…');
+
+  const statsRegion = tables.statsRegion;
+  const headerBaseline = statsRegion.headerBand.yBottom;
+  const headerHeight = Math.max(20, statsRegion.headerBand.yBottom - statsRegion.headerBand.yTop);
+  const dataRowHeight = Math.max(20, statsRegion.dataBand.yBottom - statsRegion.dataBand.yTop);
+  // F1: band = header baseline + 5 percent tolerance to header bottom edge, up to header bottom + one row height
+  const tol5Pct = Math.round(headerHeight * 0.05);
+  const valBandTop = headerBaseline - tol5Pct;
+  const valBandBottom = headerBaseline + dataRowHeight;
+  const actTop = tables.activityRows[0]?.yTop;
+  // F1: Accept ONLY text blocks whose vertical center lies inside this band as stat values.
+  // Any block below the band (activities table etc.) must never be used for stats!
+  const maxAllowedStatY = actTop && actTop > valBandBottom
+    ? Math.min(valBandBottom, actTop - 8)
+    : valBandBottom;
+
+  const STAT_HEADER_TOKENS: Record<string, string[]> = {
+    std10: ['10', 'ધોરણ 10', 'ધોરણ', 'ધો.'],
+    std11: ['11', 'ધોરણ 11', 'ધોરણ', 'ધો.'],
+    std12: ['12', 'ધોરણ 12', 'ધોરણ', 'ધો.'],
+    student_count: ['13', 'કુલ', 'સંખ્યા', 'સ્ટુડન્ટની સંખ્યા', 'સ્ટુડન્ટ'],
+    college: ['કોલેજ', 'કોલે'],
+    engineer: ['એન્જિનિયર', 'એન્જી'],
+    medical: ['મેડિકલ', 'મેડીક'],
+    muslim_teachers: ['શિક્ષક', 'મુસ્લિમ']
+  };
+
+  const statsResult: Record<string, LeafField> = {
+    student_count: { v: null, ok: false },
+    std10: { v: null, ok: false },
+    std11: { v: null, ok: false },
+    std12: { v: null, ok: false },
+    college: { v: null, ok: false },
+    engineer: { v: null, ok: false },
+    medical: { v: null, ok: false },
+    muslim_teachers: { v: null, ok: false }
+  };
+
+  // F1 STRICT STAT GATING:
+  // Only extract stats if table lines were detected AND form structure was verified
+  // (at least 3 canonical activities matched from the printed table).
+  // If activities table came back empty (as in owner's handwritten photo),
+  // values failing either rule render as empty input + badge. A wrong confident value must never appear again.
+  const hasAuthenticTableStructure = statsRegion.isLineDetected && matchedActivityCount >= 3;
+  if (hasAuthenticTableStructure) {
+    let candidateCols = tables.statsCols;
+    const W11 = (statsRegion.tableRight - statsRegion.tableLeft) / 11;
+    if (!candidateCols || candidateCols.length < 8) {
+      candidateCols = [];
+      for (let c = 0; c < 11; c++) {
+        const xLeft = Math.round(statsRegion.tableLeft + c * W11);
+        const xRight = Math.round(statsRegion.tableLeft + (c + 1) * W11);
+        candidateCols.push({
+          headerRect: {
+            x: xLeft,
+            y: statsRegion.headerBand.yTop,
+            width: xRight - xLeft,
+            height: statsRegion.headerBand.yBottom - statsRegion.headerBand.yTop
+          },
+          dataRect: {
+            x: xLeft,
+            y: statsRegion.dataBand.yTop,
+            width: xRight - xLeft,
+            height: statsRegion.dataBand.yBottom - statsRegion.dataBand.yTop
+          }
+        });
+      }
+    }
+
+    // F2: Run header-band OCR with F3 preprocessing (upscale + Otsu) and PSM 7 per header cell;
+    // fuzzy-match the 8 needed headers (સ્ટુડન્ટની સંખ્યા/કુલ, ધોરણ 10, 11, 12, કોલેજ, એન્જિનિયર, મેડિકલ, મુસ્લિમ શિક્ષકો)
+    for (let ci = 0; ci < candidateCols.length; ci++) {
+      const col = candidateCols[ci];
+      const headerText = await extractLabelCell(col.headerRect);
+      const valueRect = col.dataRect;
+
+      let matchedKey: string | null = null;
+      const digitsInH = gujaratiToAsciiDigits(headerText).replace(/[^0-9]/g, '');
+      console.log(`[StatHeaderCandidate] col ${ci} headerText="${headerText}" digitsInH="${digitsInH}"`);
+
+      if (headerText.includes('કોલેજ') || headerText.includes('કોલે')) {
+        matchedKey = 'college';
+      } else if (headerText.includes('એન્જિનિયર') || headerText.includes('એન્જી') || headerText.includes('ઈજનેર')) {
+        matchedKey = 'engineer';
+      } else if (headerText.includes('મેડિક') || headerText.includes('મેડીક') || headerText.includes('મેક્કિલ') || headerText.includes('મેડિ')) {
+        matchedKey = 'medical';
+      } else if (headerText.includes('મુસ્લિમ') || headerText.includes('શિક્ષક')) {
+        matchedKey = 'muslim_teachers';
+      } else if (headerText.includes('સ્ટુડન્ટ') || headerText.includes('વિદ્યાર્થી') || (headerText.includes('સંખ્યા') && !headerText.includes('શિક્ષક')) || headerText.includes('કુલ')) {
+        matchedKey = 'student_count';
+      } else if (headerText.includes('ધોરણ') || headerText.includes('ધો.')) {
+        if (digitsInH.includes('10')) {
+          matchedKey = 'std10';
+        } else if (digitsInH.includes('12')) {
+          matchedKey = 'std12';
+        } else if (digitsInH.includes('11') || digitsInH === '1' || headerText.includes('॥1') || headerText.includes('11')) {
+          matchedKey = 'std11';
+        }
+      } else {
+        for (const def of STAT_HEADER_DEFS) {
+          if (def.patterns.some((p) => headerText.includes(p))) {
+            matchedKey = def.key;
+            break;
+          }
+        }
+      }
+
+      if (matchedKey && !statsResult[matchedKey].v) {
+        // F1 constraint: Accept ONLY text blocks whose vertical center lies inside [valBandTop, maxAllowedStatY]
+        const valCenterY = valueRect.y + valueRect.height / 2;
+        if (valCenterY >= valBandTop && valCenterY <= maxAllowedStatY) {
+          const val = await extractNumericCell(valueRect, undefined, {
+            isStatCell: true,
+            headerBaseline,
+            minAllowedY: valBandTop,
+            maxAllowedY: maxAllowedStatY,
+            headerTokens: STAT_HEADER_TOKENS[matchedKey]
+          });
+          if (val.v && val.ok) {
+            statsResult[matchedKey] = val;
+            console.log(`[StatsDetectHeader] col ${ci} (${matchedKey}) -> val="${val.v}"`);
+          }
+        }
+      }
+    }
+
+    // F2: Fixed-grid geometry fallback for any stat not detected via headers:
+    // divide the stats table width into its 11 equal columns and read the value cell under each column index;
+    // map columns 1-7 and 11 to the eight stat inputs.
+    const FIXED_11_MAP: Record<string, number> = {
+      student_count: 0, // Column 1
+      std10: 1,         // Column 2
+      std11: 2,         // Column 3
+      std12: 3,         // Column 4
+      college: 4,       // Column 5
+      engineer: 5,      // Column 6
+      medical: 6,       // Column 7
+      muslim_teachers: 10 // Column 11
+    };
+
+    for (const [key, colIdx] of Object.entries(FIXED_11_MAP)) {
+      if (!statsResult[key].v || !statsResult[key].ok) {
+        let geoRect: CellRect;
+        if (candidateCols && candidateCols.length === 11 && candidateCols[colIdx]) {
+          geoRect = candidateCols[colIdx].dataRect;
+        } else {
+          const xLeft = Math.round(statsRegion.tableLeft + colIdx * W11);
+          const xRight = Math.round(statsRegion.tableLeft + (colIdx + 1) * W11);
+          geoRect = {
+            x: xLeft,
+            y: statsRegion.dataBand.yTop,
+            width: xRight - xLeft,
+            height: dataRowHeight
+          };
+        }
+        const valCenterY = geoRect.y + geoRect.height / 2;
+        if (valCenterY >= valBandTop && valCenterY <= maxAllowedStatY) {
+          const geoVal = await extractNumericCell(geoRect, undefined, {
+            isStatCell: true,
+            headerBaseline,
+            minAllowedY: valBandTop,
+            maxAllowedY: maxAllowedStatY,
+            headerTokens: STAT_HEADER_TOKENS[key]
+          });
+          if (geoVal.v && geoVal.ok) {
+            statsResult[key] = geoVal;
+            console.log(`[StatsDetectGeometry11] ${key} from Col ${colIdx + 1} -> val="${geoVal.v}"`);
+          }
+        }
+      }
+    }
+
+    // Support 8-column table fallback for muslim_teachers if table had 8 detected columns
+    if ((!statsResult.muslim_teachers.v || !statsResult.muslim_teachers.ok) && candidateCols && candidateCols.length >= 8) {
+      const lastCol = candidateCols[candidateCols.length - 1];
+      const valCenterY = lastCol.dataRect.y + lastCol.dataRect.height / 2;
+      if (valCenterY >= valBandTop && valCenterY <= maxAllowedStatY) {
+        const lastVal = await extractNumericCell(lastCol.dataRect, undefined, {
+          isStatCell: true,
+          headerBaseline,
+          minAllowedY: valBandTop,
+          maxAllowedY: maxAllowedStatY,
+          headerTokens: STAT_HEADER_TOKENS.muslim_teachers
+        });
+        if (lastVal.v && lastVal.ok) {
+          statsResult.muslim_teachers = lastVal;
+          console.log(`[StatsDetectGeometry8] muslim_teachers from last col -> val="${lastVal.v}"`);
+        }
+      }
+    }
+  }
+
+  // F1 STRICT STAT GATING:
+  // Any stat not filled within the y-band with confidence >= 70 remains empty tagged અસ્પષ્ટ.
+  // Values failing either rule render as empty input + badge. Never guess by index, never use global search.
+  const ALL_STAT_KEYS = ['student_count', 'std10', 'std11', 'std12', 'college', 'engineer', 'medical', 'muslim_teachers'];
+  for (const key of ALL_STAT_KEYS) {
+    if (!statsResult[key]?.v || !statsResult[key]?.ok) {
+      statsResult[key] = { v: null, ok: false };
+    }
+  }
+
+  // CRITICAL SAFETY GUARD: college must never receive 172 from Activity row 8!
+  if (statsResult.college.v === '172') {
+    statsResult.college = { v: null, ok: false };
   }
 
   return {

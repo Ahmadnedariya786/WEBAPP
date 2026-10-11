@@ -19,6 +19,7 @@ export const ReviewOverlay: React.FC<ReviewOverlayProps> = ({
   onConfirmFill
 }) => {
   const [data, setData] = useState<ReviewData>(initialData);
+  const [isNoticeDismissed, setIsNoticeDismissed] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
   const innerScrollRef = useRef<HTMLDivElement>(null);
 
@@ -27,6 +28,7 @@ export const ReviewOverlay: React.FC<ReviewOverlayProps> = ({
   useEffect(() => {
     if (isOpen) {
       setData(initialData);
+      setIsNoticeDismissed(false);
       if (panelRef.current) panelRef.current.scrollTop = 0;
       if (innerScrollRef.current) innerScrollRef.current.scrollTop = 0;
     }
@@ -154,6 +156,45 @@ export const ReviewOverlay: React.FC<ReviewOverlayProps> = ({
     { key: 'muslim_teachers', label: 'મુસ્લિમ શિક્ષકોની સંખ્યા' }
   ];
 
+  // F2: Low-yield notice condition: > 60% of all picker cells are empty or badged
+  const calculateLowYield = (reviewData: ReviewData): boolean => {
+    let emptyOrBadgedCount = 0;
+    let totalCells = 0;
+
+    // 8 Stat fields
+    STAT_FIELDS.forEach(({ key }) => {
+      totalCells++;
+      const s = reviewData.stats[key];
+      if (!s || !s.v || s.v.trim() === '' || !s.ok) {
+        emptyOrBadgedCount++;
+      }
+    });
+
+    // 13 Activity rows
+    reviewData.activities.forEach((act) => {
+      if (act.no === 13) {
+        totalCells++;
+        const m = act.cols['mojuda'];
+        if (!m || !m.v || m.v.trim() === '' || !m.ok) {
+          emptyOrBadgedCount++;
+        }
+      } else {
+        reviewData.columnKeys.forEach((col) => {
+          totalCells++;
+          const c = act.cols[col.key];
+          if (!c || !c.v || c.v.trim() === '' || !c.ok) {
+            emptyOrBadgedCount++;
+          }
+        });
+      }
+    });
+
+    if (totalCells === 0) return false;
+    return (emptyOrBadgedCount / totalCells) > 0.60;
+  };
+
+  const isLowYield = calculateLowYield(data);
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -217,6 +258,31 @@ export const ReviewOverlay: React.FC<ReviewOverlayProps> = ({
 
           {/* Internal Scrollable Content - zero horizontal scroll at 360px */}
           <div ref={innerScrollRef} className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-5 space-y-5 hide-scrollbar">
+            {/* F2: Low-Yield Notice Banner (Handwritten / Ambiguous photo) */}
+            {isLowYield && !isNoticeDismissed && (
+              <div
+                id="low-yield-notice-banner"
+                data-testid="low-yield-notice-banner"
+                className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/25 flex items-start justify-between gap-2.5 transition-all"
+              >
+                <div className="flex items-start gap-2.5 min-w-0">
+                  <AlertCircle size={17} className="text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                  <p className="text-xs font-gujarati text-amber-800 dark:text-amber-200 leading-relaxed select-text font-medium">
+                    આ ફોટો હાથપ્રત અથવા અસ્પષ્ટ લાગે છે — મોટા ભાગના ખાના ખાલી છે. ખાના હાથે ભરો અથવા સાફ, સીધો ફોટો લો.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsNoticeDismissed(true)}
+                  id="btn-dismiss-low-yield-notice"
+                  className="w-7 h-7 rounded-full hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 flex items-center justify-center shrink-0 transition-colors cursor-pointer"
+                  aria-label="સૂચના બંધ કરો"
+                >
+                  <X size={15} />
+                </button>
+              </div>
+            )}
+
             {/* Halqa Name */}
             <div className="p-3.5 rounded-2xl bg-bg/60 border border-brd/20 space-y-2">
               <div className="flex items-center justify-between">
@@ -253,8 +319,9 @@ export const ReviewOverlay: React.FC<ReviewOverlayProps> = ({
               {/* Grid of single-input stats: label on top, one input below */}
               <div className="grid grid-cols-2 gap-2 sm:gap-2.5">
                 {STAT_FIELDS.map(({ key, label }) => {
-                  const stat = data.stats[key] || { v: '', ok: true };
+                  const stat = data.stats[key] || { v: '', ok: false };
                   const isLowConf = !stat.ok;
+                  const displayVal = isLowConf ? '' : (stat.v || '');
                   return (
                     <div
                       key={key}
@@ -267,7 +334,7 @@ export const ReviewOverlay: React.FC<ReviewOverlayProps> = ({
                       <div className="relative flex items-center">
                         <input
                           type="text"
-                          value={stat.v || ''}
+                          value={displayVal}
                           onFocus={() => handleStatFocus(key)}
                           onChange={(e) => handleStatChange(key, e.target.value)}
                           placeholder="–"
