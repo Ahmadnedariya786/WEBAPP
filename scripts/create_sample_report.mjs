@@ -26,7 +26,7 @@ async function createSampleReport() {
           th { background: #f0f0f0; }
           .num { text-align: center; font-weight: bold; font-family: 'Noto Sans Gujarati', sans-serif; font-size: 16px; color: #0d1b2a; }
           .handwritten { font-family: 'Caveat', cursive, sans-serif; font-size: 20px; font-weight: bold; color: #1a365d; }
-          .faint-ambiguous { opacity: 0.18; filter: blur(0.8px); font-family: 'Caveat', cursive; font-size: 14px; color: #777; }
+          .faint-ambiguous { opacity: 0.50; font-family: 'Caveat', cursive; font-size: 18px; color: #222; }
           .noisy-symbol { color: #555; font-size: 14px; }
         </style>
       </head>
@@ -54,14 +54,14 @@ async function createSampleReport() {
               </tr>
             </thead>
             <tbody>
-              <tr><td>1. નમાઝોની પાબંદી</td><td class="num">85</td><td class="num">90</td><td class="num">88</td></tr>
-              <tr><td>2. મશવરાની પાબંદી</td><td class="num">12</td><td class="num">12</td><td class="num">12</td></tr>
-              <tr><td>3. તાલીમની પાબંદી</td><td class="num">20</td><td class="num">22</td><td class="num">21</td></tr>
-              <tr><td>4. ગશતની પાબંદી</td><td class="num">15</td><td class="num">16</td><td class="num">15</td></tr>
-              <tr><td>5. પંચકોસા પાબંદી</td><td class="num">30</td><td class="num">35</td><td class="num">32</td></tr>
+              <tr><td>1. નમાઝોની પાબંદી</td><td class="num">203</td><td class="num">210</td><td class="num">205</td></tr>
+              <tr><td>2. મશવરાની પાબંદી</td><td class="num">32</td><td class="num">35</td><td class="num">33</td></tr>
+              <tr><td>3. તાલીમની પાબંદી</td><td class="num">86</td><td class="num">90</td><td class="num">88</td></tr>
+              <tr><td>4. ગશતની પાબંદી</td><td class="num">76</td><td class="num">80</td><td class="num">78</td></tr>
+              <tr><td>5. પંચકોસા પાબંદી</td><td class="num">17/40</td><td class="num">20/40</td><td class="num">18/40</td></tr>
               <!-- Row 6: શબગુજારી is completely BLANK -->
               <tr><td>6. શબગુજારી</td><td></td><td></td><td></td></tr>
-              <tr><td>7. મુલાકાત કેટલી થઈ (%)</td><td class="num">75</td><td class="num">80</td><td class="num">78</td></tr>
+              <tr><td>7. મુલાકાત કેટલી થઈ (%)</td><td class="num">100%</td><td class="num">100%</td><td class="num">100%</td></tr>
               <!-- Row 8 mojuda has a faint ambiguous mark for F4 low-confidence tag test -->
               <tr><td>8. સ્કૂલોમાં નમાઝ શરૂ થઈ</td><td class="num">4</td><td class="num">5</td><td class="num"><span class="faint-ambiguous">~ ?</span></td></tr>
               <tr><td>9. ૩ દિન જમાઅતો</td><td class="num">2</td><td class="num">2</td><td class="num">2</td></tr>

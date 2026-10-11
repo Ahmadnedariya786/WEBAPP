@@ -134,14 +134,25 @@ export function gujaratiToAsciiDigits(str: string): string {
 export function sanitizeNumericField(raw: string | null | undefined, isPercent = false): string | null {
   if (!raw) return null;
   const normalized = gujaratiToAsciiDigits(raw);
+
+  // Preserve fractions like 17/40 or 30/5
+  const fracMatch = normalized.match(/(\d+)\s*\/\s*(\d+)/);
+  if (fracMatch) {
+    return `${fracMatch[1]}/${fracMatch[2]}`;
+  }
+
+  // Preserve percentage like 100% or clamp 0-100
+  if (isPercent || normalized.includes('%')) {
+    const numMatch = normalized.match(/\d+/);
+    if (!numMatch) return null;
+    const num = parseInt(numMatch[0], 10);
+    const clamped = Math.min(100, Math.max(0, isNaN(num) ? 0 : num));
+    return normalized.includes('%') ? `${clamped}%` : String(clamped);
+  }
+
   // Strip quotes, pipes, plus, exclamation, equals, Gujarati words, all non-digits
   const digitsOnly = normalized.replace(/[^0-9]/g, '');
   if (!digitsOnly) return null;
-  if (isPercent) {
-    const num = parseInt(digitsOnly, 10);
-    const clamped = Math.min(100, Math.max(0, isNaN(num) ? 0 : num));
-    return String(clamped);
-  }
   return digitsOnly;
 }
 
@@ -389,11 +400,8 @@ export function parseOcrText(
 
     const conf = ocrLineConfidences.get(lineText) ?? 90;
     const sanitized = sanitizeNumericField(rawVal);
-    // F4: confidence gating (>= 70)
-    if (conf < 70) {
-      return { v: null, ok: false };
-    }
-    return { v: sanitized, ok: true };
+    // WEB-FIX12 F1: always prefill best guess value; if conf < 70, ok is false (shows અસ્પષ્ટ badge)
+    return { v: sanitized || null, ok: conf >= 70 };
   };
 
   const student_count = getStat(0, 'વિદ્યાર્થી');
@@ -465,9 +473,8 @@ export function parseOcrText(
       const isPercent = no === 7;
       const sanitizeCol = (rawVal: string | undefined): LeafField => {
         if (!rawVal) return { v: null, ok: true };
-        if (lineConf < 70) return { v: null, ok: false };
         const s = sanitizeNumericField(rawVal, isPercent);
-        return { v: s, ok: true };
+        return { v: s || null, ok: lineConf >= 70 };
       };
 
       // F4: if a populated row has a missing column due to faint/ambiguous mark (like row 8 col 3):
@@ -554,7 +561,10 @@ export async function runSelfContainedOcr(
     // F2: Empty-cell detection via ink coverage
     const ink = computeCellInkCoverage(canvas, rect);
     if (ink < 0.010) {
-      // Cell is EMPTY! Skip OCR, blank handwritten cell never produces numbers or text
+      // Cell has no dark ink: if fallback parsed report detected faint/ambiguous mark, keep it; else empty
+      if (fallbackField && !fallbackField.ok) {
+        return fallbackField;
+      }
       return { v: null, ok: true };
     }
 
@@ -573,17 +583,17 @@ export async function runSelfContainedOcr(
       const conf = cellRes?.data?.confidence ?? 0;
       const rawText = cellRes?.data?.text?.trim() || '';
 
-      // F4: Confidence gating (prefill ONLY when confidence >= 70)
-      if (conf < 70) {
-        return { v: null, ok: false };
-      }
-
-      // F3: Numeric sanitization (digits only, clamp percent 0-100)
+      // WEB-FIX12 F1: For every cell where ink was detected, always prefill the OCR best-guess value
+      // (sanitized per WEB-FIX10 rules) into the input. If confidence is below 70, additionally show
+      // a small અસ્પષ્ટ badge (ok: false); if confidence is 70 or above, no badge (ok: true).
       const sanitized = sanitizeNumericField(rawText, isPercent);
-      if (!sanitized) {
-        return { v: null, ok: false };
-      }
-      return { v: sanitized, ok: true };
+      const fallbackVal = fallbackField?.v ? sanitizeNumericField(fallbackField.v, isPercent) : null;
+      const bestGuess = sanitized || fallbackVal || (rawText ? sanitizeNumericField(rawText, isPercent) : null);
+
+      return {
+        v: bestGuess || null,
+        ok: conf >= 70
+      };
     } catch {
       return fallbackField;
     }

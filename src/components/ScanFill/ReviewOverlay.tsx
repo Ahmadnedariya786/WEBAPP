@@ -26,7 +26,18 @@ export const ReviewOverlay: React.FC<ReviewOverlayProps> = ({
 
   useEffect(() => {
     if (isOpen) {
-      setData(initialData);
+      const populatedStats = { ...initialData.stats };
+      Object.keys(populatedStats).forEach((k) => {
+        const item = populatedStats[k];
+        if (item && !(item as any).cols) {
+          (item as any).cols = {
+            gujishata: { v: '', ok: true },
+            agraaham: { v: '', ok: true },
+            mojuda: { v: item.v || '', ok: item.ok ?? true }
+          };
+        }
+      });
+      setData({ ...initialData, stats: populatedStats });
       if (panelRef.current) panelRef.current.scrollTop = 0;
       if (innerScrollRef.current) innerScrollRef.current.scrollTop = 0;
     }
@@ -39,14 +50,33 @@ export const ReviewOverlay: React.FC<ReviewOverlayProps> = ({
     }));
   };
 
-  const handleStatChange = (key: string, val: string) => {
-    setData(prev => ({
-      ...prev,
-      stats: {
-        ...prev.stats,
-        [key]: { ...prev.stats[key], v: val }
-      }
-    }));
+  const handleStatColChange = (key: string, colKey: string, val: string) => {
+    setData(prev => {
+      const prevStat = prev.stats[key] || { v: '', ok: true };
+      const prevCols = (prevStat as any).cols || {
+        gujishata: { v: '', ok: true },
+        agraaham: { v: '', ok: true },
+        mojuda: { v: prevStat.v || '', ok: prevStat.ok ?? true }
+      };
+      const updatedCols = {
+        ...prevCols,
+        [colKey]: { ...(prevCols[colKey] || { ok: true }), v: val }
+      };
+      const primaryVal = updatedCols.mojuda?.v || updatedCols.gujishata?.v || updatedCols.agraaham?.v || '';
+      const primaryOk = updatedCols.mojuda ? updatedCols.mojuda.ok : true;
+      return {
+        ...prev,
+        stats: {
+          ...prev.stats,
+          [key]: {
+            ...prevStat,
+            v: primaryVal,
+            ok: primaryOk,
+            cols: updatedCols
+          }
+        }
+      };
+    });
   };
 
   const handleActivityCellChange = (rowIdx: number, colKey: string, val: string) => {
@@ -82,7 +112,7 @@ export const ReviewOverlay: React.FC<ReviewOverlayProps> = ({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.14 }}
-          className="viewport-fixed-overlay fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md"
+          className="viewport-fixed-overlay fixed inset-0 z-[70] flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-md"
           style={{
             position: 'fixed',
             inset: 0,
@@ -90,7 +120,7 @@ export const ReviewOverlay: React.FC<ReviewOverlayProps> = ({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            padding: '16px',
+            padding: '12px',
           }}
           onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
           id="scan-review-overlay"
@@ -102,7 +132,7 @@ export const ReviewOverlay: React.FC<ReviewOverlayProps> = ({
             exit={{ opacity: 0, scale: 0.98 }}
             transition={{ duration: 0.14, ease: 'easeOut' }}
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-3xl max-h-[90vh] bg-card rounded-[28px] shadow-2xl flex flex-col border border-brd/30 overflow-hidden select-none my-auto self-center"
+            className="w-full max-w-xl max-h-[90vh] bg-card rounded-[28px] shadow-2xl flex flex-col border border-brd/30 overflow-hidden select-none my-auto self-center"
             style={{
               margin: 'auto',
               alignSelf: 'center',
@@ -135,10 +165,10 @@ export const ReviewOverlay: React.FC<ReviewOverlayProps> = ({
             </button>
           </div>
 
-          {/* Internal Scrollable Content */}
-          <div ref={innerScrollRef} className="flex-1 overflow-y-auto p-5 space-y-6 hide-scrollbar">
+          {/* Internal Scrollable Content - zero horizontal scroll at 360px */}
+          <div ref={innerScrollRef} className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-5 space-y-5 hide-scrollbar">
             {/* Halqa Name */}
-            <div className="p-4 rounded-2xl bg-bg/60 border border-brd/20 space-y-2">
+            <div className="p-3.5 rounded-2xl bg-bg/60 border border-brd/20 space-y-2">
               <div className="flex items-center justify-between">
                 <label className="text-xs font-semibold font-gujarati text-sub">
                   હલકો (Halqa Name)
@@ -161,145 +191,180 @@ export const ReviewOverlay: React.FC<ReviewOverlayProps> = ({
               </div>
             </div>
 
-            {/* Grouped Stats */}
-            <div className="space-y-2">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-sub font-gujarati">
-                સ્ટુડન્ટ આંકડા (Grouped Stats)
-              </h4>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+            {/* Student Stats Section (Grouped Stats) - Stacked Rows Layout */}
+            <div className="space-y-2.5" id="scan-review-stats-section">
+              <div className="flex items-center justify-between">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-sub font-gujarati">
+                  સ્ટુડન્ટ આંકડા (Grouped Stats)
+                </h4>
+              </div>
+
+              {/* Sticky Column Headers for Stats Section */}
+              <div className="sticky top-0 z-20 bg-card/95 backdrop-blur-sm py-1.5 px-1 border-b border-brd/20">
+                <div className="grid grid-cols-3 gap-2 w-full text-center">
+                  {data.columnKeys.map((col) => (
+                    <div
+                      key={col.key}
+                      className="text-xs font-bold font-gujarati text-sub py-1 px-1.5 rounded-lg bg-sub/10 select-none"
+                    >
+                      {col.label}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Stacked Rows for Stats */}
+              <div className="space-y-2">
                 {Object.entries(data.stats).map(([key, stat]) => {
                   const label = statFieldLabels[key] || key;
+                  const statCols = (stat as any).cols || {
+                    gujishata: { v: '', ok: true },
+                    agraaham: { v: '', ok: true },
+                    mojuda: { v: stat.v || '', ok: stat.ok ?? true }
+                  };
                   return (
                     <div
                       key={key}
-                      className="p-3 rounded-2xl bg-bg/50 border border-brd/20 flex flex-col justify-between"
+                      className="p-3 rounded-2xl bg-bg/50 border border-brd/20 space-y-2"
+                      data-stat-key={key}
                     >
-                      <div className="flex items-center justify-between mb-1.5">
-                        <span className="text-xs font-gujarati text-sub truncate pr-1">
+                      {/* Full-width label on top: bold small */}
+                      <div className="flex items-center justify-between">
+                        <span className="font-gujarati text-xs font-bold text-txt">
                           {label}
                         </span>
-                        {!stat.ok && (
-                          <span
-                            className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 font-gujarati font-medium shrink-0"
-                            title="અસ્પષ્ટ લખાણ"
-                          >
-                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                            <span>અસ્પષ્ટ</span>
-                          </span>
-                        )}
                       </div>
-                      <input
-                        type="text"
-                        value={stat.v || ''}
-                        onChange={(e) => handleStatChange(key, e.target.value)}
-                        placeholder="-"
-                        className="w-full app-input py-1.5 px-2 rounded-lg text-base font-bold font-num text-right outline-none focus:ring-2 focus:ring-acc/40"
-                      />
+
+                      {/* 3-column grid of inputs below it */}
+                      <div className="grid grid-cols-3 gap-2">
+                        {data.columnKeys.map((col) => {
+                          const cell = statCols[col.key] || { v: '', ok: true };
+                          const isLowConf = !cell.ok;
+                          return (
+                            <div key={col.key} className="relative flex items-center">
+                              <input
+                                type="text"
+                                value={cell.v || ''}
+                                onChange={(e) => handleStatColChange(key, col.key, e.target.value)}
+                                placeholder="–"
+                                className={`w-full app-input py-2 px-2 text-xs text-center font-num font-bold outline-none focus:ring-2 focus:ring-acc/40 rounded-xl transition-all ${
+                                  isLowConf ? 'pr-12' : ''
+                                }`}
+                              />
+                              {isLowConf && (
+                                <span
+                                  className="inline-flex items-center text-[9px] px-1.5 py-0.5 rounded-md bg-amber-500/20 text-amber-700 dark:text-amber-300 font-gujarati font-semibold absolute right-1.5 top-1 pointer-events-none select-none z-10"
+                                  title="અસ્પષ્ટ"
+                                >
+                                  અસ્પષ્ટ
+                                </span>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
                   );
                 })}
               </div>
             </div>
 
-            {/* 13 Activities Table */}
-            <div className="space-y-2">
+            {/* 13 Activities Section - Stacked Rows Layout (no wide table, no horizontal scroll) */}
+            <div className="space-y-2.5" id="scan-review-activities-section">
               <div className="flex items-center justify-between">
                 <h4 className="text-xs font-bold uppercase tracking-wider text-sub font-gujarati">
                   ૧૩ મહેનત પ્રવૃત્તિઓ (Activities)
                 </h4>
               </div>
 
-              <div className="rounded-2xl border border-brd/30 bg-card overflow-hidden shadow-sm">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse min-w-[500px]">
-                    {/* Sticky Table Headers rendered from extracted columnKeys (N4) */}
-                    <thead className="sticky top-0 z-10 bg-acc text-white shadow-sm">
-                      <tr>
-                        <th className="py-2.5 px-3 text-xs font-gujarati font-semibold w-2/5">
-                          પ્રવૃત્તિ
-                        </th>
-                        {data.columnKeys.map((col) => (
-                          <th
-                            key={col.key}
-                            className="py-2.5 px-3 text-xs font-gujarati font-semibold text-center"
-                          >
-                            {col.label}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-brd/20">
-                      {data.activities.map((act, idx) => (
-                        <tr
-                          key={act.no}
-                          className="hover:bg-acc/5 transition-colors text-sm"
-                        >
-                          <td className="py-2.5 px-3">
-                            <div className="flex items-center gap-2">
-                              <span className="w-6 h-6 rounded-md bg-acc/10 text-acc text-xs font-bold flex items-center justify-center shrink-0 font-num">
-                                {act.no}
-                              </span>
-                              <span className="font-gujarati text-xs sm:text-sm text-txt truncate">
-                                {act.name}
-                              </span>
-                            </div>
-                          </td>
-                          {act.no === 13 ? (
-                            <td colSpan={data.columnKeys.length} className="py-2 px-3">
-                              <div className="relative flex items-center">
-                                <input
-                                  type="text"
-                                  value={act.cols['mojuda']?.v || ''}
-                                  onChange={(e) =>
-                                    handleActivityCellChange(idx, 'mojuda', e.target.value)
-                                  }
-                                  placeholder="વિગત લખો..."
-                                  className="w-full app-input py-1.5 px-3 rounded-lg text-xs font-gujarati outline-none focus:ring-2 focus:ring-acc/40"
-                                />
-                                {!act.cols['mojuda']?.ok && (
-                                  <span
-                                    className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-md bg-amber-500/15 text-amber-600 dark:text-amber-400 font-gujarati font-medium absolute right-3 shrink-0 pointer-events-none"
-                                    title="અસ્પષ્ટ લખાણ"
-                                  >
-                                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                                    <span>અસ્પષ્ટ</span>
-                                  </span>
-                                )}
-                              </div>
-                            </td>
-                          ) : (
-                            data.columnKeys.map((col) => {
-                              const cell = act.cols[col.key] || { v: '', ok: true };
-                              return (
-                                <td key={col.key} className="py-2 px-2 text-center">
-                                  <div className="relative flex items-center justify-center">
-                                    <input
-                                      type="text"
-                                      value={cell.v || ''}
-                                      onChange={(e) =>
-                                        handleActivityCellChange(idx, col.key, e.target.value)
-                                      }
-                                      placeholder="-"
-                                      className="w-full max-w-[90px] app-input py-1 px-1.5 rounded-lg text-xs text-center font-num outline-none focus:ring-2 focus:ring-acc/40 font-medium"
-                                    />
-                                    {!cell.ok && (
-                                      <span
-                                        className="inline-flex items-center text-[9px] px-1 py-0.2 rounded bg-amber-500/20 text-amber-700 dark:text-amber-300 font-gujarati font-semibold absolute right-1 top-0.5 pointer-events-none"
-                                        title="અસ્પષ્ટ"
-                                      >
-                                        અસ્પષ્ટ
-                                      </span>
-                                    )}
-                                  </div>
-                                </td>
-                              );
-                            })
-                          )}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+              {/* Sticky Column Headers for Activities Section */}
+              <div className="sticky top-0 z-20 bg-card/95 backdrop-blur-sm py-1.5 px-1 border-b border-brd/20">
+                <div className="grid grid-cols-3 gap-2 w-full text-center">
+                  {data.columnKeys.map((col) => (
+                    <div
+                      key={col.key}
+                      className="text-xs font-bold font-gujarati text-sub py-1 px-1.5 rounded-lg bg-sub/10 select-none"
+                    >
+                      {col.label}
+                    </div>
+                  ))}
                 </div>
+              </div>
+
+              {/* Stacked Rows for Activities (1 to 13) */}
+              <div className="space-y-2">
+                {data.activities.map((act, idx) => (
+                  <div
+                    key={act.no}
+                    className="p-3 rounded-2xl bg-bg/50 border border-brd/20 space-y-2"
+                    data-activity-no={act.no}
+                  >
+                    {/* Full-width label on top: bold small */}
+                    <div className="flex items-center gap-2">
+                      <span className="w-5 h-5 rounded-md bg-acc/10 text-acc text-xs font-bold flex items-center justify-center shrink-0 font-num">
+                        {act.no}
+                      </span>
+                      <span className="font-gujarati text-xs sm:text-sm font-bold text-txt truncate">
+                        {act.name}
+                      </span>
+                    </div>
+
+                    {/* Inputs below it */}
+                    {act.no === 13 ? (
+                      <div className="relative flex items-center">
+                        <input
+                          type="text"
+                          value={act.cols['mojuda']?.v || ''}
+                          onChange={(e) =>
+                            handleActivityCellChange(idx, 'mojuda', e.target.value)
+                          }
+                          placeholder="વિગત લખો..."
+                          className={`w-full app-input py-2 px-3 rounded-xl text-xs font-gujarati outline-none focus:ring-2 focus:ring-acc/40 font-medium ${
+                            !act.cols['mojuda']?.ok ? 'pr-14' : ''
+                          }`}
+                        />
+                        {!act.cols['mojuda']?.ok && (
+                          <span
+                            className="inline-flex items-center text-[9px] px-1.5 py-0.5 rounded-md bg-amber-500/20 text-amber-700 dark:text-amber-300 font-gujarati font-semibold absolute right-2 top-1.5 pointer-events-none select-none z-10"
+                            title="અસ્પષ્ટ"
+                          >
+                            અસ્પષ્ટ
+                          </span>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-3 gap-2">
+                        {data.columnKeys.map((col) => {
+                          const cell = act.cols[col.key] || { v: '', ok: true };
+                          const isLowConf = !cell.ok;
+                          return (
+                            <div key={col.key} className="relative flex items-center">
+                              <input
+                                type="text"
+                                value={cell.v || ''}
+                                onChange={(e) =>
+                                  handleActivityCellChange(idx, col.key, e.target.value)
+                                }
+                                placeholder="–"
+                                className={`w-full app-input py-2 px-2 text-xs text-center font-num font-bold outline-none focus:ring-2 focus:ring-acc/40 rounded-xl transition-all ${
+                                  isLowConf ? 'pr-12' : ''
+                                }`}
+                              />
+                              {isLowConf && (
+                                <span
+                                  className="inline-flex items-center text-[9px] px-1.5 py-0.5 rounded-md bg-amber-500/20 text-amber-700 dark:text-amber-300 font-gujarati font-semibold absolute right-1.5 top-1 pointer-events-none select-none z-10"
+                                  title="અસ્પષ્ટ"
+                                >
+                                  અસ્પષ્ટ
+                                </span>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
             </div>
 
