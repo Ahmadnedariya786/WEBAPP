@@ -26,18 +26,7 @@ export const ReviewOverlay: React.FC<ReviewOverlayProps> = ({
 
   useEffect(() => {
     if (isOpen) {
-      const populatedStats = { ...initialData.stats };
-      Object.keys(populatedStats).forEach((k) => {
-        const item = populatedStats[k];
-        if (item && !(item as any).cols) {
-          (item as any).cols = {
-            gujishata: { v: '', ok: true },
-            agraaham: { v: '', ok: true },
-            mojuda: { v: item.v || '', ok: item.ok ?? true }
-          };
-        }
-      });
-      setData({ ...initialData, stats: populatedStats });
+      setData(initialData);
       if (panelRef.current) panelRef.current.scrollTop = 0;
       if (innerScrollRef.current) innerScrollRef.current.scrollTop = 0;
     }
@@ -46,36 +35,55 @@ export const ReviewOverlay: React.FC<ReviewOverlayProps> = ({
   const handleHalqaChange = (val: string) => {
     setData(prev => ({
       ...prev,
-      halqa_name: { ...prev.halqa_name, v: val }
+      halqa_name: { v: val, ok: true }
     }));
   };
 
-  const handleStatColChange = (key: string, colKey: string, val: string) => {
+  const handleHalqaFocus = () => {
+    setData(prev => {
+      if (!prev.halqa_name.ok) {
+        return {
+          ...prev,
+          halqa_name: { ...prev.halqa_name, ok: true }
+        };
+      }
+      return prev;
+    });
+  };
+
+  const handleStatChange = (key: string, val: string) => {
     setData(prev => {
       const prevStat = prev.stats[key] || { v: '', ok: true };
-      const prevCols = (prevStat as any).cols || {
-        gujishata: { v: '', ok: true },
-        agraaham: { v: '', ok: true },
-        mojuda: { v: prevStat.v || '', ok: prevStat.ok ?? true }
-      };
-      const updatedCols = {
-        ...prevCols,
-        [colKey]: { ...(prevCols[colKey] || { ok: true }), v: val }
-      };
-      const primaryVal = updatedCols.mojuda?.v || updatedCols.gujishata?.v || updatedCols.agraaham?.v || '';
-      const primaryOk = updatedCols.mojuda ? updatedCols.mojuda.ok : true;
       return {
         ...prev,
         stats: {
           ...prev.stats,
           [key]: {
             ...prevStat,
-            v: primaryVal,
-            ok: primaryOk,
-            cols: updatedCols
+            v: val,
+            ok: true
           }
         }
       };
+    });
+  };
+
+  const handleStatFocus = (key: string) => {
+    setData(prev => {
+      const prevStat = prev.stats[key];
+      if (prevStat && !prevStat.ok) {
+        return {
+          ...prev,
+          stats: {
+            ...prev.stats,
+            [key]: {
+              ...prevStat,
+              ok: true
+            }
+          }
+        };
+      }
+      return prev;
     });
   };
 
@@ -86,23 +94,65 @@ export const ReviewOverlay: React.FC<ReviewOverlayProps> = ({
       if (row) {
         row.cols = {
           ...row.cols,
-          [colKey]: { ...(row.cols[colKey] || { ok: true }), v: val }
+          [colKey]: { v: val, ok: true }
         };
       }
       return { ...prev, activities: updated };
     });
   };
 
-  const statFieldLabels: Record<string, string> = {
-    student_count: 'કુલ સંખ્યા',
-    std10: 'ધોરણ ૧૦',
-    std11: 'ધોરણ ૧૧',
-    std12: 'ધોરણ ૧૨',
-    college: 'કોલેજ',
-    engineer: 'એન્જિનિયર',
-    medical: 'મેડિકલ',
-    muslim_teachers: 'મુસ્લિમ શિક્ષકો'
+  const handleActivityCellFocus = (rowIdx: number, colKey: string) => {
+    setData(prev => {
+      const row = prev.activities[rowIdx];
+      if (row && row.cols[colKey] && !row.cols[colKey].ok) {
+        const updated = [...prev.activities];
+        updated[rowIdx] = {
+          ...row,
+          cols: {
+            ...row.cols,
+            [colKey]: { ...row.cols[colKey], ok: true }
+          }
+        };
+        return { ...prev, activities: updated };
+      }
+      return prev;
+    });
   };
+
+  const handleConfirm = () => {
+    // F1: Ensure all badges are hidden permanently after "ફોર્મમાં ભરો"
+    const cleanedStats: Record<string, { v: string; ok: boolean }> = {};
+    Object.entries(data.stats).forEach(([k, s]) => {
+      cleanedStats[k] = { v: s.v || '', ok: true };
+    });
+
+    const cleanedActivities = data.activities.map(act => ({
+      ...act,
+      cols: Object.fromEntries(
+        Object.entries(act.cols).map(([cKey, cell]) => [cKey, { v: cell.v || '', ok: true }])
+      )
+    }));
+
+    const cleanData: ReviewData = {
+      ...data,
+      halqa_name: { v: data.halqa_name.v || '', ok: true },
+      stats: cleanedStats,
+      activities: cleanedActivities
+    };
+
+    onConfirmFill(cleanData);
+  };
+
+  const STAT_FIELDS = [
+    { key: 'student_count', label: 'કુલ સંખ્યા' },
+    { key: 'std10', label: 'ધોરણ ૧૦' },
+    { key: 'std11', label: 'ધોરણ ૧૧' },
+    { key: 'std12', label: 'ધોરણ ૧૨' },
+    { key: 'college', label: 'કોલેજ' },
+    { key: 'engineer', label: 'એન્જિનિયર' },
+    { key: 'medical', label: 'મેડિકલ' },
+    { key: 'muslim_teachers', label: 'મુસ્લિમ શિક્ષકોની સંખ્યા' }
+  ];
 
   return (
     <AnimatePresence>
@@ -184,6 +234,7 @@ export const ReviewOverlay: React.FC<ReviewOverlayProps> = ({
                 <input
                   type="text"
                   value={data.halqa_name.v || ''}
+                  onFocus={handleHalqaFocus}
                   onChange={(e) => handleHalqaChange(e.target.value)}
                   placeholder="હલકાનું નામ દા.ત. પાલનપુર"
                   className="w-full app-input px-3.5 py-2.5 rounded-xl text-sm font-gujarati font-semibold outline-none focus:ring-2 focus:ring-acc/40 transition-all"
@@ -191,77 +242,50 @@ export const ReviewOverlay: React.FC<ReviewOverlayProps> = ({
               </div>
             </div>
 
-            {/* Student Stats Section (Grouped Stats) - Stacked Rows Layout */}
+            {/* F2: Student Stats Section - ONE input per stat with its label above; NO 3-column header row */}
             <div className="space-y-2.5" id="scan-review-stats-section">
               <div className="flex items-center justify-between">
                 <h4 className="text-xs font-bold uppercase tracking-wider text-sub font-gujarati">
-                  સ્ટુડન્ટ આંકડા (Grouped Stats)
+                  સ્ટુડન્ટ આંકડા (Student Stats)
                 </h4>
               </div>
 
-              {/* Sticky Column Headers for Stats Section */}
-              <div className="sticky top-0 z-20 bg-card/95 backdrop-blur-sm py-1.5 px-1 border-b border-brd/20">
-                <div className="grid grid-cols-3 gap-2 w-full text-center">
-                  {data.columnKeys.map((col) => (
-                    <div
-                      key={col.key}
-                      className="text-xs font-bold font-gujarati text-sub py-1 px-1.5 rounded-lg bg-sub/10 select-none"
-                    >
-                      {col.label}
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Stacked Rows for Stats */}
-              <div className="space-y-2">
-                {Object.entries(data.stats).map(([key, stat]) => {
-                  const label = statFieldLabels[key] || key;
-                  const statCols = (stat as any).cols || {
-                    gujishata: { v: '', ok: true },
-                    agraaham: { v: '', ok: true },
-                    mojuda: { v: stat.v || '', ok: stat.ok ?? true }
-                  };
+              {/* Grid of single-input stats: label on top, one input below */}
+              <div className="grid grid-cols-2 gap-2 sm:gap-2.5">
+                {STAT_FIELDS.map(({ key, label }) => {
+                  const stat = data.stats[key] || { v: '', ok: true };
+                  const isLowConf = !stat.ok;
                   return (
                     <div
                       key={key}
-                      className="p-3 rounded-2xl bg-bg/50 border border-brd/20 space-y-2"
+                      className="p-2.5 rounded-xl bg-bg/50 border border-brd/20 space-y-1.5"
                       data-stat-key={key}
                     >
-                      {/* Full-width label on top: bold small */}
-                      <div className="flex items-center justify-between">
-                        <span className="font-gujarati text-xs font-bold text-txt">
-                          {label}
-                        </span>
-                      </div>
-
-                      {/* 3-column grid of inputs below it */}
-                      <div className="grid grid-cols-3 gap-2">
-                        {data.columnKeys.map((col) => {
-                          const cell = statCols[col.key] || { v: '', ok: true };
-                          const isLowConf = !cell.ok;
-                          return (
-                            <div key={col.key} className="relative flex items-center">
-                              <input
-                                type="text"
-                                value={cell.v || ''}
-                                onChange={(e) => handleStatColChange(key, col.key, e.target.value)}
-                                placeholder="–"
-                                className={`w-full app-input py-2 px-2 text-xs text-center font-num font-bold outline-none focus:ring-2 focus:ring-acc/40 rounded-xl transition-all ${
-                                  isLowConf ? 'pr-12' : ''
-                                }`}
-                              />
-                              {isLowConf && (
-                                <span
-                                  className="inline-flex items-center text-[9px] px-1.5 py-0.5 rounded-md bg-amber-500/20 text-amber-700 dark:text-amber-300 font-gujarati font-semibold absolute right-1.5 top-1 pointer-events-none select-none z-10"
-                                  title="અસ્પષ્ટ"
-                                >
-                                  અસ્પષ્ટ
-                                </span>
-                              )}
-                            </div>
-                          );
-                        })}
+                      <label className="block font-gujarati text-xs font-bold text-txt truncate" title={label}>
+                        {label}
+                      </label>
+                      <div className="relative flex items-center">
+                        <input
+                          type="text"
+                          value={stat.v || ''}
+                          onFocus={() => handleStatFocus(key)}
+                          onChange={(e) => handleStatChange(key, e.target.value)}
+                          placeholder="–"
+                          aria-label={label}
+                          data-stat-input={key}
+                          className={`w-full app-input py-2 px-2.5 text-xs text-center font-num font-bold outline-none focus:ring-2 focus:ring-acc/40 rounded-xl transition-all ${
+                            isLowConf ? 'pr-[56px]' : ''
+                          }`}
+                        />
+                        {isLowConf && (
+                          <span
+                            className="inline-flex items-center text-[9px] px-1.5 py-0.5 rounded-md bg-amber-500/20 text-amber-700 dark:text-amber-300 font-gujarati font-semibold absolute right-1.5 top-1.5 pointer-events-none select-none z-10"
+                            title="અસ્પષ્ટ"
+                            data-testid={`badge-${key}`}
+                          >
+                            અસ્પષ્ટ
+                          </span>
+                        )}
                       </div>
                     </div>
                   );
@@ -269,7 +293,7 @@ export const ReviewOverlay: React.FC<ReviewOverlayProps> = ({
               </div>
             </div>
 
-            {/* 13 Activities Section - Stacked Rows Layout (no wide table, no horizontal scroll) */}
+            {/* 13 Activities Section - Sticky 3-column headers apply ONLY here */}
             <div className="space-y-2.5" id="scan-review-activities-section">
               <div className="flex items-center justify-between">
                 <h4 className="text-xs font-bold uppercase tracking-wider text-sub font-gujarati">
@@ -278,7 +302,7 @@ export const ReviewOverlay: React.FC<ReviewOverlayProps> = ({
               </div>
 
               {/* Sticky Column Headers for Activities Section */}
-              <div className="sticky top-0 z-20 bg-card/95 backdrop-blur-sm py-1.5 px-1 border-b border-brd/20">
+              <div className="sticky top-0 z-20 bg-card/95 backdrop-blur-sm py-1.5 px-1 border-b border-brd/20" id="activities-column-header">
                 <div className="grid grid-cols-3 gap-2 w-full text-center">
                   {data.columnKeys.map((col) => (
                     <div
@@ -315,18 +339,21 @@ export const ReviewOverlay: React.FC<ReviewOverlayProps> = ({
                         <input
                           type="text"
                           value={act.cols['mojuda']?.v || ''}
+                          onFocus={() => handleActivityCellFocus(idx, 'mojuda')}
                           onChange={(e) =>
                             handleActivityCellChange(idx, 'mojuda', e.target.value)
                           }
                           placeholder="વિગત લખો..."
                           className={`w-full app-input py-2 px-3 rounded-xl text-xs font-gujarati outline-none focus:ring-2 focus:ring-acc/40 font-medium ${
-                            !act.cols['mojuda']?.ok ? 'pr-14' : ''
+                            !act.cols['mojuda']?.ok ? 'pr-[56px]' : ''
                           }`}
+                          data-activity-input="13-mojuda"
                         />
                         {!act.cols['mojuda']?.ok && (
                           <span
                             className="inline-flex items-center text-[9px] px-1.5 py-0.5 rounded-md bg-amber-500/20 text-amber-700 dark:text-amber-300 font-gujarati font-semibold absolute right-2 top-1.5 pointer-events-none select-none z-10"
                             title="અસ્પષ્ટ"
+                            data-testid="badge-13-mojuda"
                           >
                             અસ્પષ્ટ
                           </span>
@@ -342,18 +369,21 @@ export const ReviewOverlay: React.FC<ReviewOverlayProps> = ({
                               <input
                                 type="text"
                                 value={cell.v || ''}
+                                onFocus={() => handleActivityCellFocus(idx, col.key)}
                                 onChange={(e) =>
                                   handleActivityCellChange(idx, col.key, e.target.value)
                                 }
                                 placeholder="–"
                                 className={`w-full app-input py-2 px-2 text-xs text-center font-num font-bold outline-none focus:ring-2 focus:ring-acc/40 rounded-xl transition-all ${
-                                  isLowConf ? 'pr-12' : ''
+                                  isLowConf ? 'pr-[56px]' : ''
                                 }`}
+                                data-activity-input={`${act.no}-${col.key}`}
                               />
                               {isLowConf && (
                                 <span
                                   className="inline-flex items-center text-[9px] px-1.5 py-0.5 rounded-md bg-amber-500/20 text-amber-700 dark:text-amber-300 font-gujarati font-semibold absolute right-1.5 top-1 pointer-events-none select-none z-10"
                                   title="અસ્પષ્ટ"
+                                  data-testid={`badge-${act.no}-${col.key}`}
                                 >
                                   અસ્પષ્ટ
                                 </span>
@@ -411,7 +441,7 @@ export const ReviewOverlay: React.FC<ReviewOverlayProps> = ({
             <LiquidButton
               variant="primary"
               className="w-full min-h-[48px] h-[48px] px-4 font-gujarati text-sm flex items-center justify-center gap-1.5 cursor-pointer"
-              onClick={() => onConfirmFill(data)}
+              onClick={handleConfirm}
               id="btn-scan-review-confirm"
             >
               <Check size={16} />

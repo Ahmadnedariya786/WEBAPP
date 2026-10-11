@@ -111,22 +111,28 @@ export async function launchHeadlessBrowser(puppeteer, customLaunchOptions = {})
  * and sets up CDP request interception for local fulfillment.
  */
 export async function configureDownloadSafety(page, downloadDir) {
+  let downloadAttempts = 0;
   try {
     const client = await page.createCDPSession();
     await client.send('Browser.setDownloadBehavior', {
-      behavior: 'default',
+      behavior: 'deny',
       downloadPath: downloadDir || os.tmpdir(),
-      eventsEnabled: false
+      eventsEnabled: true
+    });
+    client.on('Browser.downloadWillBegin', (evt) => {
+      downloadAttempts++;
+      console.warn('[CDP Download Event Detected!]', evt);
     });
   } catch (err) {
     try {
       const client = await page.createCDPSession();
       await client.send('Page.setDownloadBehavior', {
-        behavior: 'default',
+        behavior: 'deny',
         downloadPath: downloadDir || os.tmpdir()
       });
     } catch {}
   }
+  page._getDownloadAttempts = () => downloadAttempts;
 
   // Intercept and serve Tesseract lang-data assets directly to prevent OS download managers from intercepting
   try {

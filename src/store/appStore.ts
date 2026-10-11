@@ -321,9 +321,10 @@ export const useAppStore = create<AppState>()(
 
         // 2. Stats (GOLDEN RULE: write ONLY non-empty values; empty = skip)
         if (!newDraft.stats) {
-          newDraft.stats = { std_10: 0, std_11: 0, std_12: 0, college: 0, engineering: 0, medical: 0, muslim_teachers: 0 };
+          newDraft.stats = { total: 0, std_10: 0, std_11: 0, std_12: 0, college: 0, engineering: 0, medical: 0, muslim_teachers: 0 };
         }
         const statMapping: Record<string, string> = {
+          student_count: 'total',
           std10: 'std_10',
           std11: 'std_11',
           std12: 'std_12',

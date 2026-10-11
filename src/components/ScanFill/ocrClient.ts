@@ -376,22 +376,35 @@ export function parseOcrText(
     }
   });
 
-  const getStat = (idx: number, fallbackKey?: string): LeafField => {
+  const getStat = (idx: number, fallbackKeys: string | string[]): LeafField => {
     let rawVal: string | null = null;
     let lineText = '';
-    if (fallbackKey) {
-      for (const line of lines) {
-        if (line.includes(fallbackKey)) {
-          lineText = line;
-          let content = line.split(fallbackKey).join(' ');
-          content = content.replace(/(કુલ|વિદ્યાર્થી|ધોરણ|શિક્ષક|મુસ્લિમ)/g, ' ');
-          content = content.replace(/[:|+=!?"'_\-~`*#^$@&/<>\\]/g, ' ').trim();
-          const m = content.match(numRegex);
-          if (m && m[0]) {
-            rawVal = m[0];
-            break;
+    const keys = Array.isArray(fallbackKeys) ? fallbackKeys : [fallbackKeys];
+    // Ignore header / meta lines (e.g. date '10/10/2026' or 'હલકો:') so dates don't collide with std10
+    const statLines = lines.filter((l) => !l.includes('તારીખ') && !l.includes('તારીખ:') && !l.includes('હલકો:'));
+    if (keys.length > 0) {
+      for (const line of statLines) {
+        for (const k of keys) {
+          const kIdx = line.indexOf(k);
+          if (kIdx !== -1) {
+            lineText = line;
+            // First check the text immediately after the keyword
+            const after = line.substring(kIdx + k.length);
+            const afterMatches = after.match(numRegex);
+            if (afterMatches && afterMatches[0]) {
+              rawVal = afterMatches[0];
+              break;
+            }
+            // Fallback: check text immediately before keyword
+            const before = line.substring(0, kIdx);
+            const beforeMatches = before.match(numRegex);
+            if (beforeMatches && beforeMatches.length > 0) {
+              rawVal = beforeMatches[beforeMatches.length - 1];
+              break;
+            }
           }
         }
+        if (rawVal) break;
       }
     }
     if (!rawVal && numbersFound[idx]) {
@@ -404,14 +417,14 @@ export function parseOcrText(
     return { v: sanitized || null, ok: conf >= 70 };
   };
 
-  const student_count = getStat(0, 'વિદ્યાર્થી');
-  const std10 = getStat(1, '૧૦');
-  const std11 = getStat(2, '૧૧');
-  const std12 = getStat(3, '૧૨');
-  const college = getStat(4, 'કોલેજ');
-  const engineer = getStat(5, 'એન્જિનિયર');
-  const medical = getStat(6, 'મેડિકલ');
-  const muslim_teachers = getStat(7, 'શિક્ષક');
+  const student_count = getStat(0, ['કુલ વિદ્યાર્થી', 'કુલ સંખ્યા', 'વિદ્યાર્થી', 'કુલ']);
+  const std10 = getStat(1, ['ધોરણ ૧૦', 'ધોરણ 10', 'ધો. ૧૦', 'ધો. 10']);
+  const std11 = getStat(2, ['ધોરણ ૧૧', 'ધોરણ 11', 'ધો. ૧૧', 'ધો. 11']);
+  const std12 = getStat(3, ['ધોરણ ૧૨', 'ધોરણ 12', 'ધો. ૧૨', 'ધો. 12']);
+  const college = getStat(4, ['કોલેજ']);
+  const engineer = getStat(5, ['એન્જિનિયર', 'એન્જીનિયર']);
+  const medical = getStat(6, ['મેડિકલ']);
+  const muslim_teachers = getStat(7, ['મુસ્લિમ શિક્ષકો', 'મુસ્લિમ શિક્ષક', 'શિક્ષકો', 'શિક્ષક']);
 
   // 3. Extract 13 Activities
   const ACTIVITY_KEYWORDS: Record<number, string[]> = {

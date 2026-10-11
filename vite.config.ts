@@ -10,15 +10,22 @@ function tesseractAssetsMiddleware(): Plugin {
       const urlObj = new URL(req.url, 'http://localhost');
       const pathname = urlObj.pathname;
 
-      if (pathname.startsWith('/tesseract/lang-data/')) {
-        const fileName = pathname.replace('/tesseract/lang-data/', '');
-        const distPath = path.resolve(process.cwd(), 'dist', 'tesseract', 'lang-data', fileName);
-        const publicPath = path.resolve(process.cwd(), 'public', 'tesseract', 'lang-data', fileName);
+      if (pathname.startsWith('/tesseract/')) {
+        const subPath = pathname.replace(/^\/tesseract\//, '');
+        const distPath = path.resolve(process.cwd(), 'dist', 'tesseract', subPath);
+        const publicPath = path.resolve(process.cwd(), 'public', 'tesseract', subPath);
         const filePath = fs.existsSync(distPath) ? distPath : publicPath;
 
         if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
           const stat = fs.statSync(filePath);
-          const contentType = fileName.endsWith('.gz') ? 'application/gzip' : 'application/octet-stream';
+          let contentType = 'application/octet-stream';
+          if (pathname.endsWith('.gz') || pathname.endsWith('.traineddata') || pathname.endsWith('.traineddata.gz')) {
+            contentType = 'application/gzip';
+          } else if (pathname.endsWith('.wasm')) {
+            contentType = 'application/wasm';
+          } else if (pathname.endsWith('.js')) {
+            contentType = 'application/javascript';
+          }
 
           if (req.method === 'OPTIONS') {
             res.statusCode = 204;
@@ -170,5 +177,15 @@ function apiDevMiddleware(): Plugin {
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), tesseractAssetsMiddleware(), apiDevMiddleware()],
-})
+  server: {
+    headers: {
+      'Content-Disposition': 'inline'
+    }
+  },
+  preview: {
+    headers: {
+      'Content-Disposition': 'inline'
+    }
+  }
+});
 

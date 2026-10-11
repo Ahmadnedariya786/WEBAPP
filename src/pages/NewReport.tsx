@@ -34,6 +34,7 @@ const KPI_KEYS: { key: keyof typeof initialStats; label: string }[] = [
 ];
 
 const initialStats = {
+  total: 0,
   std_10: 0,
   std_11: 0,
   std_12: 0,
@@ -91,7 +92,8 @@ export const NewReport: React.FC = () => {
   const [recentTileKey, setRecentTileKey] = useState<string | null>(null);
 
   // Total Students Calculation & Count-up Animation
-  const totalStudents = stats.std_10 + stats.std_11 + stats.std_12 + stats.college;
+  const sumStudents = stats.std_10 + stats.std_11 + stats.std_12 + stats.college;
+  const totalStudents = stats.total && stats.total > 0 ? stats.total : sumStudents;
   const [displayCount, setDisplayCount] = useState(totalStudents);
 
   useEffect(() => {
@@ -359,7 +361,14 @@ export const NewReport: React.FC = () => {
   const handleStatChange = (key: keyof typeof stats, value: string) => {
     setRecentTileKey(key);
     setTimeout(() => setRecentTileKey(null), 200);
-    setStats(prev => ({ ...prev, [key]: parseInt(value) || 0 }));
+    const parsed = parseInt(value) || 0;
+    setStats(prev => {
+      const next = { ...prev, [key]: parsed };
+      if (key !== 'total' && key !== 'muslim_teachers') {
+        next.total = next.std_10 + next.std_11 + next.std_12 + next.college;
+      }
+      return next;
+    });
   };
 
   const handleActivityChange = (rowKey: string, col: 'gujishta' | 'azaim' | 'maujuda', value: string) => {
@@ -869,7 +878,7 @@ export const NewReport: React.FC = () => {
               <span className="count-zone-top-label font-gujarati text-[13px] font-medium tracking-wide">
                 સ્ટુડન્ટની સંખ્યા
               </span>
-              <span className="count-zone-top-value font-num font-extrabold text-[36px] leading-none">
+              <span className="count-zone-top-value font-num font-extrabold text-[36px] leading-none" id="total-student-count">
                 {displayCount}
               </span>
             </div>
