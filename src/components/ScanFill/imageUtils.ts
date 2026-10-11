@@ -75,22 +75,38 @@ export async function processImageFile(file: File, source?: 'camera' | 'gallery'
     throw new UnsupportedFormatError('ફોટો ફોર્મેટ સપોર્ટેડ નથી');
   }
 
-  // F2: Downscale canvas to max 1600px on the longest side
-  const MAX_DIM = 1600;
-  const longest = Math.max(naturalWidth, naturalHeight);
-  const scale = longest > MAX_DIM ? MAX_DIM / longest : 1;
+  // F3: OCR PREPROCESSING FOR PRINT:
+  // Replace the 1600px downscale with: grayscale convert, Otsu binarization,
+  // then UPSCALE so median text height is 30-40px (about 2-3x for A4 photos)
+  // For standard A4 documents, ~45-50 lines means a document height of ~1800-2000px yields 30-40px line/character height.
+  let scale = 1.0;
+  if (naturalHeight < 1100) {
+    scale = 2.4; // 2-3x upscale for small mobile camera captures
+  } else if (naturalHeight < 1600) {
+    scale = 1800 / naturalHeight; // target ~1800px height so text is ~35px
+  } else if (naturalHeight > 2200) {
+    scale = 2000 / naturalHeight; // normalize oversized captures to ~2000px
+  } else {
+    scale = 1.0;
+  }
+
   const targetWidth = Math.round(naturalWidth * scale);
   const targetHeight = Math.round(naturalHeight * scale);
 
   const canvas = document.createElement('canvas');
   canvas.width = targetWidth;
   canvas.height = targetHeight;
-  const ctx = canvas.getContext('2d');
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
   if (!ctx) {
     throw new Error('Canvas context could not be created');
   }
 
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
   ctx.drawImage(imgSource, 0, 0, targetWidth, targetHeight);
+
+  // Apply Grayscale + Otsu binarization for clean print text recognition
+  applyOtsuBinarization(canvas);
 
   // Close ImageBitmap if used to release memory promptly
   if ('close' in imgSource && typeof imgSource.close === 'function') {
@@ -173,3 +189,65 @@ function loadImageElement(file: File): Promise<HTMLImageElement> {
     img.src = url;
   });
 }
+
+/**
+ * F3. Otsu binarization algorithm:
+ * Converts canvas to high-contrast pure black and white.
+ * Maximizes inter-class variance between background paper and foreground ink/text.
+ */
+export function applyOtsuBinarization(canvas: HTMLCanvasElement): void {
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  if (!ctx) return;
+  const width = canvas.width;
+  const height = canvas.height;
+  const imgData = ctx.getImageData(0, 0, width, height);
+  const data = imgData.data;
+  const numPixels = width * height;
+
+  const histogram = new Int32Array(256);
+  const grayArray = new Uint8Array(numPixels);
+  let totalSum = 0;
+
+  for (let i = 0; i < numPixels; i++) {
+    const idx = i * 4;
+    const gray = Math.round(0.299 * data[idx] + 0.587 * data[idx + 1] + 0.114 * data[idx + 2]);
+    grayArray[i] = gray;
+    histogram[gray]++;
+    totalSum += gray;
+  }
+
+  let weightBackground = 0;
+  let sumBackground = 0;
+  let maxVariance = 0;
+  let optimalThreshold = 128;
+
+  for (let t = 0; t < 256; t++) {
+    weightBackground += histogram[t];
+    if (weightBackground === 0) continue;
+    const weightForeground = numPixels - weightBackground;
+    if (weightForeground === 0) break;
+
+    sumBackground += t * histogram[t];
+    const meanBackground = sumBackground / weightBackground;
+    const meanForeground = (totalSum - sumBackground) / weightForeground;
+    const diff = meanBackground - meanForeground;
+    const variance = weightBackground * weightForeground * diff * diff;
+
+    if (variance > maxVariance) {
+      maxVariance = variance;
+      optimalThreshold = t;
+    }
+  }
+
+  for (let i = 0; i < numPixels; i++) {
+    const idx = i * 4;
+    const val = grayArray[i] < optimalThreshold ? 0 : 255;
+    data[idx] = val;
+    data[idx + 1] = val;
+    data[idx + 2] = val;
+    data[idx + 3] = 255;
+  }
+
+  ctx.putImageData(imgData, 0, 0);
+}
+

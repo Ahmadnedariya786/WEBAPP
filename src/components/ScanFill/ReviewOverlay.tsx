@@ -322,6 +322,7 @@ export const ReviewOverlay: React.FC<ReviewOverlayProps> = ({
                     key={act.no}
                     className="p-3 rounded-2xl bg-bg/50 border border-brd/20 space-y-2"
                     data-activity-no={act.no}
+                    data-activity-row={act.no}
                   >
                     {/* Full-width label on top: bold small */}
                     <div className="flex items-center gap-2">
@@ -443,6 +444,7 @@ export const ReviewOverlay: React.FC<ReviewOverlayProps> = ({
               className="w-full min-h-[48px] h-[48px] px-4 font-gujarati text-sm flex items-center justify-center gap-1.5 cursor-pointer"
               onClick={handleConfirm}
               id="btn-scan-review-confirm"
+              data-testid="scan-review-fill-btn"
             >
               <Check size={16} />
               <span>ફોર્મમાં ભરો</span>
