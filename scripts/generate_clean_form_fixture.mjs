@@ -80,6 +80,11 @@ async function generateCleanFormFixture() {
             font-weight: 600;
             font-size: 20px;
           }
+          #stats-table th, #stats-table td {
+            font-size: 14px;
+            padding: 6px 2px;
+            word-break: break-word;
+          }
         </style>
       </head>
       <body>
@@ -98,6 +103,9 @@ async function generateCleanFormFixture() {
                 <th>કોલેજ</th>
                 <th>એન્જિનિયર</th>
                 <th>મેડિકલ</th>
+                <th>અન્ય 1</th>
+                <th>અન્ય 2</th>
+                <th>અન્ય 3</th>
                 <th>મુસ્લિમ શિક્ષકોની સંખ્યા</th>
               </tr>
             </thead>
@@ -110,6 +118,9 @@ async function generateCleanFormFixture() {
                 <td class="num">96</td>
                 <td class="num">28</td>
                 <td class="num">12</td>
+                <td class="num"></td>
+                <td class="num"></td>
+                <td class="num"></td>
                 <td class="num">9</td>
               </tr>
             </tbody>

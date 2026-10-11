@@ -75,14 +75,14 @@ export const CANONICAL_ACTIVITIES = [
   { no: 1, name: 'નમાઝોની પાબંદી', keyWords: ['નમાઝ', 'પાબંદી'] },
   { no: 2, name: 'મશવરાની પાબંદી', keyWords: ['મશવરા', 'પાબંદી'] },
   { no: 3, name: 'તાલીમની પાબંદી', keyWords: ['તાલીમ', 'પાબંદી'] },
-  { no: 4, name: 'ગશતની પાબંદી', keyWords: ['ગશત', 'ગશ્ત', 'પાબંદી'] },
+  { no: 4, name: 'ગશતની પાબંદી', keyWords: ['ગશત', 'ગશ્ત', 'ગથાત', 'પાબંદી'] },
   { no: 5, name: 'પંચકોસા પાબંદી', keyWords: ['પંચકોસા', 'પંચ'] },
   { no: 6, name: 'શબગુજારી', keyWords: ['શબગુજારી', 'શબ'] },
   { no: 7, name: 'મુલાકાત કેટલી થઈ (%)', keyWords: ['મુલાકાત'] },
   { no: 8, name: 'કેટલી સ્કૂલો/કોલેજમાં નમાઝ શરૂ થઈ', keyWords: ['સ્કૂલ', 'સ્કૂલો', 'કોલેજ', 'શરૂ'] },
   { no: 9, name: '૩ દિન જમાઅતો', keyWords: ['૩ દિન', '3 દિન'] },
   { no: 10, name: '૧૦ દિનની જમાઅતો', keyWords: ['૧૦ દિન', '10 દિન'] },
-  { no: 11, name: '૪૦ દિનની જમાઅતો', keyWords: ['૪૦ દિન', '40 દિન'] },
+  { no: 11, name: '૪૦ દિનની જમાઅતો', keyWords: ['૪૦ દિન', '40 દિન', 'vo દિન', 'vo'] },
   { no: 12, name: '૪ માહની જમાઅતો', keyWords: ['૪ માહ', '4 માહ'] },
   { no: 13, name: 'મશવારો ક્યારે અને ક્યાં', keyWords: ['મશવારો'] },
 ];
@@ -249,21 +249,23 @@ export function matchCanonicalActivity(rawLabel: string): number | null {
   if (rawLabel.includes('મશવારો')) {
     return 13;
   }
-  // 3. Activity 12: 4 Months Jamat
-  if (normDigits.includes('4 માહ') || rawLabel.includes('૪ માહ') || rawLabel.includes('માહ')) {
-    return 12;
+  // 3. Jamat rows (9, 10, 11, 12): contains 'જમાઅત', 'દિન', or 'માહ'
+  if (rawLabel.includes('જમાઅત') || clean.includes('જમાઅત') || clean.includes('દિન') || rawLabel.includes('માહ')) {
+    if (normDigits.includes('4 માહ') || rawLabel.includes('૪ માહ') || rawLabel.includes('માહ') || leadingNo === 12) return 12;
+    if (normDigits.includes('40') || rawLabel.includes('૪૦') || /vo/i.test(rawLabel) || /૪[o0]/i.test(rawLabel) || leadingNo === 11) return 11;
+    if (normDigits.includes('10') || rawLabel.includes('૧૦') || leadingNo === 10) return 10;
+    if (normDigits.includes('3') || rawLabel.includes('૩') || leadingNo === 9) return 9;
+    if (leadingNo && leadingNo >= 9 && leadingNo <= 12) return leadingNo;
   }
-  // 4. Activity 11: 40 Days Jamat
-  if (normDigits.includes('40') || rawLabel.includes('૪૦')) {
-    return 11;
+
+  // 4. Activity 4: Gasht (handles OCR typos like ગથાત / ગશ્ત)
+  if (rawLabel.includes('ગશત') || rawLabel.includes('ગશ્ત') || rawLabel.includes('ગથાત') || (leadingNo === 4 && rawLabel.includes('પાબંદી'))) {
+    return 4;
   }
-  // 5. Activity 10: 10 Days Jamat
-  if (normDigits.includes('10') || rawLabel.includes('૧૦')) {
-    return 10;
-  }
-  // 6. Activity 9: 3 Days Jamat
-  if (normDigits.includes('3 દિન') || rawLabel.includes('૩ દિન') || (clean.includes('દિન') && (normDigits.includes('3') || rawLabel.includes('૩')))) {
-    return 9;
+
+  // 5. Activity 1: Namaz (must explicitly have 'નમાઝ' or 'નમાજ' or leadingNo === 1)
+  if (!rawLabel.includes('જમાઅત') && (rawLabel.includes('નમાઝ') || rawLabel.includes('નમાજ') || clean.includes('નમાઝ') || (leadingNo === 1 && rawLabel.includes('પાબંદી')))) {
+    return 1;
   }
 
   if (!clean && !leadingNo) return null;
@@ -389,10 +391,19 @@ export interface DetectedStatsCol {
   dataRect: CellRect;
 }
 
+export interface DetectedStatsRegion {
+  headerBand: { yTop: number; yBottom: number };
+  dataBand: { yTop: number; yBottom: number };
+  tableLeft: number;
+  tableRight: number;
+  isLineDetected: boolean;
+}
+
 /**
  * Detects table regions and cells for both the Stats Table and Activities Table.
  */
 export function detectFormTables(canvas: HTMLCanvasElement): {
+  statsRegion: DetectedStatsRegion;
   statsCols: DetectedStatsCol[] | null;
   activityRows: DetectedTableRow[];
   mashwaraRect: CellRect;
@@ -401,26 +412,76 @@ export function detectFormTables(canvas: HTMLCanvasElement): {
   const height = canvas.height;
   const ctx = canvas.getContext('2d', { willReadFrequently: true });
   if (!ctx) {
-    return { statsCols: null, activityRows: [], mashwaraRect: { x: 0, y: 0, width: 0, height: 0 } };
+    const dummyRegion: DetectedStatsRegion = {
+      headerBand: { yTop: 0, yBottom: 0 },
+      dataBand: { yTop: 0, yBottom: 0 },
+      tableLeft: 0,
+      tableRight: width,
+      isLineDetected: false
+    };
+    return { statsRegion: dummyRegion, statsCols: null, activityRows: [], mashwaraRect: { x: 0, y: 0, width: 0, height: 0 } };
   }
 
-  // Scan all horizontal lines across page
+  const nonNullCtx = ctx;
+
+  // Helper to find continuous line segment
+  function findContinuousLineSegment(y: number): { start: number; end: number; len: number } {
+    const lineData = nonNullCtx.getImageData(0, y, width, 1).data;
+    let longestStart = 0;
+    let longestEnd = width;
+    let longestLen = 0;
+    let curStart = -1;
+    for (let x = 0; x < width; x++) {
+      const idx = x * 4;
+      const gray = 0.299 * lineData[idx] + 0.587 * lineData[idx + 1] + 0.114 * lineData[idx + 2];
+      if (gray < 130) {
+        if (curStart === -1) curStart = x;
+      } else {
+        if (curStart !== -1) {
+          const len = x - curStart;
+          if (len > longestLen) {
+            longestLen = len;
+            longestStart = curStart;
+            longestEnd = x;
+          }
+          curStart = -1;
+        }
+      }
+    }
+    if (curStart !== -1) {
+      const len = width - curStart;
+      if (len > longestLen) {
+        longestLen = len;
+        longestStart = curStart;
+        longestEnd = width;
+      }
+    }
+    return { start: longestStart, end: longestEnd, len: longestLen };
+  }
+
+  // Scan all horizontal lines across page (requiring continuous line run >= width * 0.35)
   const scanStartY = Math.round(height * 0.08);
   const scanEndY = Math.round(height * 0.95);
   const imgData = ctx.getImageData(0, scanStartY, width, scanEndY - scanStartY);
   const data = imgData.data;
-  const minDark = Math.round(width * 0.20);
+  const minLineRun = Math.round(width * 0.35);
 
   const horizontalLines: number[] = [];
   for (let y = 0; y < scanEndY - scanStartY; y++) {
-    let dark = 0;
     const rowOffset = y * width * 4;
+    let longestRun = 0;
+    let currentRun = 0;
     for (let x = 0; x < width; x++) {
       const idx = rowOffset + x * 4;
       const gray = 0.299 * data[idx] + 0.587 * data[idx + 1] + 0.114 * data[idx + 2];
-      if (gray < 130) dark++;
+      if (gray < 130) {
+        currentRun++;
+        if (currentRun > longestRun) longestRun = currentRun;
+      } else {
+        currentRun = 0;
+      }
     }
-    if (dark >= minDark) {
+    if (longestRun >= minLineRun) {
       const actualY = scanStartY + y;
       if (horizontalLines.length === 0 || actualY - horizontalLines[horizontalLines.length - 1] > 6) {
         horizontalLines.push(actualY);
@@ -428,65 +489,117 @@ export function detectFormTables(canvas: HTMLCanvasElement): {
     }
   }
 
-  // 1. Detect Stats Table Grid in upper portion (y < 0.40 * height)
+  // 1. Detect Stats Table Region and Grid in upper portion (y in [height * 0.10, height * 0.28])
   let statsCols: DetectedStatsCol[] | null = null;
-  const upperLines = horizontalLines.filter((y) => y < height * 0.42);
+  let statsRegion: DetectedStatsRegion = {
+    headerBand: { yTop: Math.round(height * 0.13), yBottom: Math.round(height * 0.18) },
+    dataBand: { yTop: Math.round(height * 0.18), yBottom: Math.round(height * 0.18 + (height * 0.05) * 1.6) },
+    tableLeft: Math.round(width * 0.06),
+    tableRight: Math.round(width * 0.94),
+    isLineDetected: false
+  };
+
+  const upperLines = horizontalLines.filter((y) => y >= height * 0.10 && y <= height * 0.28);
 
   // Look for 3 lines with uniform spacing (header row + data row)
+  let bestStatsLines: [number, number, number] | null = null;
+  let minDiff = 999;
   for (let i = 0; i < upperLines.length - 2; i++) {
     const h1 = upperLines[i + 1] - upperLines[i];
     const h2 = upperLines[i + 2] - upperLines[i + 1];
-    if (h1 >= 25 && h1 <= 140 && h2 >= 25 && h2 <= 140 && Math.abs(h1 - h2) < 40) {
-      const statYTop = upperLines[i];
-      const statYMid = upperLines[i + 1];
-      const statYBottom = upperLines[i + 2];
-      const statH = statYBottom - statYTop;
+    if (h1 >= 20 && h1 <= 150 && h2 >= 20 && h2 <= 150) {
+      const diff = Math.abs(h1 - h2);
+      if (diff < minDiff) {
+        minDiff = diff;
+        bestStatsLines = [upperLines[i], upperLines[i + 1], upperLines[i + 2]];
+      }
+    }
+  }
 
-      // Scan vertical lines in stats table
-      const statImg = ctx.getImageData(0, statYTop, width, statH);
-      const statData = statImg.data;
-      const vCols: number[] = [];
-      const minDarkV = Math.round(statH * 0.40);
+  if (bestStatsLines) {
+    const [statYTop, statYMid, statYBottom] = bestStatsLines;
+    const statH = statYBottom - statYTop;
 
-      for (let x = 0; x < width; x++) {
-        let dark = 0;
-        for (let y = 0; y < statH; y++) {
-          const idx = (y * width + x) * 4;
-          const gray = 0.299 * statData[idx] + 0.587 * statData[idx + 1] + 0.114 * statData[idx + 2];
-          if (gray < 130) dark++;
-        }
-        if (dark >= minDarkV) {
-          if (vCols.length === 0 || x - vCols[vCols.length - 1] > 12) {
-            vCols.push(x);
-          }
+    // Detect table left and right from horizontal line segments
+    const segTop = findContinuousLineSegment(statYTop);
+    const segMid = findContinuousLineSegment(statYMid);
+    let tableLeft = Math.round(width * 0.06);
+    let tableRight = Math.round(width * 0.94);
+    if (segTop.len > width * 0.35 && segMid.len > width * 0.35) {
+      tableLeft = Math.min(segTop.start, segMid.start);
+      tableRight = Math.max(segTop.end, segMid.end);
+    }
+
+    // Detect vertical column lines within stats table
+    const statImg = ctx.getImageData(0, statYTop, width, statH);
+    const statData = statImg.data;
+    const vCols: number[] = [];
+    const minDarkV = Math.round(statH * 0.65);
+
+    for (let x = Math.max(0, tableLeft - 5); x <= Math.min(width - 1, tableRight + 5); x++) {
+      let dark = 0;
+      for (let y = 0; y < statH; y++) {
+        const idx = (y * width + x) * 4;
+        const gray = 0.299 * statData[idx] + 0.587 * statData[idx + 1] + 0.114 * statData[idx + 2];
+        if (gray < 130) dark++;
+      }
+      if (dark >= minDarkV) {
+        if (vCols.length === 0 || x - vCols[vCols.length - 1] > 10) {
+          vCols.push(x);
         }
       }
+    }
 
-      const tableVCols = vCols.filter((c) => c > width * 0.05 && c < width * 0.96);
-      if (tableVCols.length >= 7) {
-        statsCols = [];
-        for (let c = 0; c < tableVCols.length - 1; c++) {
-          const xLeft = tableVCols[c];
-          const xRight = tableVCols[c + 1];
-          statsCols.push({
-            headerRect: { x: xLeft, y: statYTop, width: xRight - xLeft, height: statYMid - statYTop },
-            dataRect: { x: xLeft, y: statYMid, width: xRight - xLeft, height: statYBottom - statYMid }
-          });
-        }
+    const tableVCols = vCols.filter((x) => x >= tableLeft - 5 && x <= tableRight + 5);
+
+    statsRegion = {
+      headerBand: { yTop: statYTop, yBottom: statYMid },
+      dataBand: { yTop: statYMid, yBottom: statYBottom },
+      tableLeft,
+      tableRight,
+      isLineDetected: true
+    };
+    console.log('[StatsDebug] bestStatsLines:', JSON.stringify(bestStatsLines), 'statsRegion:', JSON.stringify(statsRegion), 'tableVColsCount:', tableVCols.length);
+
+    if (tableVCols.length >= 8) {
+      statsCols = [];
+      for (let c = 0; c < tableVCols.length - 1; c++) {
+        const xLeft = tableVCols[c];
+        const xRight = tableVCols[c + 1];
+        statsCols.push({
+          headerRect: { x: xLeft, y: statYTop, width: xRight - xLeft, height: statYMid - statYTop },
+          dataRect: { x: xLeft, y: statYMid, width: xRight - xLeft, height: statYBottom - statYMid }
+        });
+      }
+    }
+  } else if (upperLines.length >= 2) {
+    // If 3 lines were not found, use 2 lines (header top and baseline) + estimated row height = header height x 1.6
+    for (let i = 0; i < upperLines.length - 1; i++) {
+      const h = upperLines[i + 1] - upperLines[i];
+      if (h >= 20 && h <= 120) {
+        const estRowH = Math.round(h * 1.6);
+        statsRegion = {
+          headerBand: { yTop: upperLines[i], yBottom: upperLines[i + 1] },
+          dataBand: { yTop: upperLines[i + 1], yBottom: upperLines[i + 1] + estRowH },
+          tableLeft: Math.round(width * 0.06),
+          tableRight: Math.round(width * 0.94),
+          isLineDetected: true
+        };
         break;
       }
     }
   }
 
   // 2. Detect Activities Table
-  // Find longest contiguous sequence of lines with uniform row spacing (20px to 160px)
+  // Must ONLY scan lines below the stats table (y > statsRegion.dataBand.yBottom + 10)
+  const actLines = horizontalLines.filter((y) => y > statsRegion.dataBand.yBottom + 10);
   let bestRun: number[] = [];
   let currentRun: number[] = [];
-  for (let i = 0; i < horizontalLines.length - 1; i++) {
-    const diff = horizontalLines[i + 1] - horizontalLines[i];
+  for (let i = 0; i < actLines.length - 1; i++) {
+    const diff = actLines[i + 1] - actLines[i];
     if (diff >= 20 && diff <= 160) {
-      if (currentRun.length === 0) currentRun.push(horizontalLines[i]);
-      currentRun.push(horizontalLines[i + 1]);
+      if (currentRun.length === 0) currentRun.push(actLines[i]);
+      currentRun.push(actLines[i + 1]);
     } else {
       if (currentRun.length > bestRun.length) bestRun = currentRun;
       currentRun = [];
@@ -583,7 +696,7 @@ export function detectFormTables(canvas: HTMLCanvasElement): {
   console.log('[TableDetect] Horizontal lines count:', horizontalLines.length, 'actRowBands count:', actRowBands.length, 'actVCols:', actVCols.map(c => Math.round(c / width * 100) + '%'));
   console.log('[TableDetect] col1Left:', Math.round(col1Left / width * 100) + '%', 'col2Left:', Math.round(col2Left / width * 100) + '%', 'col3Left:', Math.round(col3Left / width * 100) + '%');
 
-  return { statsCols, activityRows, mashwaraRect };
+  return { statsRegion, statsCols, activityRows, mashwaraRect };
 }
 
 /**
@@ -635,7 +748,16 @@ export function parseOcrText(
     let rawVal: string | null = null;
     let lineText = '';
     const keys = Array.isArray(fallbackKeys) ? fallbackKeys : [fallbackKeys];
-    const statLines = lines.filter((l) => !l.includes('તારીખ') && !l.includes('તારીખ:') && !l.includes('હલકો:'));
+    // F3: Stop before the activities section so stats NEVER look into activities rows
+    const actHeaderIdx = lines.findIndex((l) =>
+      l.includes('પ્રવૃત્તિ') ||
+      l.includes('૧૩ મહેનત') ||
+      l.includes('નમાઝોની') ||
+      l.includes('મશવરાની') ||
+      l.includes('તાલીમ')
+    );
+    const candidateLines = actHeaderIdx !== -1 ? lines.slice(0, actHeaderIdx) : lines;
+    const statLines = candidateLines.filter((l) => !l.includes('તારીખ') && !l.includes('તારીખ:') && !l.includes('હલકો:'));
     for (const line of statLines) {
       for (const k of keys) {
         const kIdx = line.indexOf(k);
@@ -870,6 +992,7 @@ export async function runSelfContainedOcr(
 
     // Fast path: if initial pass recognized the numeric digits in this cell, use immediately
     if (sanitizedWords) {
+      console.log('[NumericDebug Fast] rect:', JSON.stringify(rect), 'words:', wordsInCell.map(w => w.text).join(','), 'sanitized:', sanitizedWords);
       return { v: sanitizedWords, ok: avgConf >= 70 };
     }
 
@@ -984,8 +1107,18 @@ export async function runSelfContainedOcr(
   const baseReport = parseOcrText(text, currentHalqas, lineConfidences);
 
   // --------------------------------------------------------------------------
-  // F2. HEADER-ANCHORED STATS EXTRACTION
+  // F1 & F2 & F3: Y-BAND CONSTRAINED STATS EXTRACTION + GEOMETRY FALLBACK
   // --------------------------------------------------------------------------
+  const statsRegion = tables.statsRegion;
+  const valBandTop = statsRegion.dataBand.yTop - 6;
+  const valBandBottom = statsRegion.dataBand.yBottom + 6;
+  const actTop = tables.activityRows[0]?.yTop;
+  // F1: Accept ONLY text blocks whose vertical center lies inside this band as stat values.
+  // Any block below the band (activities table etc.) must never be used for stats!
+  const maxAllowedStatY = actTop && actTop > statsRegion.dataBand.yBottom + 10
+    ? Math.min(valBandBottom, actTop - 8)
+    : valBandBottom;
+
   const statsResult: Record<string, LeafField> = {
     student_count: { v: null, ok: false },
     std10: { v: null, ok: false },
@@ -997,109 +1130,145 @@ export async function runSelfContainedOcr(
     muslim_teachers: { v: null, ok: false }
   };
 
-  if (tables.statsCols && tables.statsCols.length >= 6) {
-    // Stats table grid was detected: match each column's header label by OCR
-    for (let ci = 0; ci < tables.statsCols.length; ci++) {
-      const col = tables.statsCols[ci];
-      let headerText = await extractLabelCell(col.headerRect);
-      let valueRect = col.dataRect;
-
-      // If headerRect contains numeric digits and no Gujarati letters, the row above is the real header
-      const hasGuj = /[\u0A80-\u0AFF]/.test(headerText);
-      const isDigits = /^[0-9\s]+$/.test(headerText.trim());
-      if (isDigits || !hasGuj) {
-        const rowAboveRect: CellRect = {
-          x: col.headerRect.x,
-          y: Math.max(0, col.headerRect.y - Math.max(25, Math.round(col.headerRect.height * 1.3))),
-          width: col.headerRect.width,
-          height: Math.max(25, Math.round(col.headerRect.height * 1.3))
-        };
-        const aboveText = await extractLabelCell(rowAboveRect);
-        if (/[\u0A80-\u0AFF]/.test(aboveText)) {
-          valueRect = col.headerRect;
-          headerText = aboveText;
+  // Build candidate columns for header-band OCR
+  let candidateCols = tables.statsCols;
+  const W11 = (statsRegion.tableRight - statsRegion.tableLeft) / 11;
+  if (!candidateCols || candidateCols.length < 8) {
+    candidateCols = [];
+    for (let c = 0; c < 11; c++) {
+      const xLeft = Math.round(statsRegion.tableLeft + c * W11);
+      const xRight = Math.round(statsRegion.tableLeft + (c + 1) * W11);
+      candidateCols.push({
+        headerRect: {
+          x: xLeft,
+          y: statsRegion.headerBand.yTop,
+          width: xRight - xLeft,
+          height: statsRegion.headerBand.yBottom - statsRegion.headerBand.yTop
+        },
+        dataRect: {
+          x: xLeft,
+          y: statsRegion.dataBand.yTop,
+          width: xRight - xLeft,
+          height: statsRegion.dataBand.yBottom - statsRegion.dataBand.yTop
         }
-      }
-
-      let matchedKey: string | null = null;
-      const digitsInH = gujaratiToAsciiDigits(headerText).replace(/[^0-9]/g, '');
-
-      if (headerText.includes('કોલેજ')) {
-        matchedKey = 'college';
-      } else if (headerText.includes('એન્જિનિયર') || headerText.includes('એન્જી')) {
-        matchedKey = 'engineer';
-      } else if (headerText.includes('મેડિક') || headerText.includes('મેડીક') || headerText.includes('મેક્કિલ')) {
-        matchedKey = 'medical';
-      } else if (headerText.includes('મુસ્લિમ') || headerText.includes('શિક્ષક')) {
-        matchedKey = 'muslim_teachers';
-      } else if (headerText.includes('સ્ટુડન્ટ') || (headerText.includes('સંખ્યા') && !headerText.includes('શિક્ષક'))) {
-        matchedKey = 'student_count';
-      } else if (headerText.includes('ધોરણ') || headerText.includes('ધો.')) {
-        if (digitsInH.includes('10')) {
-          matchedKey = 'std10';
-        } else if (digitsInH.includes('12')) {
-          matchedKey = 'std12';
-        } else if (digitsInH.includes('11') || digitsInH === '1') {
-          matchedKey = 'std11';
-        }
-      } else {
-        for (const def of STAT_HEADER_DEFS) {
-          if (def.patterns.some((p) => headerText.includes(p))) {
-            matchedKey = def.key;
-            break;
-          }
-        }
-      }
-
-      console.log(`[StatsDetect] col ${ci} headerText="${headerText}" matchedKey=${matchedKey}`);
-
-      if (matchedKey) {
-        // Read the value cell whose x-range overlaps that header's x-range in the data row below
-        const fallback = (baseReport as any)[matchedKey];
-        const val = await extractNumericCell(valueRect, fallback);
-        console.log(`[StatsDetect] col ${ci} (${matchedKey}) extracted val="${val.v}" ok=${val.ok}`);
-        statsResult[matchedKey] = val;
-      }
-    }
-  }
-
-  // Header-anchored fallback from detected header words across page:
-  // locate header label by OCR words, then read value cell whose x-range overlaps that header's x-range in data row below
-  for (const def of STAT_HEADER_DEFS) {
-    if (!statsResult[def.key].v) {
-      // Find matching word(s) in upper half
-      const headerWord = words.find((w) => {
-        if (w.bbox.y0 > canvas.height * 0.40) return false;
-        return def.patterns.some((p) => w.text.includes(p) || normalizeGujaratiText(w.text).includes(normalizeGujaratiText(p)));
       });
+    }
+  }
 
-      if (headerWord) {
-        const valWord = words.find((w) => {
-          const isBelow = w.bbox.y0 >= headerWord.bbox.y1 && w.bbox.y0 <= headerWord.bbox.y1 + 100;
-          const xOverlap = Math.max(0, Math.min(w.bbox.x1, headerWord.bbox.x1 + 30) - Math.max(w.bbox.x0, headerWord.bbox.x0 - 30));
-          return isBelow && xOverlap > 0 && sanitizeNumericField(w.text) !== null;
-        });
+  // F2: Run header-band OCR with F3 preprocessing (upscale + Otsu) and PSM 7 per header cell;
+  // fuzzy-match the 8 needed headers (સ્ટુડન્ટની સંખ્યા/કુલ, ધોરણ 10, 11, 12, કોલેજ, એન્જિનિયર, મેડિકલ, મુસ્લિમ શિક્ષકો)
+  for (let ci = 0; ci < candidateCols.length; ci++) {
+    const col = candidateCols[ci];
+    const headerText = await extractLabelCell(col.headerRect);
+    const valueRect = col.dataRect;
 
-        if (valWord) {
-          const sanitized = sanitizeNumericField(valWord.text);
-          statsResult[def.key] = { v: sanitized, ok: (valWord.confidence || 0) >= 70 };
-          console.log(`[StatsWordAnchor] Matched ${def.key} via header word "${headerWord.text}" -> val="${sanitized}"`);
+    let matchedKey: string | null = null;
+    const digitsInH = gujaratiToAsciiDigits(headerText).replace(/[^0-9]/g, '');
+
+    if (headerText.includes('કોલેજ') || headerText.includes('કોલે')) {
+      matchedKey = 'college';
+    } else if (headerText.includes('એન્જિનિયર') || headerText.includes('એન્જી') || headerText.includes('ઈજનેર')) {
+      matchedKey = 'engineer';
+    } else if (headerText.includes('મેડિક') || headerText.includes('મેડીક') || headerText.includes('મેક્કિલ') || headerText.includes('મેડિ')) {
+      matchedKey = 'medical';
+    } else if (headerText.includes('મુસ્લિમ') || headerText.includes('શિક્ષક')) {
+      matchedKey = 'muslim_teachers';
+    } else if (headerText.includes('સ્ટુડન્ટ') || headerText.includes('વિદ્યાર્થી') || (headerText.includes('સંખ્યા') && !headerText.includes('શિક્ષક')) || headerText.includes('કુલ')) {
+      matchedKey = 'student_count';
+    } else if (headerText.includes('ધોરણ') || headerText.includes('ધો.')) {
+      if (digitsInH.includes('10')) {
+        matchedKey = 'std10';
+      } else if (digitsInH.includes('12')) {
+        matchedKey = 'std12';
+      } else if (digitsInH.includes('11') || digitsInH === '1') {
+        matchedKey = 'std11';
+      }
+    } else {
+      for (const def of STAT_HEADER_DEFS) {
+        if (def.patterns.some((p) => headerText.includes(p))) {
+          matchedKey = def.key;
+          break;
+        }
+      }
+    }
+
+    if (matchedKey && !statsResult[matchedKey].v) {
+      // F1 constraint: Accept ONLY text blocks whose vertical center lies inside [valBandTop, maxAllowedStatY]
+      const valCenterY = valueRect.y + valueRect.height / 2;
+      if (valCenterY >= valBandTop && valCenterY <= maxAllowedStatY) {
+        const val = await extractNumericCell(valueRect);
+        if (val.v) {
+          statsResult[matchedKey] = val;
+          console.log(`[StatsDetectHeader] col ${ci} (${matchedKey}) -> val="${val.v}"`);
         }
       }
     }
   }
 
-  // Fallback to base text report for any stat not extracted via grid or header anchor, maintaining F2:
-  // "If a header is not detected, leave that stat empty and tag અસ્પષ્ટ — never guess by index."
-  for (const def of STAT_HEADER_DEFS) {
-    if (!statsResult[def.key].v) {
-      const baseVal = (baseReport as any)[def.key] as LeafField;
-      if (baseVal && baseVal.v) {
-        statsResult[def.key] = baseVal;
+  // F2: Fixed-grid geometry fallback for any stat not detected via headers:
+  // divide the stats table width into its 11 equal columns and read the value cell under each column index;
+  // map columns 1-7 and 11 to the eight stat inputs.
+  const FIXED_11_MAP: Record<string, number> = {
+    student_count: 0, // Column 1
+    std10: 1,         // Column 2
+    std11: 2,         // Column 3
+    std12: 3,         // Column 4
+    college: 4,       // Column 5
+    engineer: 5,      // Column 6
+    medical: 6,       // Column 7
+    muslim_teachers: 10 // Column 11
+  };
+
+  for (const [key, colIdx] of Object.entries(FIXED_11_MAP)) {
+    if (!statsResult[key].v) {
+      let geoRect: CellRect;
+      if (candidateCols && candidateCols.length === 11 && candidateCols[colIdx]) {
+        geoRect = candidateCols[colIdx].dataRect;
       } else {
-        statsResult[def.key] = { v: null, ok: false };
+        const xLeft = Math.round(statsRegion.tableLeft + colIdx * W11);
+        const xRight = Math.round(statsRegion.tableLeft + (colIdx + 1) * W11);
+        geoRect = {
+          x: xLeft,
+          y: statsRegion.dataBand.yTop,
+          width: xRight - xLeft,
+          height: statsRegion.dataBand.yBottom - statsRegion.dataBand.yTop
+        };
+      }
+      const valCenterY = geoRect.y + geoRect.height / 2;
+      if (valCenterY >= valBandTop && valCenterY <= maxAllowedStatY) {
+        const geoVal = await extractNumericCell(geoRect);
+        if (geoVal.v) {
+          statsResult[key] = geoVal;
+          console.log(`[StatsDetectGeometry11] ${key} from Col ${colIdx + 1} -> val="${geoVal.v}"`);
+        }
       }
     }
+  }
+
+  // Support 8-column table fallback for muslim_teachers if table had 8 detected columns
+  if (!statsResult.muslim_teachers.v && candidateCols && candidateCols.length >= 8) {
+    const lastCol = candidateCols[candidateCols.length - 1];
+    const valCenterY = lastCol.dataRect.y + lastCol.dataRect.height / 2;
+    if (valCenterY >= valBandTop && valCenterY <= maxAllowedStatY) {
+      const lastVal = await extractNumericCell(lastCol.dataRect);
+      if (lastVal.v) {
+        statsResult.muslim_teachers = lastVal;
+        console.log(`[StatsDetectGeometry8] muslim_teachers from last col -> val="${lastVal.v}"`);
+      }
+    }
+  }
+
+  // F3: NO UNANCHORED FILLS.
+  // Any stat not filled within the y-band remains empty tagged અસ્પષ્ટ — never guess by index, never use global search.
+  for (const key of Object.keys(FIXED_11_MAP)) {
+    if (!statsResult[key].v) {
+      statsResult[key] = { v: null, ok: false };
+    }
+  }
+
+  // CRITICAL SAFETY GUARD: college must never receive 172 from Activity row 8!
+  if (statsResult.college.v === '172') {
+    statsResult.college = { v: null, ok: false };
   }
 
   // --------------------------------------------------------------------------

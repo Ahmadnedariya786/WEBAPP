@@ -196,6 +196,7 @@ export async function runVerification(runIndex = 1) {
 
     let totalCells = 0;
     let exactMatches = 0;
+    let exactStatsMatches = 0;
     const mismatches = [];
 
     // 1. Stats Evaluation
@@ -203,8 +204,12 @@ export async function runVerification(runIndex = 1) {
       totalCells++;
       const gotVal = extractedData.stats[key] || '';
       const isMatch = gotVal === expectedVal;
-      if (isMatch) exactMatches++;
-      else mismatches.push({ field: `Stat: ${key}`, expected: expectedVal, got: gotVal });
+      if (isMatch) {
+        exactMatches++;
+        exactStatsMatches++;
+      } else {
+        mismatches.push({ field: `Stat: ${key}`, expected: expectedVal, got: gotVal });
+      }
 
       console.log(
         '| ' +
@@ -295,14 +300,28 @@ export async function runVerification(runIndex = 1) {
       }
     }
 
+    const statsMatchPercent = Math.round((exactStatsMatches / 8) * 100);
     const matchPercent = Math.round((exactMatches / totalCells) * 100);
     console.log('------------------------------------------------------------------------');
     console.log(`TOTAL CELLS EVALUATED: ${totalCells}`);
     console.log(`EXACT MATCHES:        ${exactMatches} / ${totalCells}`);
+    console.log(`STATS MATCHES:        ${exactStatsMatches} / 8 (${statsMatchPercent}%, Gate requirement: >= 75%)`);
     console.log(`MATCH PERCENTAGE:     ${matchPercent}% (Requirement: >= 90%)`);
     console.log('------------------------------------------------------------------------');
 
-    // CRITICAL ASSERTION 1: Kills the shift bug
+    // CRITICAL ASSERTION 0: WEB-FIX15 - Prevent activity leak into stats (college !== 172)
+    if (extractedData.stats.college === '172') {
+      throw new Error('FATAL LEAK DETECTED: college received 172 from Activity row 8! Top stats table row boundary breached!');
+    }
+    console.log('✅ CRITICAL CHECK PASSED: Zero value leakage from activities table into stats! (college !== 172)');
+
+    // CRITICAL ASSERTION 1: Stats accuracy gate >= 75%
+    if (statsMatchPercent < 75) {
+      throw new Error(`FATAL: Stats extraction accuracy ${statsMatchPercent}% is below required 75% gate! Mismatches: ${JSON.stringify(mismatches.filter(m => m.field.startsWith('Stat:')))}`);
+    }
+    console.log(`✅ CRITICAL CHECK PASSED: Stats extraction accuracy ${statsMatchPercent}% meets >= 75% gate!`);
+
+    // CRITICAL ASSERTION 2: Kills the shift bug
     const row1 = extractedData.activities[1] || { guj: '', azaim: '', moj: '' };
     const row2 = extractedData.activities[2] || { guj: '', azaim: '', moj: '' };
 
@@ -314,11 +333,11 @@ export async function runVerification(runIndex = 1) {
     }
     console.log('✅ CRITICAL CHECK PASSED: Zero row-shift off-by-one bug detected! Row 1 correctly populated.');
 
-    // CRITICAL ASSERTION 2: Require at least 90 percent exact cell match
+    // CRITICAL ASSERTION 3: Require at least 90 percent overall exact cell match
     if (matchPercent < 90) {
       throw new Error(`Extraction accuracy ${matchPercent}% is below required 90%! Mismatches: ${JSON.stringify(mismatches)}`);
     }
-    console.log(`✅ F4 PASSED: Extraction accuracy ${matchPercent}% meets >= 90% threshold!`);
+    console.log(`✅ F4 PASSED: Overall extraction accuracy ${matchPercent}% meets >= 90% threshold!`);
 
     // ------------------------------------------------------------------------
     // F5. ZERO DIFF REVIEW: APPLY VALUES TO FORM
