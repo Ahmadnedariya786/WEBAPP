@@ -962,7 +962,14 @@ export async function runSelfContainedOcr(
   // Helper to extract numeric value from a cell rect
   const extractNumericCell = async (
     rect: CellRect,
-    fallbackField?: LeafField
+    fallbackField?: LeafField,
+    options?: {
+      isStatCell?: boolean;
+      headerBaseline?: number;
+      minAllowedY?: number;
+      maxAllowedY?: number;
+      headerTokens?: string[];
+    }
   ): Promise<LeafField> => {
     const ink = computeCellInkCoverage(canvas, rect);
     if (ink < 0.003) {
@@ -971,24 +978,52 @@ export async function runSelfContainedOcr(
     }
 
     // Check if initial pass words cleanly fall inside this cell
-    const padY = Math.round(rect.height * 0.10);
+    const padY = options?.isStatCell ? 0 : Math.round(rect.height * 0.10);
     const wordsInCell = words.filter((w) => {
       const cx = (w.bbox.x0 + w.bbox.x1) / 2;
       const cy = (w.bbox.y0 + w.bbox.y1) / 2;
+
+      // F1 constraint for stats: values must come strictly from the row BELOW the header row
+      // (band = header baseline + 5 percent tolerance to header bottom edge, up to header bottom + one row height).
+      // Exclude any text block that overlaps the header row or equals a header token.
+      if (options?.isStatCell) {
+        const hBase = options.headerBaseline ?? rect.y;
+        if (cy <= hBase || w.bbox.y1 <= hBase) {
+          return false;
+        }
+        if (options.minAllowedY !== undefined && cy < options.minAllowedY) {
+          return false;
+        }
+        if (options.maxAllowedY !== undefined && cy > options.maxAllowedY) {
+          return false;
+        }
+        const wText = w.text.trim();
+        const wDigits = gujaratiToAsciiDigits(wText).replace(/[^0-9]/g, '');
+        if (options.headerTokens && (options.headerTokens.includes(wText) || options.headerTokens.includes(wDigits))) {
+          return false;
+        }
+      } else {
+        if (cy < rect.y - padY || cy > rect.y + rect.height + padY) {
+          return false;
+        }
+      }
+
       return (
         cx >= rect.x + 2 &&
-        cx <= rect.x + rect.width - 2 &&
-        cy >= rect.y - padY &&
-        cy <= rect.y + rect.height + padY
+        cx <= rect.x + rect.width - 2
       );
     });
 
     wordsInCell.sort((a, b) => a.bbox.x0 - b.bbox.x0);
     const combinedWordsText = wordsInCell.map((w) => w.text).join(' ');
-    const sanitizedWords = sanitizeNumericField(combinedWordsText);
+    let sanitizedWords = sanitizeNumericField(combinedWordsText);
     const avgConf = wordsInCell.length > 0
       ? wordsInCell.reduce((acc, w) => acc + (w.confidence || 0), 0) / wordsInCell.length
       : 0;
+
+    if (options?.isStatCell && sanitizedWords && options.headerTokens && options.headerTokens.includes(sanitizedWords)) {
+      sanitizedWords = null;
+    }
 
     // Fast path: if initial pass recognized the numeric digits in this cell, use immediately
     if (sanitizedWords) {
@@ -1003,7 +1038,13 @@ export async function runSelfContainedOcr(
         tessedit_char_whitelist: '0123456789%'
       });
 
-      const cellCanvas = cropRectToCanvas(canvas, rect, 0.05, 0.10);
+      const cropY = options?.isStatCell && options.headerBaseline
+        ? Math.max(rect.y, options.headerBaseline)
+        : rect.y;
+      const cropH = (rect.y + rect.height) - cropY;
+      const cropRect = { ...rect, y: cropY, height: Math.max(10, cropH) };
+
+      const cellCanvas = cropRectToCanvas(canvas, cropRect, 0.05, 0.10);
       let cellRes = await worker.recognize(cellCanvas);
       let conf = cellRes?.data?.confidence ?? 0;
       let rawText = cellRes?.data?.text?.trim() || '';
@@ -1018,6 +1059,10 @@ export async function runSelfContainedOcr(
         conf = cellRes?.data?.confidence ?? 0;
         rawText = cellRes?.data?.text?.trim() || '';
         sanitized = sanitizeNumericField(rawText);
+      }
+
+      if (options?.isStatCell && sanitized && options.headerTokens && options.headerTokens.includes(sanitized)) {
+        sanitized = null;
       }
 
       const best = sanitized || (fallbackField?.v ? sanitizeNumericField(fallbackField.v) : null);
@@ -1110,14 +1155,30 @@ export async function runSelfContainedOcr(
   // F1 & F2 & F3: Y-BAND CONSTRAINED STATS EXTRACTION + GEOMETRY FALLBACK
   // --------------------------------------------------------------------------
   const statsRegion = tables.statsRegion;
-  const valBandTop = statsRegion.dataBand.yTop - 6;
-  const valBandBottom = statsRegion.dataBand.yBottom + 6;
+  const headerBaseline = statsRegion.headerBand.yBottom;
+  const headerHeight = Math.max(20, statsRegion.headerBand.yBottom - statsRegion.headerBand.yTop);
+  const dataRowHeight = Math.max(20, statsRegion.dataBand.yBottom - statsRegion.dataBand.yTop);
+  // F1: band = header baseline + 5 percent tolerance to header bottom edge, up to header bottom + one row height
+  const tol5Pct = Math.round(headerHeight * 0.05);
+  const valBandTop = headerBaseline - tol5Pct;
+  const valBandBottom = headerBaseline + dataRowHeight;
   const actTop = tables.activityRows[0]?.yTop;
   // F1: Accept ONLY text blocks whose vertical center lies inside this band as stat values.
   // Any block below the band (activities table etc.) must never be used for stats!
-  const maxAllowedStatY = actTop && actTop > statsRegion.dataBand.yBottom + 10
+  const maxAllowedStatY = actTop && actTop > valBandBottom
     ? Math.min(valBandBottom, actTop - 8)
     : valBandBottom;
+
+  const STAT_HEADER_TOKENS: Record<string, string[]> = {
+    std10: ['10', 'ધોરણ 10', 'ધોરણ', 'ધો.'],
+    std11: ['11', 'ધોરણ 11', 'ધોરણ', 'ધો.', '1'],
+    std12: ['12', 'ધોરણ 12', 'ધોરણ', 'ધો.'],
+    student_count: ['13', 'કુલ', 'સંખ્યા', 'સ્ટુડન્ટની સંખ્યા', 'સ્ટુડન્ટ'],
+    college: ['કોલેજ', 'કોલે'],
+    engineer: ['એન્જિનિયર', 'એન્જી'],
+    medical: ['મેડિકલ', 'મેડીક'],
+    muslim_teachers: ['શિક્ષક', 'મુસ્લિમ']
+  };
 
   const statsResult: Record<string, LeafField> = {
     student_count: { v: null, ok: false },
@@ -1196,7 +1257,13 @@ export async function runSelfContainedOcr(
       // F1 constraint: Accept ONLY text blocks whose vertical center lies inside [valBandTop, maxAllowedStatY]
       const valCenterY = valueRect.y + valueRect.height / 2;
       if (valCenterY >= valBandTop && valCenterY <= maxAllowedStatY) {
-        const val = await extractNumericCell(valueRect);
+        const val = await extractNumericCell(valueRect, undefined, {
+          isStatCell: true,
+          headerBaseline,
+          minAllowedY: valBandTop,
+          maxAllowedY: maxAllowedStatY,
+          headerTokens: STAT_HEADER_TOKENS[matchedKey]
+        });
         if (val.v) {
           statsResult[matchedKey] = val;
           console.log(`[StatsDetectHeader] col ${ci} (${matchedKey}) -> val="${val.v}"`);
@@ -1231,12 +1298,18 @@ export async function runSelfContainedOcr(
           x: xLeft,
           y: statsRegion.dataBand.yTop,
           width: xRight - xLeft,
-          height: statsRegion.dataBand.yBottom - statsRegion.dataBand.yTop
+          height: dataRowHeight
         };
       }
       const valCenterY = geoRect.y + geoRect.height / 2;
       if (valCenterY >= valBandTop && valCenterY <= maxAllowedStatY) {
-        const geoVal = await extractNumericCell(geoRect);
+        const geoVal = await extractNumericCell(geoRect, undefined, {
+          isStatCell: true,
+          headerBaseline,
+          minAllowedY: valBandTop,
+          maxAllowedY: maxAllowedStatY,
+          headerTokens: STAT_HEADER_TOKENS[key]
+        });
         if (geoVal.v) {
           statsResult[key] = geoVal;
           console.log(`[StatsDetectGeometry11] ${key} from Col ${colIdx + 1} -> val="${geoVal.v}"`);
@@ -1250,7 +1323,13 @@ export async function runSelfContainedOcr(
     const lastCol = candidateCols[candidateCols.length - 1];
     const valCenterY = lastCol.dataRect.y + lastCol.dataRect.height / 2;
     if (valCenterY >= valBandTop && valCenterY <= maxAllowedStatY) {
-      const lastVal = await extractNumericCell(lastCol.dataRect);
+      const lastVal = await extractNumericCell(lastCol.dataRect, undefined, {
+        isStatCell: true,
+        headerBaseline,
+        minAllowedY: valBandTop,
+        maxAllowedY: maxAllowedStatY,
+        headerTokens: STAT_HEADER_TOKENS.muslim_teachers
+      });
       if (lastVal.v) {
         statsResult.muslim_teachers = lastVal;
         console.log(`[StatsDetectGeometry8] muslim_teachers from last col -> val="${lastVal.v}"`);

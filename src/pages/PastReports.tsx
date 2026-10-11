@@ -221,6 +221,11 @@ export const PastReports: React.FC = () => {
 
   const getTotalStudents = (stats: any) => {
     if (!stats) return 0;
+    const formTotal = stats.total;
+    if (formTotal !== undefined && formTotal !== null && formTotal !== '') {
+      const val = Number(formTotal);
+      if (!isNaN(val)) return val;
+    }
     return (stats.std_10 || 0) + (stats.std_11 || 0) + (stats.std_12 || 0) + (stats.college || 0);
   };
 

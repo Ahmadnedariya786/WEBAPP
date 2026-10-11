@@ -78,15 +78,17 @@ export const Dashboard: React.FC = () => {
   const { reports } = useAppStore();
 
   const totalStudents = useMemo(() => {
-    return reports.reduce(
-      (sum, r) =>
-        sum +
-        ((r.stats?.std_10 || 0) +
-          (r.stats?.std_11 || 0) +
-          (r.stats?.std_12 || 0) +
-          (r.stats?.college || 0)),
-      0
-    );
+    return reports.reduce((sum, r) => {
+      const formTotal = r.stats?.total;
+      const val =
+        formTotal !== undefined && formTotal !== null && formTotal !== ''
+          ? Number(formTotal)
+          : ((r.stats?.std_10 || 0) +
+             (r.stats?.std_11 || 0) +
+             (r.stats?.std_12 || 0) +
+             (r.stats?.college || 0));
+      return sum + (isNaN(val) ? 0 : val);
+    }, 0);
   }, [reports]);
 
   // Context line values
@@ -132,40 +134,115 @@ export const Dashboard: React.FC = () => {
 
   const hasReports = reports.length > 0;
 
-  // 13 Activity items
-  const ACTIVITY_KEYS = [
-    { key: 'activity.namaz', value: 85 },
-    { key: 'activity.mashwara_pabandi', value: 70 },
-    { key: 'activity.taleem', value: 65 },
-    { key: 'activity.gasht', value: 50 },
-    { key: 'activity.panchkosa', value: 45 },
-    { key: 'activity.shabguzari', value: 40 },
-    { key: 'activity.mulaqat_percent', value: 60 },
-    { key: 'activity.school_namaz', value: 30 },
-    { key: 'activity.jamaat_3', value: 15 },
-    { key: 'activity.jamaat_10', value: 5 },
-    { key: 'activity.jamaat_40', value: 2 },
-    { key: 'activity.jamaat_4m', value: 0 },
-    { key: 'activity.mashwara_when_where', value: 90 },
+  // Real computation helper functions
+  const parseNum = (val: any): number => {
+    if (val === undefined || val === null || val === '') return 0;
+    const n = Number(String(val).replace(/[^0-9.-]/g, ''));
+    return isNaN(n) ? 0 : n;
+  };
+
+  const getActValues = (r: any, key: string, idx: number): { gujishta: number; mojuda: number } => {
+    const act = r.activities?.[key] || (Array.isArray(r.activities) ? r.activities[idx] : null);
+    const mojuda = parseNum(act?.maujuda || act?.mojuda || act?.cols?.mojuda?.v || 0);
+    const gujishta = parseNum(act?.gujishta || act?.gujishata || act?.cols?.gujishata?.v || 0);
+    return { gujishta, mojuda };
+  };
+
+  const getAct7StoredPercent = (r: any): number => {
+    const act = r.activities?.['activity.mulaqat_percent'] || (Array.isArray(r.activities) ? r.activities[6] : null);
+    const raw =
+      act?.maujuda ||
+      act?.percent ||
+      act?.value ||
+      act?.gujishta ||
+      act?.cols?.mojuda?.v ||
+      act?.cols?.gujishata?.v ||
+      r.mulakat_percent?.v ||
+      r.mulakat_percent ||
+      0;
+    const n = parseNum(raw);
+    return Math.min(100, Math.max(0, Math.round(n)));
+  };
+
+  const getAct13HasText = (r: any): boolean => {
+    const text =
+      r.mashwara ||
+      r.activities?.['mashwara']?.maujuda ||
+      r.activities?.['activity.mashwara_when_where']?.maujuda ||
+      (Array.isArray(r.activities) ? (r.activities[12]?.cols?.mojuda?.v || r.activities[12]?.mojuda) : '');
+    return Boolean(text && String(text).trim().length > 0);
+  };
+
+  const ACTIVITY_DEFS = [
+    { key: 'activity.namaz', no: 1 },
+    { key: 'activity.mashwara_pabandi', no: 2 },
+    { key: 'activity.taleem', no: 3 },
+    { key: 'activity.gasht', no: 4 },
+    { key: 'activity.panchkosa', no: 5 },
+    { key: 'activity.shabguzari', no: 6 },
+    { key: 'activity.mulaqat_percent', no: 7 },
+    { key: 'activity.school_namaz', no: 8 },
+    { key: 'activity.jamaat_3', no: 9 },
+    { key: 'activity.jamaat_10', no: 10 },
+    { key: 'activity.jamaat_40', no: 11 },
+    { key: 'activity.jamaat_4m', no: 12 },
+    { key: 'activity.mashwara_when_where', no: 13 },
   ];
+
+  const computedActivities = useMemo(() => {
+    if (!hasReports) {
+      return ACTIVITY_DEFS.map((def, idx) => ({
+        key: def.key,
+        value: 0,
+        originalIndex: idx + 1,
+        label: t(def.key as any),
+      }));
+    }
+
+    return ACTIVITY_DEFS.map((def, idx) => {
+      let value = 0;
+      if (def.no === 7) {
+        // Activity 7 uses its stored percent value
+        const total = reports.reduce((sum, r) => sum + getAct7StoredPercent(r), 0);
+        value = Math.min(100, Math.round(total / reports.length));
+      } else if (def.no === 13) {
+        // Activity 13 = 100 if its text is non-empty else 0
+        const hasText = reports.some(r => getAct13HasText(r));
+        value = hasText ? 100 : 0;
+      } else {
+        // Per-activity percent = min(100, round(mojuda ÷ gujishta × 100)) when gujishta > 0 else 0
+        let totalGuj = 0;
+        let totalMoj = 0;
+        for (const r of reports) {
+          const { gujishta, mojuda } = getActValues(r, def.key, idx);
+          totalGuj += gujishta;
+          totalMoj += mojuda;
+        }
+        value = totalGuj > 0 ? Math.min(100, Math.round((totalMoj / totalGuj) * 100)) : 0;
+      }
+
+      return {
+        key: def.key,
+        value,
+        originalIndex: idx + 1,
+        label: t(def.key as any),
+      };
+    });
+  }, [reports, hasReports]);
+
+  const activity1Percent = computedActivities[0]?.value || 0;
+  const activity7Percent = computedActivities[6]?.value || 0;
 
   // Sort state: 'activity' (default sequence) | 'desc' (percentage descending)
   type SortType = 'activity' | 'desc';
   const [sortBy, setSortBy] = useState<SortType>('activity');
 
   const sortedActivities = useMemo(() => {
-    const list = ACTIVITY_KEYS.map((item, index) => ({
-      ...item,
-      value: hasReports ? item.value : 0,
-      originalIndex: index + 1,
-      label: t(item.key as any),
-    }));
-
     if (sortBy === 'desc') {
-      return [...list].sort((a, b) => b.value - a.value);
+      return [...computedActivities].sort((a, b) => b.value - a.value);
     }
-    return list;
-  }, [hasReports, sortBy]);
+    return computedActivities;
+  }, [computedActivities, sortBy]);
 
   return (
     <div className="space-y-4 pb-12 relative">
@@ -224,15 +301,15 @@ export const Dashboard: React.FC = () => {
 
             {/* Two Donut Rings side by side */}
             <div className="flex items-start justify-around gap-2">
-              {/* Donut 1: Canonical label "નમાઝોની પાબંદી 85/100" (or 0/100 when empty) */}
+              {/* Donut 1: Canonical label "નમાઝોની પાબંદી X/100" (or 0/100 when empty) */}
               <DonutRing
-                progress={hasReports ? 85 : 0}
-                label={`${t('activity.namaz')} ${hasReports ? '85/100' : '0/100'}`}
+                progress={hasReports ? activity1Percent : 0}
+                label={`${t('activity.namaz')} ${hasReports ? `${activity1Percent}/100` : '0/100'}`}
                 delay={prefersReducedMotion ? 0 : 0.1}
               />
               {/* Donut 2: "મુલાકાત કેટલી થઈ (%)" */}
               <DonutRing
-                progress={hasReports ? 60 : 0}
+                progress={hasReports ? activity7Percent : 0}
                 label={t('activity.mulaqat_percent')}
                 delay={prefersReducedMotion ? 0 : 0.15}
               />

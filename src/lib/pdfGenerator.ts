@@ -156,9 +156,12 @@ export async function generateReportPdfBlob(data: PdfReportData): Promise<Blob> 
   const halqa = data.halqa || '-';
   const dateStr = formatDate(data.date || '');
   const stats = data.stats || {};
-  const totalStudents = data.totalStudents !== undefined
-    ? data.totalStudents
-    : ((stats.std_10 || 0) + (stats.std_11 || 0) + (stats.std_12 || 0) + (stats.college || 0));
+  const formTotal = stats.total;
+  const totalStudents = (formTotal !== undefined && formTotal !== null && formTotal !== '' && !isNaN(Number(formTotal)))
+    ? Number(formTotal)
+    : (data.totalStudents !== undefined
+        ? data.totalStudents
+        : ((stats.std_10 || 0) + (stats.std_11 || 0) + (stats.std_12 || 0) + (stats.college || 0)));
   const activities = data.activities || {};
   const mashwaraVal = data.mashwara || activities['mashwara']?.maujuda || '-';
   const notesVal = data.notes || '-';

@@ -134,9 +134,12 @@ export function buildReportSheet(report: ReportExportData): XLSX.WorkSheet {
   const halqa = report.halqa || '-';
   const dateStr = formatDate(report.date || '');
   const stats = report.stats || {};
-  const totalStudents = report.totalStudents !== undefined 
-    ? report.totalStudents 
-    : ((stats.std_10 || 0) + (stats.std_11 || 0) + (stats.std_12 || 0) + (stats.college || 0));
+  const formTotal = stats.total;
+  const totalStudents = (formTotal !== undefined && formTotal !== null && formTotal !== '' && !isNaN(Number(formTotal)))
+    ? Number(formTotal)
+    : (report.totalStudents !== undefined 
+        ? report.totalStudents 
+        : ((stats.std_10 || 0) + (stats.std_11 || 0) + (stats.std_12 || 0) + (stats.college || 0)));
   const activities = report.activities || {};
   const mashwaraVal = report.mashwara || activities['mashwara']?.maujuda || '-';
   const notesVal = report.notes || '-';
