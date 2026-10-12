@@ -5,38 +5,88 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/manifest.json" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <meta name="theme-color" content="#171238" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="theme-color" content="#241640" />
+    <meta name="color-scheme" content="dark light" />
     <meta name="app-version" content="વર્ઝન 6.0.0" />
     <title>Mehnat Tracker</title>
+    <style>
+      html, body {
+        margin: 0;
+        padding: 0;
+      }
+      html[data-theme="outdoor"], html[data-theme="outdoor"] body {
+        background-color: #F5F0E1;
+        color-scheme: light;
+      }
+      html[data-theme="dark"], html[data-theme="dark"] body {
+        background-color: #20242B;
+        color-scheme: dark;
+      }
+      html[data-theme="premium"], html[data-theme="premium"] body {
+        background-color: #171238;
+        color-scheme: dark;
+      }
+      html[data-theme="outdoor"] #app-splash {
+        background-color: #F5F0E1 !important;
+      }
+      html[data-theme="dark"] #app-splash {
+        background-color: #20242B !important;
+      }
+      html[data-theme="premium"] #app-splash {
+        background-color: #171238 !important;
+      }
+    </style>
     <script>
       (function() {
         var t = localStorage.getItem('theme');
         if (!t) { t = 'premium'; localStorage.setItem('theme', t); }
         document.documentElement.setAttribute('data-theme', t);
-        var bg = '#171238';
+        var headerBg = '#241640';
+        var pageBg = '#171238';
+        var colorScheme = 'dark';
         if (t === 'outdoor') {
-          bg = '#F5F0E1';
+          headerBg = '#FBF7EC';
+          pageBg = '#F5F0E1';
+          colorScheme = 'light';
         } else if (t === 'dark') {
-          bg = '#20242B';
+          headerBg = '#20242B';
+          pageBg = '#20242B';
+          colorScheme = 'dark';
         } else {
-          bg = '#171238';
+          headerBg = '#241640';
+          pageBg = '#171238';
+          colorScheme = 'dark';
         }
         var m = document.querySelector('meta[name="theme-color"]');
         if (m) {
-          m.setAttribute('content', bg);
+          m.setAttribute('content', headerBg);
         } else {
           m = document.createElement('meta');
           m.setAttribute('name', 'theme-color');
-          m.setAttribute('content', bg);
+          m.setAttribute('content', headerBg);
           document.head.appendChild(m);
         }
-        document.documentElement.style.backgroundColor = bg;
+        var cs = document.querySelector('meta[name="color-scheme"]');
+        if (cs) {
+          cs.setAttribute('content', colorScheme);
+        } else {
+          cs = document.createElement('meta');
+          cs.setAttribute('name', 'color-scheme');
+          cs.setAttribute('content', colorScheme);
+          document.head.appendChild(cs);
+        }
+        document.documentElement.style.backgroundColor = pageBg;
+        document.documentElement.style.colorScheme = colorScheme;
         if (document.body) {
-          document.body.style.backgroundColor = bg;
+          document.body.style.backgroundColor = pageBg;
+          document.body.style.colorScheme = colorScheme;
         } else {
           document.addEventListener('DOMContentLoaded', function() {
-            if (document.body) document.body.style.backgroundColor = bg;
+            if (document.body) {
+              document.body.style.backgroundColor = pageBg;
+              document.body.style.colorScheme = colorScheme;
+            }
           });
         }
       })();
@@ -47,7 +97,7 @@
       };
     </script>
   </head>
-  <body style="margin: 0; background-color: #171238;">
+  <body style="margin: 0; padding: 0;">
     <!-- F1 & F2: Branded Splash Screen (Zero Blank Gap, Instant Static Paint) -->
     <div id="app-splash" style="position: fixed; inset: 0; z-index: 99999; display: flex; flex-direction: column; align-items: center; justify-content: center; background-color: #171238; transition: opacity 300ms ease; user-select: none;">
       <!-- Web App Manifest Icon Replica: Purple rounded square (corner radius 25%) with folded white document and 3 magenta lines -->
@@ -86,30 +136,40 @@
         var vt = vm ? (vm.getAttribute('content') || 'વર્ઝન 6.0.0') : 'વર્ઝન 6.0.0';
         if (v) v.textContent = vt;
 
-        var bg = '#171238';
+        var headerBg = '#241640';
+        var pageBg = '#171238';
+        var colorScheme = 'dark';
         if (t === 'outdoor') {
-          bg = '#F5F0E1';
-          if (s) s.style.backgroundColor = bg;
-          if (b) b.style.backgroundColor = bg;
+          headerBg = '#FBF7EC';
+          pageBg = '#F5F0E1';
+          colorScheme = 'light';
+          if (s) s.style.backgroundColor = pageBg;
+          if (b) b.style.backgroundColor = pageBg;
           if (h) h.style.color = '#1E2F73';
           if (v) v.style.color = '#5A6BA8';
         } else if (t === 'dark') {
-          bg = '#20242B';
-          if (s) s.style.backgroundColor = bg;
-          if (b) b.style.backgroundColor = bg;
+          headerBg = '#20242B';
+          pageBg = '#20242B';
+          colorScheme = 'dark';
+          if (s) s.style.backgroundColor = pageBg;
+          if (b) b.style.backgroundColor = pageBg;
           if (h) h.style.color = '#F3F4F6';
           if (v) v.style.color = '#9CA3AF';
         } else {
           // premium or unset
-          bg = '#171238';
-          if (s) s.style.backgroundColor = bg;
-          if (b) b.style.backgroundColor = bg;
+          headerBg = '#241640';
+          pageBg = '#171238';
+          colorScheme = 'dark';
+          if (s) s.style.backgroundColor = pageBg;
+          if (b) b.style.backgroundColor = pageBg;
           if (h) h.style.color = '#FFFFFF';
           if (v) v.style.color = 'rgba(255, 255, 255, 0.7)';
         }
 
         var m = document.querySelector('meta[name="theme-color"]');
-        if (m) m.setAttribute('content', bg);
+        if (m) m.setAttribute('content', headerBg);
+        var cs = document.querySelector('meta[name="color-scheme"]');
+        if (cs) cs.setAttribute('content', colorScheme);
 
         // F3: Fade and Remove on app-ready, with 4000ms safety fallback
         var splashFaded = false;
@@ -128,7 +188,8 @@
           }, 350);
         }
 
-        window.addEventListener('app-ready', hideSplash, { once: true });
+        window.__hideSplash = hideSplash;
+        window.addEventListener('app-ready', hideSplash);
         setTimeout(hideSplash, 4000);
       })();
     </script>

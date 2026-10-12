@@ -20,7 +20,8 @@ const PORT = 5217;
 const APP_URL = `http://localhost:${PORT}/`;
 
 async function startServer() {
-  serverProcess = spawn('npx', ['vite', 'preview', '--port', String(PORT), '--strictPort'], {
+  const npxCmd = process.platform === 'win32' ? 'npx.cmd' : 'npx';
+  serverProcess = spawn(npxCmd, ['vite', 'preview', '--port', String(PORT), '--strictPort'], {
     shell: true,
     stdio: ['ignore', 'pipe', 'pipe']
   });

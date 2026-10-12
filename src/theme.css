@@ -94,12 +94,32 @@ html[data-theme="premium"] {
   --input-placeholder: rgba(255, 227, 241, 0.55);
 }
 
-html[data-theme="outdoor"] body {
-  background: #F5F0E1;
+html[data-theme="outdoor"] {
+  color-scheme: light;
+}
+html[data-theme="dark"] {
+  color-scheme: dark;
+}
+html[data-theme="premium"] {
+  color-scheme: dark;
 }
 
+html[data-theme="outdoor"],
+html[data-theme="outdoor"] body {
+  background: #F5F0E1;
+  background-color: #F5F0E1;
+}
+
+html[data-theme="dark"],
 html[data-theme="dark"] body {
-  background: linear-gradient(180deg,#262B33,#1F2329);
+  background: #20242B;
+  background-color: #20242B;
+}
+
+html[data-theme="premium"],
+html[data-theme="premium"] body {
+  background: #171238;
+  background-color: #171238;
 }
 
 /* ── Neumorphic tokens (gate screens only) ── */
